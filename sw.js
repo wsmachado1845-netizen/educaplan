@@ -1,0 +1,53 @@
+// EducaPlan — Service Worker
+// Cache simples do "app shell" para permitir abrir o app mesmo sem internet.
+const CACHE_NAME = "educaplan-cache-v1";
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icon-192.png",
+  "./icon-512.png"
+];
+
+self.addEventListener("install", function (event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function (cache) {
+      return cache.addAll(APP_SHELL);
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", function (event) {
+  event.waitUntil(
+    caches.keys().then(function (keys) {
+      return Promise.all(
+        keys
+          .filter(function (key) { return key !== CACHE_NAME; })
+          .map(function (key) { return caches.delete(key); })
+      );
+    })
+  );
+  self.clients.claim();
+});
+
+// Estratégia: tenta a rede primeiro (pra sempre pegar a versão mais nova
+// quando online), cai pro cache se estiver offline.
+self.addEventListener("fetch", function (event) {
+  if (event.request.method !== "GET") return;
+  event.respondWith(
+    fetch(event.request)
+      .then(function (response) {
+        var copy = response.clone();
+        caches.open(CACHE_NAME).then(function (cache) {
+          cache.put(event.request, copy);
+        });
+        return response;
+      })
+      .catch(function () {
+        return caches.match(event.request).then(function (cached) {
+          return cached || caches.match("./index.html");
+        });
+      })
+  );
+});
