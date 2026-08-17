@@ -386,6 +386,37 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
 .hbar-n { flex: 0 0 20px; text-align: right; font-size: 12px; font-weight: 700; color: var(--t2); }
 .hbar-zero .hbar-lb, .hbar-zero .hbar-n { color: var(--t4); }
 
+/* Ilustração do cartão de calendário: só decorativa, some quando não cabe. */
+.cal-ic { font-size: 30px; line-height: 1; margin-left: auto; opacity: .9; }
+@media (max-width: 620px) { .cal-ic { display: none; } }
+
+/* Ícones do menu lateral no mesmo desenho dos atalhos do painel. */
+.snav-ic { font-size: 15px; }
+
+/* ── Indicadores do painel ──
+   Cartões próprios com número, rótulo e ícone ilustrativo à direita. O ícone
+   dá leitura imediata do que cada número representa, sem precisar ler o
+   rótulo — especialmente no celular. */
+.stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--sh1); padding: 13px 15px; display: flex; align-items: center;
+  justify-content: space-between; gap: 10px; min-width: 0; }
+.stat-card-n { font-family: var(--serif); font-size: 23px; font-weight: 700; line-height: 1; }
+.stat-card-l { font-size: 9.5px; color: var(--t4); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .04em; margin-top: 4px; line-height: 1.25; }
+.stat-card-ic { font-size: 21px; line-height: 1; flex-shrink: 0; opacity: .95; }
+@media (max-width: 900px) { .stat-cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px) {
+  .stat-cards { gap: 8px; }
+  .stat-card { padding: 11px 12px; border-radius: 12px; }
+  .stat-card-n { font-size: 21px; }
+  .stat-card-ic { font-size: 19px; }
+}
+
+/* Ícones ilustrativos das ferramentas: fundo neutro e emoji colorido, para
+   o atalho ser reconhecido pelo desenho antes mesmo da leitura. */
+.tool-ic { background: var(--bg3) !important; }
+
 /* Indicadores do topo em faixa única, no lugar de quatro cartões grandes. */
 .mini-stats { display: grid; grid-template-columns: repeat(4, 1fr); }
 .mini-stat { text-align: center; padding: 13px 6px; border-right: 1px solid var(--border2); }
@@ -535,7 +566,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
 </head>
 <body class="t-grafite">
 <div class="shell">
-  <aside class="side noprint" id="side"><div class="logo" onclick="go(&#39;home&#39;);closeSide()"><div class="logo-mark">✦</div><div><div class="logo-name">EducaPlan</div><div class="logo-sub">BNCC · PLANEJAMENTO</div></div></div><div class="side-lb">Planejamento</div><div class="snav active" onclick="go(&#39;home&#39;);closeSide()"><span class="snav-ic">⌂</span><span>Painel Principal</span></div><div class="snav" onclick="go(&#39;gen&#39;);closeSide()"><span class="snav-ic">✦</span><span>Criar Planejamento</span></div><div class="snav" onclick="go(&#39;plans&#39;);closeSide()"><span class="snav-ic">❐</span><span>Histórico de Planos</span></div><div class="side-lb">Rotina Escolar</div><div class="snav" onclick="go(&#39;diario&#39;);closeSide()"><span class="snav-ic">▤</span><span>Registro de Aulas</span></div><div class="snav" onclick="go(&#39;agenda&#39;);closeSide()"><span class="snav-ic">▣</span><span>Agenda Letiva</span></div><div class="snav" onclick="go(&#39;archive&#39;);closeSide()"><span class="snav-ic">❍</span><span>Arquivo Bimestral</span></div><div class="side-lb">Apoio</div><div class="snav" onclick="go(&#39;aee&#39;);closeSide()"><span class="snav-ic">♿</span><span>Hub AEE</span></div><div class="snav" onclick="go(&#39;settings&#39;);closeSide()"><span class="snav-ic">⚙</span><span>Ajustes &amp; Mais</span></div><div class="side-foot"><div class="side-user"><strong>Weliton</strong>U. I. Deuris De Deus</div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="badge badge-mute" title="Sem chave — gerador local">Local</span><button class="icon-btn" onclick="toggleTheme()" title="Trocar tema (Escuro)">◑ Escuro</button><button class="icon-btn" onclick="logout()" title="Sair">⎋</button></div></div></aside>
+  <aside class="side noprint" id="side"><div class="logo" onclick="go(&#39;home&#39;);closeSide()"><div class="logo-mark">✦</div><div><div class="logo-name">EducaPlan</div><div class="logo-sub">BNCC · PLANEJAMENTO PEDAGÓGICO</div></div></div><div class="side-lb">Planejamento</div><div class="snav active" onclick="go(&#39;home&#39;);closeSide()"><span class="snav-ic">⌂</span><span>Painel Principal</span></div><div class="snav" onclick="go(&#39;gen&#39;);closeSide()"><span class="snav-ic">✦</span><span>Criar Planejamento</span></div><div class="snav" onclick="go(&#39;plans&#39;);closeSide()"><span class="snav-ic">❐</span><span>Histórico de Planos</span></div><div class="side-lb">Rotina Escolar</div><div class="snav" onclick="go(&#39;diario&#39;);closeSide()"><span class="snav-ic">▤</span><span>Registro de Aulas</span></div><div class="snav" onclick="go(&#39;agenda&#39;);closeSide()"><span class="snav-ic">▣</span><span>Agenda Letiva</span></div><div class="snav" onclick="go(&#39;archive&#39;);closeSide()"><span class="snav-ic">❍</span><span>Arquivo Bimestral</span></div><div class="side-lb">Apoio</div><div class="snav" onclick="go(&#39;aee&#39;);closeSide()"><span class="snav-ic">♿</span><span>Hub AEE</span></div><div class="snav" onclick="go(&#39;settings&#39;);closeSide()"><span class="snav-ic">⚙</span><span>Ajustes &amp; Mais</span></div><div class="side-foot"><div class="side-user"><strong>Weliton</strong>U. I. Deuris De Deus</div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="badge badge-mute" title="Sem chave — gerador local">Local</span><button class="icon-btn" onclick="toggleTheme()" title="Trocar tema (Escuro)">◑ Escuro</button><button class="icon-btn" onclick="logout()" title="Sair">⎋</button></div></div></aside>
   <div class="side-ovl noprint" id="sideOvl" onclick="closeSide()"></div>
   <div class="content">
     <div class="topbar noprint">
@@ -544,7 +575,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
         <div class="logo-mark">✦</div>
         <div>
           <div class="logo-name">EducaPlan</div>
-          <div class="logo-sub">BNCC · PLANEJAMENTO</div>
+          <div class="logo-sub">BNCC · PLANEJAMENTO PEDAGÓGICO</div>
         </div>
       </div>
     </div>
@@ -7867,6 +7898,15 @@ function viewHome() {
   var subjBars = Object.keys(subjCount).sort(function(a,b){ return subjCount[b] - subjCount[a]; }).slice(0, 6);
   var maxSubj = Math.max(1, Math.max.apply(null, subjBars.map(function(s){ return subjCount[s]; })));
 
+  /* Cartão de indicador: número, rótulo e ícone ilustrativo. */
+  function statCard(valor, rotulo, icone, cor) {
+    return '<div class="stat-card">' +
+        "<div><div class='stat-card-n'" + (cor ? " style='color:" + cor + "'" : "") + ">" + valor + "</div>" +
+        "<div class='stat-card-l'>" + rotulo + "</div></div>" +
+        "<div class='stat-card-ic'>" + icone + "</div>" +
+      "</div>";
+  }
+
   /* Uma linha de barra horizontal: rótulo, trilho proporcional e valor. */
   function hbar(rotulo, valor, maximo, cor) {
     var pct = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
@@ -7892,15 +7932,13 @@ function viewHome() {
     backupReminderHtml() +
 
     /* Indicadores em faixa única */
-    '<div class="card mini-stats" style="margin-bottom:14px">' +
-      '<div class="mini-stat"><div class="mini-n">' + plans.length + '</div>' +
-        '<div class="mini-l">' + (plans.length === 1 ? "Planejamento" : "Planejamentos") + "</div></div>" +
-      '<div class="mini-stat"><div class="mini-n" style="color:var(--grn)">' + Object.keys(subjCount).length + '</div>' +
-        '<div class="mini-l">' + (Object.keys(subjCount).length === 1 ? "Disciplina" : "Disciplinas") + "</div></div>" +
-      '<div class="mini-stat"><div class="mini-n" style="color:var(--acc)">' + aeeCount + '</div>' +
-        '<div class="mini-l">Com AEE</div></div>' +
-      '<div class="mini-stat"><div class="mini-n" style="color:var(--blu)">' + aiCount + '</div>' +
-        '<div class="mini-l">Gerados por IA</div></div>' +
+    /* Indicadores em cartÃµes prÃ³prios, com Ã­cone Ã  direita â leitura mais
+       rÃ¡pida no celular do que uma faixa de nÃºmeros iguais. */
+    '<div class="stat-cards">' +
+      statCard(plans.length, (plans.length === 1 ? "Planejamento" : "Planejamentos"), "📁", "") +
+      statCard(Object.keys(subjCount).length, (Object.keys(subjCount).length === 1 ? "Disciplina" : "Disciplinas"), "📚", "var(--grn)") +
+      statCard(aeeCount, "Com AEE", "♿", "var(--acc)") +
+      statCard(aiCount, "Gerados por IA", "🧠", "var(--blu)") +
     "</div>" +
 
     '<div class="g2" style="margin-bottom:14px">' +
@@ -7933,20 +7971,21 @@ function viewHome() {
             "<div><strong style='font-size:17px;color:var(--grn)'>" + mi.semanas + "</strong> <span style='color:var(--t4)'>semanas</span></div>" +
           "</div>" +
           '<button class="btn btn-outline btn-sm" onclick="go(\'agenda\')">Ver agenda completa</button>' +
+          '<div class="cal-ic">📆</div>' +
         "</div></div>";
     })() +
 
     /* Ferramentas */
     '<div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:10px;font-family:var(--serif)">Minhas Ferramentas</div>' +
     '<div class="gtools" style="margin-bottom:22px">' +
-      [["gen","&#10022;","Criar Planejamento","Gerar um plano de aula completo, alinhado &agrave;s habilidades da BNCC"],
-       ["diario","&#9636;","Registro de Aulas","Di&aacute;rio de classe com as datas reais do calend&aacute;rio letivo"],
-       ["plans","&#10064;","Hist&oacute;rico de Planos","Todos os planejamentos que voc&ecirc; j&aacute; salvou"],
-       ["cobertura","&#9733;","Cobertura BNCC","Veja quais habilidades j&aacute; foram trabalhadas e quais faltam no ano"],
-       ["archive","&#10061;","Arquivo Bimestral","Seus planos organizados nas pastas de cada bimestre"],
-       ["agenda","&#9635;","Agenda Letiva","Calend&aacute;rio do m&ecirc;s e a sua grade semanal de aulas"],
-       ["aee","&#9855;","Hub AEE","Estrat&eacute;gias de inclus&atilde;o e recursos por diagn&oacute;stico"],
-       ["settings","&#9881;","Ajustes &amp; Mais","Perfil, hor&aacute;rio semanal, temas e backup dos dados"]
+      [["gen","📝","Criar Planejamento","Gerar um plano de aula completo, alinhado &agrave;s habilidades da BNCC"],
+       ["diario","📋","Registro de Aulas","Di&aacute;rio de classe com as datas reais do calend&aacute;rio letivo"],
+       ["plans","🗂️","Hist&oacute;rico de Planos","Todos os planejamentos que voc&ecirc; j&aacute; salvou"],
+       ["cobertura","🏅","Cobertura BNCC","Veja quais habilidades j&aacute; foram trabalhadas e quais faltam no ano"],
+       ["archive","🗃️","Arquivo Bimestral","Seus planos organizados nas pastas de cada bimestre"],
+       ["agenda","📅","Agenda Letiva","Calend&aacute;rio do m&ecirc;s e a sua grade semanal de aulas"],
+       ["aee","♿","Hub AEE","Estrat&eacute;gias de inclus&atilde;o e recursos por diagn&oacute;stico"],
+       ["settings","⚙️","Ajustes &amp; Mais","Perfil, hor&aacute;rio semanal, temas e backup dos dados"]
       ].map(function(t) {
         return '<div class="card tool" onclick="go(\'' + t[0] + '\')">' +
           '<div class="tool-ic">' + t[1] + "</div>" +
@@ -10113,21 +10152,22 @@ function openSide() { document.body.classList.add("side-open"); }
 function closeSide() { document.body.classList.remove("side-open"); }
 
 /* Menu lateral vertical, à esquerda */
+/* Mesmos Ã­cones do painel, para o menu e os atalhos falarem a mesma lÃ­ngua. */
 var SIDE_MENU = [
   { group:"Planejamento", items:[
-    { id:"home",   label:"Painel Principal",  icon:"&#8962;" },
-    { id:"gen",    label:"Criar Planejamento", icon:"&#10022;" },
-    { id:"plans",  label:"Hist&oacute;rico de Planos", icon:"&#10064;" },
-    { id:"cobertura", label:"Cobertura BNCC", icon:"&#9733;" }
+    { id:"home",   label:"Painel Principal",  icon:"🏠" },
+    { id:"gen",    label:"Criar Planejamento", icon:"📝" },
+    { id:"plans",  label:"Hist&oacute;rico de Planos", icon:"🗂️" },
+    { id:"cobertura", label:"Cobertura BNCC", icon:"🏅" }
   ]},
   { group:"Rotina Escolar", items:[
-    { id:"diario", label:"Registro de Aulas", icon:"&#9636;" },
-    { id:"agenda", label:"Agenda Letiva",     icon:"&#9635;" },
-    { id:"archive",label:"Arquivo Bimestral", icon:"&#10061;" }
+    { id:"diario", label:"Registro de Aulas", icon:"📋" },
+    { id:"agenda", label:"Agenda Letiva",     icon:"📅" },
+    { id:"archive",label:"Arquivo Bimestral", icon:"🗃️" }
   ]},
   { group:"Apoio", items:[
-    { id:"aee",      label:"Hub AEE",       icon:"&#9855;" },
-    { id:"settings", label:"Ajustes &amp; Mais", icon:"&#9881;" }
+    { id:"aee",      label:"Hub AEE",       icon:"♿" },
+    { id:"settings", label:"Ajustes &amp; Mais", icon:"⚙️" }
   ]}
 ];
 
@@ -10142,7 +10182,7 @@ function renderSide() {
   var html = '<div class="logo" onclick="go(\'home\');closeSide()">' +
       '<div class="logo-mark">&#10022;</div>' +
       "<div><div class='logo-name'>EducaPlan</div>" +
-      "<div class='logo-sub'>BNCC &middot; PLANEJAMENTO</div></div></div>";
+      "<div class='logo-sub'>BNCC &middot; PLANEJAMENTO PEDAG&Oacute;GICO</div></div></div>";
 
   SIDE_MENU.forEach(function(g) {
     html += '<div class="side-lb">' + g.group + "</div>";
