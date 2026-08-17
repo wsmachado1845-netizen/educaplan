@@ -1,7 +1,7 @@
 {
-  "name": "EducaPlan BNCC — Planejamento Curricular",
+  "name": "EducaPlan — Planejamento com IA para Educação",
   "short_name": "EducaPlan",
-  "description": "Aplicativo de preparação e gestão de planos de aula alinhados à BNCC.",
+  "description": "Planejamento com IA para Educação — planos de aula alinhados à BNCC, do 1º ao 9º ano.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
