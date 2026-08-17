@@ -1953,12 +1953,90 @@ var DRIVE_FILENAME = "educaplan_backup.json";
    deixá-lo embutido evita ter que digitá-lo à mão em cada aparelho. */
 var DEFAULT_GOOGLE_CLIENT_ID = "530916123457-8985ml66a91c8v4h4agtgc0q1f30m2hb.apps.googleusercontent.com";
 var K_CLIENTID_FIX = "educaplan_clientid_fix_v17";
+/* Onde fica guardada a autorização do Google neste aparelho:
+   - K_GTOKEN: a permissão de acesso e a hora em que ela expira. O Google
+     entrega permissões de curta duração (cerca de 1 hora) e, antes desta
+     versão, o app guardava isso só na memória — ao fechar o app a permissão
+     se perdia e a tela voltava para "Desconectado", mesmo sem nada de errado.
+   - K_GAUTORIZADO: marca que este aparelho já foi autorizado alguma vez.
+     Com essa marca o app consegue renovar a permissão em silêncio, sem
+     abrir de novo a tela de login do Google. */
+var K_GTOKEN = "educaplan_gtoken_v1";
+var K_GAUTORIZADO = "educaplan_gautorizado_v1";
 var _driveSyncThrottleMs = 20000;
 var _lastDriveSyncAt = 0;
 var _applyingRemoteData = false;
-var _googleState = { token:null, tokenClient:null, connected:false, syncing:false, lastError:"" };
+var _renovandoSilencioso = false;
+var _googleState = { token:null, tokenClient:null, connected:false, syncing:false, lastError:"", renovando:false };
 
 function driveState() { return _googleState; }
+
+/* ---- Permissão guardada entre sessões ---- */
+function driveGuardarToken(token, segundosValidade) {
+  var expiraEm = Date.now() + (Math.max(60, (segundosValidade || 3600)) - 90) * 1000;
+  try {
+    localStorage.setItem(K_GTOKEN, JSON.stringify({ token:token, exp:expiraEm }));
+    localStorage.setItem(K_GAUTORIZADO, "1");
+  } catch (e) {}
+  _googleState.token = token;
+  _googleState.tokenExp = expiraEm;
+}
+function driveTokenGuardado() {
+  try {
+    var g = JSON.parse(localStorage.getItem(K_GTOKEN) || "null");
+    if (g && g.token && g.exp && g.exp > Date.now()) return g;
+  } catch (e) {}
+  return null;
+}
+function driveJaAutorizado() {
+  try { return localStorage.getItem(K_GAUTORIZADO) === "1"; } catch (e) { return false; }
+}
+function driveEsquecerToken(esquecerAutorizacao) {
+  try {
+    localStorage.removeItem(K_GTOKEN);
+    if (esquecerAutorizacao) localStorage.removeItem(K_GAUTORIZADO);
+  } catch (e) {}
+  _googleState.token = null;
+  _googleState.tokenExp = 0;
+}
+
+/* Renova a permissão sem incomodar o professor: como o aparelho já foi
+   autorizado antes, o Google devolve uma nova permissão sem pedir login de
+   novo (prompt vazio). Se o Google exigir interação, o app não insiste —
+   apenas mostra "toque para reconectar". */
+function driveRenovarSilencioso(aoTerminar) {
+  var g = driveState();
+  if (_renovandoSilencioso) return;
+  if (!driveJaAutorizado()) return;
+  if (!(location.protocol === "https:" || location.hostname === "localhost")) return;
+  var tc = driveEnsureTokenClient();
+  if (!tc) return;
+  _renovandoSilencioso = true;
+  g.renovando = true;
+  g._aoRenovar = aoTerminar || null;
+  try {
+    tc.requestAccessToken({ prompt: "" });
+  } catch (e) {
+    _renovandoSilencioso = false;
+    g.renovando = false;
+  }
+}
+
+/* Chamado quando o app abre: se a permissão guardada ainda vale, volta
+   conectado na hora; se venceu, tenta renovar em silêncio. */
+function driveRetomarConexao() {
+  var g = driveState();
+  var salvo = driveTokenGuardado();
+  if (salvo) {
+    g.token = salvo.token;
+    g.tokenExp = salvo.exp;
+    g.connected = true;
+    g.lastError = "";
+    driveSyncNow("retomada");
+    return;
+  }
+  if (driveJaAutorizado()) driveRenovarSilencioso();
+}
 
 function markChanged() {
   if (_applyingRemoteData) return;
@@ -2003,17 +2081,33 @@ function driveEnsureTokenClient() {
     client_id: state.cfg.googleClientId,
     scope: DRIVE_SCOPE,
     callback: function(resp) {
+      var eraSilencioso = _renovandoSilencioso;
+      _renovandoSilencioso = false;
+      g.renovando = false;
       if (resp && resp.access_token) {
-        g.token = resp.access_token;
+        /* Guarda a permissão e a validade: ao reabrir o app, a conexão volta
+           sozinha enquanto ela valer, sem nova tela do Google. */
+        driveGuardarToken(resp.access_token, resp.expires_in);
         g.connected = true;
         g.lastError = "";
-        driveSyncNow("login");
-      } else {
+        var cb = g._aoRenovar; g._aoRenovar = null;
+        if (cb) { cb(); } else { driveSyncNow(eraSilencioso ? "renovacao" : "login"); }
+      } else if (!eraSilencioso) {
         g.lastError = "Não foi possível autorizar o acesso ao Google Drive.";
+        render();
+      } else {
         render();
       }
     },
     error_callback: function(err) {
+      var eraSilencioso = _renovandoSilencioso;
+      _renovandoSilencioso = false;
+      g.renovando = false;
+      g._aoRenovar = null;
+      /* Falha na renovação silenciosa não é erro para o professor: apenas
+         significa que o Google quer uma confirmação. O app fica em
+         "Autorizado — toque em Sincronizar" e não mostra alarme nenhum. */
+      if (eraSilencioso) { render(); return; }
       var tipo = (err && err.type) || "";
       if (tipo === "popup_closed") {
         g.lastError = "A janela do Google foi fechada antes de concluir a autorização.";
@@ -2044,14 +2138,27 @@ function driveConnect() {
 
 function driveDisconnect() {
   var g = driveState();
-  g.token = null; g.connected = false;
+  /* Desconectar é um pedido explícito: aqui a autorização deste aparelho é
+     esquecida de verdade, para o app não voltar reconectado sozinho. */
+  driveEsquecerToken(true);
+  g.connected = false;
+  g.lastError = "";
   render();
   toast("Desconectado do Google Drive neste aparelho.");
 }
 
 function driveAutoSyncMaybe() {
   var g = driveState();
-  if (!g.connected || !g.token) return;
+  if (!g.connected || !g.token) {
+    /* Permissão vencida no meio do uso: tenta renovar em silêncio e, se
+       conseguir, a sincronização acontece logo em seguida. */
+    if (driveJaAutorizado() && !g.syncing) driveRenovarSilencioso(function(){ driveSyncNow("auto"); });
+    return;
+  }
+  if (g.tokenExp && Date.now() > g.tokenExp) {
+    driveRenovarSilencioso(function(){ driveSyncNow("auto"); });
+    return;
+  }
   var now = Date.now();
   if ((now - _lastDriveSyncAt) < _driveSyncThrottleMs) return;
   driveSyncNow("auto");
@@ -2064,8 +2171,13 @@ function driveApiFetch(url, opts) {
   opts.headers["Authorization"] = "Bearer " + g.token;
   return fetch(url, opts).then(function(res) {
     if (res.status === 401) {
-      g.token = null; g.connected = false;
-      throw new Error("A sessão do Google expirou. Conecte novamente em Ajustes.");
+      /* Permissão recusada pelo Google: descarta a permissão vencida, mas
+         mantém a marca de que este aparelho já foi autorizado, e tenta
+         renovar em silêncio para a próxima sincronização. */
+      driveEsquecerToken(false);
+      g.connected = false;
+      driveRenovarSilencioso();
+      throw new Error("A permissão do Google venceu. O app está renovando automaticamente — se não voltar, toque em Sincronizar agora.");
     }
     return res;
   });
@@ -2109,7 +2221,15 @@ function driveUpload(fileId, dataObj) {
 
 function driveSyncNow(reason) {
   var g = driveState();
-  if (!g.connected || !g.token || g.syncing) return;
+  if (g.syncing) return;
+  /* Se a permissão venceu mas o aparelho já foi autorizado, renova em
+     silêncio e sincroniza logo em seguida — o professor só toca uma vez. */
+  if ((!g.connected || !g.token) && driveJaAutorizado()) {
+    driveRenovarSilencioso(function(){ driveSyncNow(reason); });
+    render();
+    return;
+  }
+  if (!g.connected || !g.token) return;
   g.syncing = true;
   render();
   _lastDriveSyncAt = Date.now();
@@ -8624,17 +8744,31 @@ function viewSettings() {
         "Se aparecer o erro <em>401: invalid_client</em>, a chave deste aparelho est&aacute; incorreta &mdash; " +
         '<a href="javascript:void(0)" onclick="driveResetClientId()" style="color:var(--acc)">restaurar a chave padr&atilde;o</a>.' +
       "</div>" +
-      '<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-top:13px">' +
-        "<span style='width:8px;height:8px;border-radius:50%;background:" + (gConnected ? "var(--grn)" : "var(--t4)") + "'></span>" +
-        (gSyncing ? "Sincronizando&hellip;" : (gConnected ? "Conectado neste aparelho" : "Desconectado neste aparelho")) + "</div>" +
-      (gErr ? '<div style="font-size:11.5px;color:var(--red);margin-top:6px">' + esc(gErr) + "</div>" : "") +
-      (c.googleLastSyncAt ? '<div style="font-size:11px;color:var(--t4);margin-top:4px">&Uacute;ltima sincroniza&ccedil;&atilde;o: ' + esc(new Date(c.googleLastSyncAt).toLocaleString("pt-BR")) + "</div>" : "") +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
-        (gConnected
-          ? '<button class="btn btn-outline btn-sm" onclick="driveSyncNow(\'manual\')"' + (gSyncing ? " disabled" : "") + '>Sincronizar agora</button>' +
-            '<button class="btn btn-ghost btn-sm" onclick="driveDisconnect()">Desconectar</button>'
-          : '<button class="btn btn-primary btn-sm" onclick="driveConnect()">Conectar ao Google Drive</button>') +
-      "</div>" +
+      /* Três estados, não dois: conectado, autorizado (permissão vencendo,
+         renovando sozinho) e desconectado. Antes, uma permissão vencida
+         aparecia como "Desconectado" e dava a impressão de que a conexão
+         tinha caído — quando bastava renovar. */
+      (function() {
+        var autorizado = driveJaAutorizado();
+        var renovando = driveState().renovando;
+        var cor = gConnected ? "var(--grn)" : (autorizado ? "var(--amb)" : "var(--t4)");
+        var texto = gSyncing ? "Sincronizando&hellip;"
+          : (gConnected ? "Conectado neste aparelho"
+            : (renovando ? "Renovando a permiss&atilde;o&hellip;"
+              : (autorizado ? "Autorizado neste aparelho &mdash; renova sozinho ao sincronizar"
+                : "Desconectado neste aparelho")));
+        return '<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-top:13px">' +
+          "<span style='width:8px;height:8px;border-radius:50%;background:" + cor + "'></span>" + texto + "</div>" +
+          (gErr ? '<div style="font-size:11.5px;color:var(--red);margin-top:6px">' + esc(gErr) + "</div>" : "") +
+          (c.googleLastSyncAt ? '<div style="font-size:11px;color:var(--t4);margin-top:4px">&Uacute;ltima sincroniza&ccedil;&atilde;o: ' +
+            esc(new Date(c.googleLastSyncAt).toLocaleString("pt-BR")) + "</div>" : "") +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
+            (gConnected || autorizado
+              ? '<button class="btn btn-outline btn-sm" onclick="driveSyncNow(\'manual\')"' + (gSyncing ? " disabled" : "") + '>Sincronizar agora</button>' +
+                '<button class="btn btn-ghost btn-sm" onclick="driveDisconnect()">Desconectar</button>'
+              : '<button class="btn btn-primary btn-sm" onclick="driveConnect()">Conectar ao Google Drive</button>') +
+          "</div>";
+      })() +
     "</div>" +
 
     /* Dados */
@@ -9747,6 +9881,48 @@ if (!state.agendaMonth || !CALENDAR.meses[state.agendaMonth]) {
    anteriores (inclusive antes desta função existir). */
 syncDiaryWithPlans();
 render();
+
+/* Retoma a conexão com o Google Drive ao abrir o app. Sem isso, o professor
+   precisava tocar em "Conectar" toda vez que abria o app, mesmo já tendo
+   autorizado o aparelho.
+   A permissão guardada é restaurada na hora, sem depender da biblioteca do
+   Google — só a renovação precisa dela, e por isso ela espera o script
+   carregar (útil quando a internet está lenta). */
+(function() {
+  var salvo = driveTokenGuardado();
+  if (salvo) {
+    var g = driveState();
+    g.token = salvo.token;
+    g.tokenExp = salvo.exp;
+    g.connected = true;
+    g.lastError = "";
+    render();
+    driveSyncNow("retomada");
+    return;
+  }
+  if (!driveJaAutorizado()) return;
+  (function aguardarGoogle(tentativas) {
+    tentativas = tentativas || 0;
+    if (typeof google !== "undefined" && google.accounts && google.accounts.oauth2) {
+      driveRenovarSilencioso(function(){ driveSyncNow("retomada"); render(); });
+      render();
+      return;
+    }
+    if (tentativas < 25) setTimeout(function(){ aguardarGoogle(tentativas + 1); }, 400);
+  })();
+})();
+
+/* Ao voltar para o app (trocar de aba, desbloquear o celular), confere se a
+   permissão ainda vale e renova se precisar — assim a sincronização não
+   falha silenciosamente depois de horas com o app aberto em segundo plano. */
+document.addEventListener("visibilitychange", function() {
+  if (document.visibilityState !== "visible") return;
+  var g = driveState();
+  if (!driveJaAutorizado()) return;
+  if (!g.token || (g.tokenExp && Date.now() > g.tokenExp)) {
+    driveRenovarSilencioso(function(){ driveSyncNow("retorno"); render(); });
+  }
+});
 </script>
 
 
