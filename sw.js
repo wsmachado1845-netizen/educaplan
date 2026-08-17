@@ -1,12 +1,13 @@
 // EducaPlan — Service Worker
 // Cache simples do "app shell" para permitir abrir o app mesmo sem internet.
-const CACHE_NAME = "educaplan-cache-v21";
+const CACHE_NAME = "educaplan-cache-v22";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./icon-maskable-512.png"
 ];
 
 self.addEventListener("install", function (event) {
