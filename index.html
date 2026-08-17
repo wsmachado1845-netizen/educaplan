@@ -8583,6 +8583,84 @@ function viewDiario() {
      — daí a sensação de "o tema, o tema, o tema" repetido linha após linha.
      Agora cada linha traz só o conteúdo daquele dia, e a habilidade exibida
      é a que corresponde a esse conteúdo, não uma distribuição separada. */
+  /* O diário oficial não aceita só o rótulo do gênero: "Tirinha" sozinho não
+     diz o que foi trabalhado. Aqui cada conteúdo ganha um complemento curto
+     dizendo o QUE se trabalha nele, colado ao que a habilidade pede — por
+     exemplo "Tirinha — efeito de humor na relação entre linguagem verbal e
+     não verbal" ou "Infográfico — leitura de gráficos e relação entre dados,
+     texto e imagem". Curto de propósito: cabe na linha do diário. */
+  var FOCOS_CONTEUDO = [
+    [/tirinha|charge|cartum|\bmeme\b|quadrinho|\bgif\b/i,
+      "efeito de humor e ironia na relação entre linguagem verbal e não verbal"],
+    [/infogr[áa]fico/i,
+      "leitura de gráficos e tabelas (barras, pizza) e relação entre dados, texto e imagem"],
+    [/not[íi]cia|jornal[íi]stic/i,
+      "fato central, lide (o quê, quem, quando, onde) e ordenação dos acontecimentos"],
+    [/reportagem|fotorreportagem/i,
+      "tema, perspectiva de abordagem e fontes consultadas"],
+    [/propaganda|publicit[áa]ri|an[úu]ncio|campanha/i,
+      "recursos persuasivos, público-alvo e articulação entre imagem e texto"],
+    [/relat[óo]rio/i,
+      "organização dos dados coletados, análise e conclusão"],
+    [/peti[çc][ãa]o|abaixo-assinado|carta aberta/i,
+      "estrutura da reivindicação, identificação dos signatários e argumentos"],
+    [/regimento|normativ|\blei\b|estatuto|\beca\b/i,
+      "hierarquia dos itens, vocabulário técnico e caráter imperativo do texto"],
+    [/entrevista/i, "roteiro de perguntas, escuta e transcrição das respostas"],
+    [/podcast|v[íi]deo|audiovisual/i, "roteiro, entonação e adequação da fala ao público"],
+    [/debate|semin[áa]rio|roda de conversa/i, "argumentos, refutação e organização dos turnos de fala"],
+    [/verbete|dicion[áa]rio|enciclop[ée]dia/i, "estrutura do verbete e organização das informações"],
+    [/resumo|s[íi]ntese/i, "seleção das ideias principais sem cópia do original"],
+    [/poema|verso|poesia|cordel/i, "recursos sonoros, disposição em versos e sentido figurado"],
+    [/conto|cr[ôo]nica|narrativ|f[áa]bula|lenda/i, "elementos da narrativa: enredo, personagens, tempo e espaço"],
+    [/multissemi|multimodal|multimod/i, "combinação de imagem, som e escrita na produção de sentidos"],
+    [/coes[ãa]o|refer[êe]ncia|anaf[óo]ric|conectiv|conjun[çc]/i, "retomadas, conectivos e progressão das ideias no texto"],
+    [/concord[âa]ncia/i, "concordância verbal e nominal na leitura e na produção própria"],
+    [/pontua[çc][ãa]o/i, "efeitos de sentido produzidos pela pontuação"],
+    [/ortograf|acentua[çc]/i, "regularidades da escrita aplicadas ao próprio texto"],
+    [/fato e opini|opini[ãa]o/i, "distinção entre fato e opinião e as marcas que a sustentam"],
+    [/fake|not[íi]cias falsas|checagem|curadoria/i, "verificação de fonte, data, autoria e comparação entre veículos"],
+    /* Língua Inglesa — os conteúdos vêm do livro, também precisam do foco */
+    [/simple present/i, "rotina e descrição de pessoas no presente simples"],
+    [/present continuous/i, "ações em andamento no momento da fala"],
+    [/simple past|past continuous/i, "relato de fatos e experiências passadas"],
+    [/superlative|comparative/i, "comparação e destaque entre elementos (adjetivos)"],
+    [/adjectives?/i, "vocabulário de qualidades e sua posição na frase"],
+    [/plural of nouns|plural/i, "formação do plural e concordância no grupo nominal"],
+    [/articles?/i, "uso do artigo definido e indefinido"],
+    [/preposition|directions?/i, "localização e orientação no espaço"],
+    [/ordinal numbers?/i, "numerais ordinais em datas e sequências"],
+    [/pronounce|pronunciation|sound/i, "pronúncia e comparação sonora com a língua portuguesa"],
+    [/have to|must|modal/i, "obrigação, necessidade e recomendação com verbos modais"],
+    [/learn words|vocabulary|words/i, "ampliação do repertório de palavras do tema da unidade"],
+    [/listen|speak|check/i, "compreensão oral e produção falada a partir da unidade"],
+    [/time to read|reading/i, "estratégias de leitura e localização de informação no texto"],
+    [/rights|responsibilit/i, "direitos e deveres na convivência e na cidadania"]
+  ];
+
+  /* Quando o conteúdo não cai em nenhum caso conhecido, o foco é extraído da
+     própria habilidade — assim nunca fica um rótulo solto. */
+  function focoPelaHabilidade(nota) {
+    var t = String(nota || "").replace(/\s+/g, " ").trim();
+    if (!t) return "";
+    t = t.replace(/^\([^)]*\)\s*/, "");
+    var corte = t.split(/[.;]|,\s*(?:tais como|como|por exemplo)/i)[0] || t;
+    corte = corte.replace(/^[A-ZÁÂÃÉÊÍÓÔÕÚÇ][a-zà-ÿ]+r\s+/, function(m){ return m.toLowerCase(); });
+    if (corte.length > 96) corte = corte.slice(0, 93).replace(/\s+\S*$/, "") + "...";
+    return corte.trim();
+  }
+
+  function especificarConteudo(conteudo, nota) {
+    var base = String(conteudo || "").trim();
+    if (!base) return "";
+    if (base.indexOf("—") >= 0 && base.length > 45) return base;
+    for (var i = 0; i < FOCOS_CONTEUDO.length; i++) {
+      if (FOCOS_CONTEUDO[i][0].test(base)) return base + " — " + FOCOS_CONTEUDO[i][1];
+    }
+    var f = focoPelaHabilidade(nota);
+    return f ? base + " — " + f : base;
+  }
+
   function curriculoDoCodigo(codigo, skills) {
     var achado = A(skills).filter(function(s){ return s.code === codigo; })[0];
     return (achado && achado.fonte === "Acerta Brasil / SAEB") ? "SAEB / Matriz Santa Luzia" : "BNCC";
@@ -8598,7 +8676,7 @@ function viewDiario() {
           if (curriculos.indexOf(cur) < 0) curriculos.push(cur);
         });
         return {
-          conteudo: k.content,
+          conteudo: especificarConteudo(k.content, k.note),
           habilidades: codigos.join(", "),
           curriculo: curriculos.join(" / ")
         };

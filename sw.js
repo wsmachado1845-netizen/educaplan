@@ -1,6 +1,6 @@
 // EducaPlan — Service Worker
 // Cache simples do "app shell" para permitir abrir o app mesmo sem internet.
-const CACHE_NAME = "educaplan-cache-v22";
+const CACHE_NAME = "educaplan-cache-v23";
 const APP_SHELL = [
   "./",
   "./index.html",
