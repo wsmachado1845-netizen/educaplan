@@ -341,6 +341,25 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
 .sec-body .badge, .bar-lb, .stat-l { text-align: center; hyphens: none; }
 table.tb td, table.tb th { hyphens: none; text-align: left; }
 
+/* ── Plano no celular ──
+   Numa tela de ~350px úteis, duas colunas de habilidades dão ~150px cada:
+   o texto justificado vira uma sequência de palavras esticadas e cortadas.
+   Aqui o plano passa a usar uma coluna só, texto alinhado à esquerda, e a
+   tabela de conteúdos de 3 colunas dá lugar a blocos empilhados. Nada disso
+   afeta o computador nem a impressão/PDF, que continuam como estão. */
+.of-narrow-only { display: none; }
+@media (max-width: 640px) {
+  .of-2col, .of-2col tbody, .of-2col tr, .of-2col td { display: block; width: 100% !important; }
+  .of-2col td { padding: 0 0 9px 0 !important; }
+  .of-2col td:empty { display: none; }
+  .of-wide-only { display: none; }
+  .of-narrow-only { display: block; }
+  #planPaper .sec-body p, #planPaper .sec-body li, #planPaper .sec-body div,
+  #planPaper div, #planPaper td { text-align: left !important; text-justify: auto !important; }
+  #planPaper h1 { font-size: 19px !important; line-height: 1.25 !important; }
+  #planPaper h2 { font-size: 14px !important; }
+}
+
 /* ── Impressão: páginas preenchidas de ponta a ponta ── */
 @media print {
   /* Sem isso, o Chrome (usado pelo atalho do app) pode imprimir os
@@ -354,6 +373,12 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
+  /* No papel vale sempre a tabela de 3 colunas, mesmo que o professor mande
+     imprimir a partir do celular (onde a tela mostra os blocos empilhados). */
+  .of-wide-only { display: block !important; }
+  .of-narrow-only { display: none !important; }
+  .of-2col, .of-2col tbody, .of-2col tr { display: revert !important; }
+  .of-2col td { display: table-cell !important; }
   .noprint, .side, .topbar, .side-ovl, footer { display: none !important; }
   html, body { background: #fff !important; }
   body { color: #000 !important; font-size: 11pt; }
@@ -6085,7 +6110,9 @@ function ofTwoColTable(htmlItens, cols) {
       return "<td style='width:" + Math.floor(100/cols) + "%;padding:0 16px 13px 0;vertical-align:top'>" + h + "</td>";
     }).join("") + (slice.length < cols ? new Array(cols - slice.length + 1).join("<td></td>") : "") + "</tr>";
   }
-  return "<table style='width:100%;border-collapse:collapse'>" + rows + "</table>";
+  /* class of-2col: no celular o CSS empilha essas colunas numa só, para o
+     texto da habilidade não ficar espremido em ~150px de largura. */
+  return "<table class='of-2col' style='width:100%;border-collapse:collapse'>" + rows + "</table>";
 }
 /* Identificação da origem de cada habilidade: quando tem descritor SAEB
    mostra o código dele; quando veio da matriz real da SEMED Santa Luzia
@@ -6470,11 +6497,36 @@ function viewPlanOficial(pl, c, pc, cfg) {
     return "<td style='padding:6px 10px;border:1px solid " + OF_BRD + ";background:" + OF_GRAFITE +
       ";color:#fff;font-weight:800;font-size:10px;letter-spacing:.03em'>" + text + "</td>";
   };
+  /* Versão empilhada da mesma tabela, usada só em tela estreita (celular).
+     Em 3 colunas dentro de ~350px o conteúdo fica ilegível, então no celular
+     cada objeto de conhecimento vira um bloco com os códigos abaixo dele.
+     No papel/PDF e no computador continua valendo a tabela de 3 colunas. */
+  var objetoCards = "";
+  A(c.knowledgeObjects).forEach(function(k) {
+    var mesmoTexto = k.note && deaccent(k.content).indexOf(deaccent(k.note)) >= 0;
+    var codes = A(k.codes).filter(Boolean);
+    objetoCards +=
+      '<div style="border:1px solid ' + OF_BRD + ';padding:9px 11px;margin-bottom:6px;page-break-inside:avoid">' +
+        '<div style="font-size:9.5px;font-weight:800;letter-spacing:.04em;color:' + OF_TXT2 + '">CONTE&Uacute;DO</div>' +
+        '<div style="font-weight:700;font-size:12.5px;color:' + OF_TXT + ';margin-top:1px">' + esc(k.content || k.note || c.title) + "</div>" +
+        (k.note && !mesmoTexto ? '<div style="font-size:11px;color:' + OF_TXT2 + ';margin-top:3px">' + esc(k.note) + "</div>" : "") +
+        (codes.length
+          ? '<div style="font-size:9.5px;font-weight:800;letter-spacing:.04em;color:' + OF_TXT2 + ';margin-top:7px">HABILIDADES</div>' +
+            codes.map(function(code) {
+              return '<div style="font-size:11.5px;color:' + OF_TXT + ';margin-top:2px">' +
+                "<strong>" + esc(code) + "</strong> &middot; " +
+                '<span style="color:' + OF_TXT2 + '">' + esc(curriculoDoCodigo(code)) + "</span></div>";
+            }).join("")
+          : "") +
+      "</div>";
+  });
+
   var objetosHtml = objetoRows
-    ? '<table style="width:100%;border-collapse:collapse;font-size:11.5px">' +
+    ? '<div class="of-wide-only"><table style="width:100%;border-collapse:collapse;font-size:11.5px">' +
         "<tr>" + objetoTh("CONTE&Uacute;DO") + objetoTh("HABILIDADE") + objetoTh("CURR&Iacute;CULO") + "</tr>" +
         objetoRows +
-      "</table>"
+      "</table></div>" +
+      '<div class="of-narrow-only">' + objetoCards + "</div>"
     : ofBullets([c.title]);
 
   /* BNCC Computação — eixo transversal presente no modelo oficial da SEMED,
@@ -6588,12 +6640,7 @@ function viewPlanOficial(pl, c, pc, cfg) {
       "Sequ&ecirc;ncia did&aacute;tica passo a passo, com o tempo de cada etapa &mdash; pronta para ser seguida durante a aula.") +
     ofSec("8", "Materiais e Recursos Did&aacute;ticos", recursosHtml) +
     ofSec("9", "Avaliação", avaliacaoHtml) +
-    ofSec("10", "Referências", ofBullets(referenciasFinal)) +
-
-    '<table style="width:100%;border-collapse:collapse;margin-top:34px;font-size:11px;color:' + OF_TXT2 + '"><tr>' +
-      "<td style='width:50%'>____________________________<br/>" + esc(cfg.teacherName || "Professor(a) Regente") + "</td>" +
-      "<td style='width:50%;text-align:right'>____________________________<br/>Coordena&ccedil;&atilde;o Pedag&oacute;gica / Dire&ccedil;&atilde;o</td>" +
-    "</tr></table>";
+    ofSec("10", "Referências", ofBullets(referenciasFinal));
 
   return '<div class="wrap fade" style="padding:28px 18px 56px">' + toolbar +
     '<div class="card" id="planPaper" style="padding:32px 36px;max-width:880px">' + body + "</div></div>";
@@ -7099,10 +7146,6 @@ function viewPlan() {
         "<p style='margin:0 0 9px;font-size:12px;color:var(--t3)'>" + esc(c.teacherNotes) + "</p>" +
         "<div style='border:1px dashed var(--border);border-radius:10px;height:76px'></div>") : "") +
       sec("Referências", li(c.references), true) +
-      '<div style="margin-top:26px;display:flex;justify-content:space-between;gap:20px;font-size:11px;color:var(--t4)">' +
-        "<div>____________________________<br/>" + esc(cfg.teacherName || "Professor(a)") + "</div>" +
-        "<div style='text-align:right'>____________________________<br/>Coordena&ccedil;&atilde;o Pedag&oacute;gica</div>" +
-      "</div>" +
     "</div></div>";
 }
 
@@ -8216,6 +8259,11 @@ function exportCss() {
   var soft = "#F5F8FC";
   var head = "#EAF1F8";
   return "@page{size:A4;margin:15mm 14mm}" +
+    /* O Word recebe o HTML da tela; se o professor exportar pelo celular, a
+       tela está no formato empilhado. Aqui o documento volta ao formato de
+       tabela, que é o que a escola espera no papel. */
+    ".of-narrow-only{display:none}" +
+    ".of-wide-only{display:block}" +
     "body{font-family:" + f.sans + ";color:#1a1a1a;line-height:1.5;font-size:11pt;" +
       "max-width:186mm;margin:0 auto;padding:0;text-align:justify;hyphens:auto}" +
     "h1{font-family:" + f.serif + ";color:" + acc + ";font-size:19pt;margin:0 0 4pt;text-align:left;" +
