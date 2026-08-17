@@ -5649,8 +5649,56 @@ function contentProfile(subject, theme) {
 }
 
 /* ---------- Gerador pedagógico local ---------- */
+/* ---------- Variação do texto no gerador local ----------
+   O gerador monta o plano a partir de modelos de texto. Sem variação, dois
+   planos seguidos saíam com as mesmas frases, o que fica evidente quando a
+   coordenação lê os meses em sequência. A "semente" abaixo combina o mês, a
+   turma e o próprio conteúdo para escolher, de forma estável, qual redação
+   usar: o mesmo plano reaberto mostra sempre o mesmo texto, mas o mês
+   seguinte (ou outro conteúdo) recebe outra formulação. */
+function _semente(str) {
+  var h = 0, t = String(str || "");
+  for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) % 100000;
+  return h;
+}
+function _variar(pool, semente) {
+  if (!pool || !pool.length) return "";
+  return pool[Math.abs(semente) % pool.length];
+}
+
+/* Fechamentos possíveis do bloco de cada conteúdo, no lugar da frase única
+   "Este bloco trata exclusivamente de X, articulado à habilidade Y". */
+var FECHOS_BLOCO = [
+  'O recorte deste momento é apenas {C}, articulado à habilidade {H}.',
+  'Todo o tempo deste bloco fica em {C} — habilidade {H} —, sem misturar com os demais conteúdos.',
+  'O foco aqui é exclusivamente {C}, que responde à habilidade {H}.',
+  'Este momento trata de {C} (habilidade {H}) de forma isolada, para o estudante perceber o que é próprio deste conteúdo.',
+  'Trabalha-se {C} separadamente, em referência à habilidade {H}.'
+];
+
+/* Redações alternativas quando o conteúdo não se encaixa em nenhum perfil
+   didático conhecido — antes havia uma única frase para todos os casos. */
+var BLOCOS_GENERICOS = [
+  'Desenvolvimento de "{C}": exposição dialogada do conceito, um exemplo resolvido pelo professor em voz alta e prática orientada em duplas, com registro individual no caderno.',
+  'Trabalho com "{C}": a turma parte de uma situação concreta, o professor formaliza o conceito no quadro e os estudantes aplicam em tarefa curta, com o professor circulando pelas duplas.',
+  'Abordagem de "{C}": leitura ou observação inicial do material, sistematização coletiva no quadro e exercício de fixação individual, com correção comentada.',
+  'Estudo de "{C}": levantamento do que a turma já sabe, apresentação do conceito com dois exemplos contrastantes e prática em pequenos grupos, com registro no caderno.',
+  'Momento de "{C}": demonstração comentada pelo professor, tentativa guiada da turma e prática autônoma, com verificação individual ao final.'
+];
+
+var ORGANIZACOES_BLOCO = [
+  "Coletiva, com registro no caderno.",
+  "Duplas produtivas, com mediação do professor.",
+  "Pequenos grupos, com mediação do professor.",
+  "Individual, com apoio do professor por carteira.",
+  "Coletiva na abertura e em duplas na prática."
+];
+
 function generateLocal(cfg) {
   var theme = String(cfg.theme || "").trim() || "Conteúdo curricular";
+  /* Semente do plano: muda a cada mês e a cada turma, mas é sempre a mesma
+     para a mesma combinação — o plano não muda sozinho ao ser reaberto. */
+  var _sem = _semente(String(cfg.month) + "|" + String(cfg.gradeLevel) + "|" + String(cfg.subject));
   var s = cfg.subject.toLowerCase();
   var isLP = s.indexOf("portug") >= 0, isPT = s.indexOf("produ") >= 0;
   var isEng = s.indexOf("ingl") >= 0, isMat = s.indexOf("matem") >= 0;
@@ -5779,31 +5827,65 @@ function generateLocal(cfg) {
     ratios.push(0.14);
     var mm = splitMinutes(total, ratios);
 
+    var listaConteudos = contents.map(function(c){ return c.text; }).join("; ");
+    var aberturas = [
+      "Apresentação da pauta com os conteúdos que serão trabalhados de forma distinta: " + listaConteudos +
+        ". O professor sonda o que a turma já sabe de cada um separadamente, registrando no quadro em colunas, " +
+        "para que os estudantes percebam que são objetos de estudo diferentes.",
+      "O professor escreve no quadro os conteúdos do dia — " + listaConteudos +
+        " — e pergunta, um a um, o que a turma já ouviu falar a respeito. As respostas ficam registradas em colunas " +
+        "e serão retomadas no fechamento, para comparar o antes e o depois.",
+      "Abertura com uma pergunta por conteúdo (" + listaConteudos + "), respondida oralmente ou no caderno. " +
+        "O objetivo é mapear o repertório prévio de cada assunto isoladamente, sem antecipar explicações.",
+      "Roda inicial: a turma recebe a lista dos conteúdos do mês (" + listaConteudos + ") e classifica cada um como " +
+        "\"já sei\", \"já ouvi falar\" ou \"nunca vi\". O professor registra o panorama no quadro e usa como ponto de partida.",
+      "Sondagem por escrito: cada estudante anota, em três linhas separadas, o que sabe sobre " + listaConteudos + ". " +
+        "O professor recolhe uma amostra e comenta oralmente as concepções mais frequentes antes de iniciar."
+    ];
+    var fechamentos = [
+      "Cada estudante registra, em linhas separadas, uma conclusão para cada conteúdo trabalhado (" + listaConteudos +
+        "), além de uma dúvida remanescente. O registro discriminado permite ao professor identificar em qual conteúdo " +
+        "específico houve menor compreensão.",
+      "Fechamento em bilhete de saída: uma frase por conteúdo (" + listaConteudos + ") explicando o que ficou claro, " +
+        "e uma última linha com o que ainda gera dúvida. O professor recolhe e usa como pauta da retomada.",
+      "A turma retoma o quadro da sondagem inicial e confronta o que havia registrado com o que aprendeu em cada " +
+        "conteúdo (" + listaConteudos + "). Cada estudante anota no caderno a mudança que percebeu no próprio entendimento.",
+      "Síntese em duplas: os estudantes explicam um ao outro, conteúdo por conteúdo (" + listaConteudos + "), o que " +
+        "entenderam. Em seguida, cada um registra individualmente a explicação do colega que achou mais clara.",
+      "Cada estudante monta um quadro com uma coluna por conteúdo (" + listaConteudos + "), preenchendo com o conceito " +
+        "central e um exemplo próprio. As colunas separadas evidenciam o que pertence a cada assunto."
+    ];
+
     methodology = [{
       order:1, title:"Abertura e sondagem dos conteúdos previstos", minutes:mm[0],
       organization:"Coletiva, com a turma voltada ao quadro.",
-      description:"Apresentação da pauta da aula com os conteúdos que serão trabalhados de forma distinta: " +
-        contents.map(function(c){ return c.text; }).join("; ") +
-        ". O professor sonda o que a turma já sabe de cada um separadamente, registrando no quadro em colunas, " +
-        "para que os estudantes percebam que são objetos de estudo diferentes."
+      description: _variar(aberturas, _sem)
     }];
 
     contents.forEach(function(ct, i) {
-      var core = ct.profile ? ct.profile.steps[2] : null;
+      /* Cada conteúdo recebe um momento didático diferente do perfil (e não
+         sempre o terceiro passo), e o mês desloca a escolha — assim dois
+         planos seguidos não repetem a mesma sequência de frases. */
+      var semBloco = _sem + _semente(ct.text) + i * 7;
+      var core = null;
+      if (ct.profile && ct.profile.steps && ct.profile.steps.length) {
+        var passos = ct.profile.steps;
+        /* Evita o primeiro passo (sondagem), que já é a abertura comum. */
+        var idx = 1 + (Math.abs(semBloco) % Math.max(1, passos.length - 1));
+        core = passos[idx];
+      }
+      var hab = ct.skills[0] ? ct.skills[0].code : "prevista";
+      var fecho = _variar(FECHOS_BLOCO, semBloco)
+        .replace("{C}", ct.text).replace("{H}", hab);
+      var generico = _variar(BLOCOS_GENERICOS, semBloco).replace("{C}", ct.text);
       methodology.push({
         order: i + 2,
         title: "Conteúdo " + (i + 1) + " — " + ct.text,
         minutes: mm[i + 1],
-        organization: ct.profile
-          ? ["Coletiva, com registro no caderno.","Duplas produtivas, com mediação do professor.",
-             "Pequenos grupos, com mediação do professor."][i % 3]
-          : "Coletiva, com registro no caderno.",
+        organization: _variar(ORGANIZACOES_BLOCO, semBloco + i),
         description: core
-          ? fill(core[1], ct.text) + " Este bloco trata exclusivamente de " + ct.text +
-            ", articulado à habilidade " + (ct.skills[0] ? ct.skills[0].code : "prevista") + "."
-          : 'Desenvolvimento específico de "' + ct.text + '": exposição dialogada do conceito, ' +
-            "resolução comentada de um exemplo pelo professor e prática orientada em duplas, " +
-            "com registro individual no caderno. O professor circula identificando as dúvidas próprias deste conteúdo."
+          ? fill(core[1], ct.text) + " " + fecho
+          : generico + " O professor circula identificando as dúvidas próprias deste conteúdo."
       });
     });
 
@@ -5811,9 +5893,7 @@ function generateLocal(cfg) {
       order: contents.length + 2,
       title: "Fechamento: síntese separada por conteúdo", minutes: mm[contents.length + 1],
       organization:"Individual, com recolhimento dos registros.",
-      description:"Cada estudante registra, em linhas separadas, uma conclusão para cada conteúdo trabalhado (" +
-        contents.map(function(c){ return c.text; }).join("; ") + "), além de uma dúvida remanescente. " +
-        "O registro discriminado permite ao professor identificar em qual conteúdo específico houve menor compreensão."
+      description: _variar(fechamentos, _sem + 2)
     });
   } else if (prof) {
     /* Sequência didática própria do tipo de conteúdo */
@@ -5894,7 +5974,12 @@ function generateLocal(cfg) {
   if (multi) {
     /* Uma atividade específica por conteúdo + uma final que os articula */
     activities = contents.map(function(ct, i) {
-      var a = ct.profile ? ct.profile.acts[0] : null;
+      /* Rodízio entre as atividades do perfil, deslocado pelo mês — antes
+         era sempre a primeira da lista para todos os conteúdos. */
+      var a = null;
+      if (ct.profile && ct.profile.acts && ct.profile.acts.length) {
+        a = ct.profile.acts[Math.abs(_sem + _semente(ct.text) + i * 3) % ct.profile.acts.length];
+      }
       if (a) {
         return { type:"Conteúdo " + (i+1) + " · " + ct.label,
           title:fill(a[0], ct.text), description:fill(a[1], ct.text),
@@ -5962,7 +6047,12 @@ function generateLocal(cfg) {
       skills:codes, type:"Diagnóstica",
       criteria:"Verificar separadamente o repertório prévio de cada conteúdo previsto; sem atribuição de nota." }];
     contents.forEach(function(ct, i) {
-      var a = ct.profile ? ct.profile.assess[1] : null;
+      /* Também alterna o instrumento/critério entre os do perfil, para a
+         seção de Avaliação não repetir o mesmo critério em todos os itens. */
+      var a = null;
+      if (ct.profile && ct.profile.assess && ct.profile.assess.length) {
+        a = ct.profile.assess[Math.abs(_sem + _semente(ct.text) + i * 5) % ct.profile.assess.length];
+      }
       assessment.push({
         instrument:"Conteúdo " + (i+1) + " — " + (a ? fill(a[0], ct.text) : "Atividade dirigida sobre " + ct.text),
         skills: ct.skills.map(function(k){ return k.code; }).join(", ") || codes,
