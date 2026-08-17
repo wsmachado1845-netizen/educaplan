@@ -535,11 +535,12 @@ var GRADES = [
   "Ensino Fundamental II (6º Ano B)",
   "Ensino Fundamental II (7º Ano)",
   "Ensino Fundamental II (8º Ano)",
-  "Ensino Fundamental II (9º Ano)",
-  "Ensino Médio (1º Ano)",
-  "Ensino Médio (2º Ano)",
-  "Ensino Médio (3º Ano)"
+  "Ensino Fundamental II (9º Ano)"
 ];
+/* O Ensino Médio saiu da lista: a rede municipal de Santa Luzia atende da
+   Educação Infantil ao 9º ano, então oferecer turmas de Médio só polui o
+   seletor. O banco de habilidades do Médio continua no código, caso a lista
+   precise ser reativada um dia. */
 
 var SUBJECTS = [
   "Língua Portuguesa","Matemática","Produção de Texto","Ciências da Natureza",
@@ -900,21 +901,56 @@ var BNCC = {
   "Língua Portuguesa": {
     ei: [sk("EI03EF01","Expressar ideias, desejos e sentimentos por meio da linguagem oral e escrita espontânea.","Escuta, Fala e Pensamento"),
          sk("EI03EO01","Promover a empatia, o diálogo e a cooperação em situações cotidianas.","Eu, Outro e Nós")],
-    ef1: [sk("EF01LP01","Distinguir as letras do alfabeto de outros sinais gráficos, reconhecendo o sistema alfabético.","Escrita"),
-          sk("EF01LP08","Relacionar elementos sonoros (sílabas, fonemas) à sua representação escrita.","Fonologia"),
-          sk("EF01LP16","Ler e compreender, com ajuda do professor, quadras, parlendas e trava-línguas.","Leitura")],
-    ef2: [sk("EF02LP01","Grafar corretamente palavras conhecidas ou com estruturas silábicas comuns.","Ortografia"),
-          sk("EF02LP04","Escrever palavras com sílabas CV, V, CVC, CCV identificando vogais e consoantes.","Fonologia"),
-          sk("EF02LP07","Escrever, em colaboração, cantigas, quadrinhas e parlendas.","Escrita")],
-    ef3: [sk("EF03LP01","Ler e escrever palavras com correspondências regulares contextuais entre grafemas e fonemas.","Ortografia"),
-          sk("EF03LP05","Identificar o número de sílabas de palavras, classificando-as quanto à tonicidade.","Fonologia"),
-          sk("EF03LP12","Ler e compreender, com autonomia, cartas, diários e mensagens instantâneas.","Leitura")],
-    ef4: [sk("EF04LP01","Grafar palavras utilizando regras de acentuação gráfica e regularidades ortográficas.","Ortografia"),
-          sk("EF04LP05","Identificar a função de substantivos, adjetivos, verbos e advérbios em textos.","Análise Linguística"),
-          sk("EF04LP15","Distinguir fatos de opiniões em textos de circulação diária.","Leitura")],
-    ef5: [sk("EF05LP01","Grafar palavras aplicando regras de concordância nominal e verbal.","Análise Linguística"),
-          sk("EF05LP04","Diferenciar vozes ativa e passiva em enunciados de textos lidos.","Análise Linguística"),
-          sk("EF05LP10","Ler e compreender verbetes de enciclopédia infantil, reconhecendo sua estrutura.","Leitura")],
+    ef1: [sk("EF01LP01","Reconhecer que textos são lidos e escritos da esquerda para a direita e de cima para baixo.","Leitura","Direção da escrita e organização da página"),
+         sk("EF01LP02","Escrever, espontaneamente ou por ditado, palavras e frases de forma alfabética.","Escrita","Escrita alfabética de palavras e frases"),
+         sk("EF01LP04","Distinguir as letras do alfabeto de outros sinais gráficos.","Análise Linguística","Alfabeto e outros sinais gráficos"),
+         sk("EF01LP05","Reconhecer o sistema de escrita alfabética como representação dos sons da fala.","Análise Linguística","Sistema de escrita alfabética"),
+         sk("EF01LP08","Relacionar elementos sonoros (sílabas, fonemas, partes de palavras) à sua representação escrita.","Análise Linguística","Relação som–letra"),
+         sk("EF01LP09","Comparar palavras identificando semelhanças e diferenças entre sons de sílabas iniciais.","Análise Linguística","Sílabas iniciais: rimas e aliterações"),
+         sk("EF01LP13","Comparar palavras identificando semelhanças e diferenças entre sons de sílabas finais.","Análise Linguística","Sílabas finais e rimas"),
+         sk("EF01LP16","Ler e compreender, com a ajuda do professor, quadras, parlendas, trava-línguas e cantigas.","Leitura","Textos da tradição oral: quadra, parlenda, cantiga"),
+         sk("EF01LP26","Identificar elementos de uma narrativa lida ou escutada: personagens, enredo, tempo e espaço.","Leitura","Elementos da narrativa"),
+         sk("EF12LP01","Ler palavras novas com precisão na decodificação, no caso de palavras de uso frequente.","Leitura","Decodificação e fluência inicial")],
+    ef2: [sk("EF02LP01","Utilizar, ao produzir o texto, grafia correta de palavras conhecidas ou com estruturas silábicas comuns.","Escrita","Ortografia de palavras de uso frequente"),
+         sk("EF02LP02","Segmentar palavras em sílabas e remover e substituir sílabas para criar novas palavras.","Análise Linguística","Segmentação silábica"),
+         sk("EF02LP04","Ler e escrever corretamente palavras com sílabas CV, V, CVC, CCV.","Análise Linguística","Estruturas silábicas CV, V, CVC, CCV"),
+         sk("EF02LP06","Perceber o princípio acrofônico que opera nos nomes das letras do alfabeto.","Análise Linguística","Nome das letras e princípio acrofônico"),
+         sk("EF02LP07","Escrever, em colaboração, cantigas, quadrinhas, parlendas e trava-línguas.","Escrita","Produção coletiva de textos da tradição oral"),
+         sk("EF02LP12","Ler e compreender com autonomia textos injuntivos instrucionais (receitas, regras de jogo).","Leitura","Texto instrucional: receita e regra de jogo"),
+         sk("EF02LP13","Planejar e produzir bilhetes e cartas em meio impresso ou digital.","Escrita","Bilhete e carta"),
+         sk("EF02LP26","Ler e compreender, com certa autonomia, textos literários de diferentes gêneros.","Leitura","Leitura literária"),
+         sk("EF12LP04","Ler e compreender, em colaboração com os colegas, listas, agendas, calendários e avisos.","Leitura","Textos do cotidiano escolar"),
+         sk("EF15LP03","Localizar informações explícitas em textos lidos ou escutados.","Leitura","Localização de informação explícita")],
+    ef3: [sk("EF03LP01","Ler e escrever palavras com correspondências regulares contextuais entre grafemas e fonemas.","Análise Linguística","Correspondências regulares contextuais (c/qu, g/gu, r/rr)"),
+         sk("EF03LP02","Ler e escrever corretamente palavras com sílabas complexas e dígrafos.","Análise Linguística","Sílabas complexas e dígrafos"),
+         sk("EF03LP05","Identificar o número de sílabas de palavras, classificando-as em monossílabas, dissílabas, trissílabas e polissílabas.","Análise Linguística","Número de sílabas e classificação"),
+         sk("EF03LP07","Identificar a sílaba tônica em palavras, classificando-as em oxítonas, paroxítonas e proparoxítonas.","Análise Linguística","Sílaba tônica e classificação"),
+         sk("EF03LP08","Identificar e diferenciar, em textos, substantivos e verbos e suas funções.","Análise Linguística","Substantivo e verbo"),
+         sk("EF03LP12","Ler e compreender, com autonomia, cartas pessoais, diários e mensagens instantâneas.","Leitura","Carta pessoal, diário e mensagem"),
+         sk("EF03LP24","Ler e compreender, com autonomia, textos em prosa e em verso de gêneros literários.","Leitura","Prosa e verso na literatura infantil"),
+         sk("EF35LP03","Identificar a ideia central do texto, demonstrando compreensão global.","Leitura","Ideia central do texto"),
+         sk("EF35LP04","Inferir informações implícitas nos textos lidos.","Leitura","Inferência de informação implícita"),
+         sk("EF35LP05","Inferir o sentido de palavras ou expressões desconhecidas pelo contexto.","Leitura","Sentido de palavra pelo contexto")],
+    ef4: [sk("EF04LP01","Grafar palavras utilizando regras de correspondência fonema–grafema regulares diretas e contextuais.","Análise Linguística","Regularidades ortográficas diretas e contextuais"),
+         sk("EF04LP02","Ler e escrever, corretamente, palavras com sílabas VV e CVV.","Análise Linguística","Sílabas VV e CVV: encontros vocálicos"),
+         sk("EF04LP03","Localizar palavras no dicionário para esclarecer significados e reconhecer o significado mais plausível.","Leitura","Uso do dicionário"),
+         sk("EF04LP05","Identificar a função na leitura e usar na escrita ponto final, de interrogação, de exclamação e vírgula em enumerações.","Análise Linguística","Pontuação: ponto, interrogação, exclamação e vírgula"),
+         sk("EF04LP06","Identificar em textos e usar na produção textual a concordância entre substantivo ou pronome e verbo.","Análise Linguística","Concordância verbal e nominal"),
+         sk("EF04LP09","Ler e compreender, com autonomia, boletos, faturas e carnês, entre outros gêneros do cotidiano.","Leitura","Textos do cotidiano e vida em sociedade"),
+         sk("EF04LP12","Assistir, em vídeo digital, a programa infantil e, com base em contexto, identificar informações principais.","Leitura","Vídeo e programa infantil: informação principal"),
+         sk("EF04LP15","Distinguir fatos de opiniões/sugestões em textos (informativos, jornalísticos, publicitários etc.).","Leitura","Fato e opinião"),
+         sk("EF35LP07","Utilizar, ao produzir um texto, conhecimentos linguísticos e gramaticais: ortografia, regras de concordância e pontuação.","Escrita","Revisão linguística da produção textual"),
+         sk("EF35LP09","Organizar o texto em unidades de sentido, dividindo-o em parágrafos.","Escrita","Paragrafação")],
+    ef5: [sk("EF05LP01","Grafar palavras utilizando regras de correspondência fonema–grafema regulares, contextuais e morfológicas.","Análise Linguística","Regularidades morfológicas na ortografia"),
+         sk("EF05LP03","Acentuar corretamente palavras oxítonas, paroxítonas e proparoxítonas.","Análise Linguística","Acentuação gráfica"),
+         sk("EF05LP04","Diferenciar, na leitura de textos, vírgula, ponto e vírgula, dois-pontos e reconhecer o uso das aspas.","Análise Linguística","Pontuação e discurso direto"),
+         sk("EF05LP06","Flexionar adequadamente, na escrita e na oralidade, os verbos em concordância com pronomes pessoais.","Análise Linguística","Flexão verbal e pronomes pessoais"),
+         sk("EF05LP07","Identificar, em textos, o uso de conjunções e a relação que estabelecem entre partes do texto.","Análise Linguística","Conjunções e relações de sentido"),
+         sk("EF05LP10","Ler e compreender, com autonomia, anedotas, piadas e cartuns, percebendo os recursos de humor.","Leitura","Humor: anedota, piada e cartum"),
+         sk("EF05LP12","Planejar e produzir texto sobre tema de interesse, organizando resultados de pesquisa.","Escrita","Texto expositivo a partir de pesquisa"),
+         sk("EF05LP15","Opinar e defender ponto de vista sobre tema polêmico relacionado a situações vivenciadas na escola.","Oralidade","Defesa de ponto de vista"),
+         sk("EF05LP22","Ler e compreender verbetes de dicionário, identificando a estrutura e as informações fornecidas.","Leitura","Verbete de dicionário"),
+         sk("EF35LP08","Inferir informações implícitas e o efeito de sentido de recursos gráfico-visuais em textos.","Leitura","Recursos gráfico-visuais e sentido")],
     ef6: [sk("EF06LP01","Reconhecer textos de diferentes gêneros por características composicionais e propósito comunicativo.","Leitura","Gêneros textuais e propósito comunicativo"),
           sk("EF06LP03","Identificar a forma de organização de verbetes de dicionário e localizar informações.","Leitura","Uso do dicionário e verbete"),
           sk("EF06LP05","Inferir e justificar tema, assunto e propósitos comunicativos por meio de pistas textuais.","Leitura","Inferência de tema e propósito comunicativo"),
@@ -1007,16 +1043,56 @@ var BNCC = {
   },
   "Matemática": {
     ei: [sk("EI03ET01","Estabelecer relações de comparação entre objetos observando cor, forma e tamanho.","Espaços e Formas")],
-    ef1: [sk("EF01MA01","Contar de maneira exata ou aproximada, associando a contagem a números.","Números"),
-          sk("EF01MA10","Descrever a localização de pessoas e objetos no espaço em relação à própria posição.","Geometria")],
-    ef2: [sk("EF02MA01","Comparar e ordenar números naturais até a ordem de centenas.","Números"),
-          sk("EF02MA06","Resolver e elaborar problemas de adição e subtração com números de até três ordens.","Números")],
-    ef3: [sk("EF03MA01","Ler, escrever e comparar números naturais de até quatro ordens.","Números"),
-          sk("EF03MA07","Resolver problemas de multiplicação com a ideia de adição de parcelas iguais.","Números")],
-    ef4: [sk("EF04MA01","Ler, escrever e ordenar números naturais até a ordem das centenas de milhar.","Números"),
-          sk("EF04MA06","Resolver problemas de adição e subtração com naturais e decimais.","Números")],
-    ef5: [sk("EF05MA01","Ler, escrever e ordenar números racionais na representação decimal e fracionária.","Números"),
-          sk("EF05MA07","Resolver problemas de adição e subtração com racionais na forma de fração.","Números")],
+    ef1: [sk("EF01MA01","Utilizar números naturais como indicador de quantidade ou de ordem em diferentes situações.","Números","Número como quantidade e como ordem"),
+         sk("EF01MA02","Contar de maneira exata ou aproximada, utilizando diferentes estratégias como pareamento e agrupamento.","Números","Estratégias de contagem"),
+         sk("EF01MA04","Contar a quantidade de objetos de coleções até 100 unidades e apresentar o resultado por registros.","Números","Contagem até 100"),
+         sk("EF01MA06","Construir fatos básicos da adição e utilizá-los em procedimentos de cálculo.","Números","Fatos básicos da adição"),
+         sk("EF01MA08","Resolver e elaborar problemas de adição e de subtração com o suporte de imagens ou material manipulável.","Números","Problemas de adição e subtração"),
+         sk("EF01MA10","Descrever, após o reconhecimento e a explicitação de um padrão, os elementos ausentes em sequências.","Álgebra","Sequências e padrões"),
+         sk("EF01MA13","Relacionar figuras geométricas espaciais a objetos familiares do mundo físico.","Geometria","Figuras espaciais no cotidiano"),
+         sk("EF01MA15","Comparar comprimentos, capacidades e massas, utilizando termos como mais alto, mais pesado, cabe mais.","Grandezas e Medidas","Comparação de grandezas"),
+         sk("EF01MA17","Reconhecer e relacionar períodos do dia, dias da semana e meses do ano, utilizando calendário.","Grandezas e Medidas","Calendário e medidas de tempo"),
+         sk("EF01MA21","Ler dados expressos em tabelas e em gráficos de colunas simples.","Probabilidade e Estatística","Leitura de tabela e gráfico de colunas")],
+    ef2: [sk("EF02MA01","Comparar e ordenar números naturais (até a ordem de centenas) pela compreensão do valor posicional.","Números","Valor posicional até centenas"),
+         sk("EF02MA03","Comparar quantidades de objetos de dois conjuntos por estimativa e correspondência.","Números","Estimativa e correspondência"),
+         sk("EF02MA05","Construir fatos básicos da adição e subtração e utilizá-los no cálculo mental ou escrito.","Números","Fatos básicos e cálculo mental"),
+         sk("EF02MA06","Resolver e elaborar problemas de adição e de subtração envolvendo números de até três ordens.","Números","Problemas com até três ordens"),
+         sk("EF02MA07","Resolver e elaborar problemas de multiplicação com a ideia de adição de parcelas iguais.","Números","Multiplicação como adição de parcelas iguais"),
+         sk("EF02MA12","Identificar e registrar, em linguagem verbal ou não verbal, a localização e os deslocamentos de pessoas e objetos.","Geometria","Localização e deslocamento"),
+         sk("EF02MA14","Reconhecer, nomear e comparar figuras geométricas planas, relacionando-as a objetos do mundo físico.","Geometria","Figuras planas"),
+         sk("EF02MA16","Estimar, medir e comparar comprimentos usando unidades não padronizadas e padronizadas.","Grandezas e Medidas","Medidas de comprimento"),
+         sk("EF02MA18","Indicar a duração de intervalos de tempo entre duas datas, utilizando calendário.","Grandezas e Medidas","Intervalos de tempo"),
+         sk("EF02MA22","Comparar informações de pesquisas apresentadas por meio de tabelas de dupla entrada e gráficos.","Probabilidade e Estatística","Tabela de dupla entrada e gráfico")],
+    ef3: [sk("EF03MA01","Ler, escrever e comparar números naturais de até a ordem de unidade de milhar.","Números","Números até a unidade de milhar"),
+         sk("EF03MA03","Construir e utilizar fatos básicos da adição e da multiplicação para o cálculo mental ou escrito.","Números","Fatos básicos da multiplicação"),
+         sk("EF03MA05","Utilizar diferentes procedimentos de cálculo para resolver problemas de adição e subtração.","Números","Procedimentos de cálculo"),
+         sk("EF03MA07","Resolver e elaborar problemas de multiplicação com os significados de adição de parcelas iguais e proporcionalidade.","Números","Multiplicação e proporcionalidade"),
+         sk("EF03MA09","Associar o quociente de uma divisão com resto zero à ideia de repartição equitativa.","Números","Divisão e repartição equitativa"),
+         sk("EF03MA13","Descrever e representar, por meio de esboços, deslocamentos em malha quadriculada.","Geometria","Deslocamento em malha quadriculada"),
+         sk("EF03MA17","Reconhecer que o resultado de uma medida depende da unidade de medida utilizada.","Grandezas e Medidas","Unidade de medida e resultado"),
+         sk("EF03MA19","Estimar, medir e comparar capacidade e massa, utilizando unidades usuais (litro, mililitro, quilograma, grama).","Grandezas e Medidas","Capacidade e massa"),
+         sk("EF03MA22","Ler e registrar medidas e intervalos de tempo utilizando relógios para informar horários.","Grandezas e Medidas","Leitura de horas"),
+         sk("EF03MA27","Ler, interpretar e comparar dados apresentados em tabelas de dupla entrada e gráficos de barras.","Probabilidade e Estatística","Interpretação de gráfico de barras")],
+    ef4: [sk("EF04MA01","Ler, escrever e ordenar números naturais até a ordem de dezenas de milhar.","Números","Números até dezenas de milhar"),
+         sk("EF04MA02","Mostrar, por decomposição e composição, que todo número natural pode ser escrito por adições e multiplicações por potências de dez.","Números","Composição e decomposição"),
+         sk("EF04MA03","Resolver e elaborar problemas com números naturais envolvendo adição e subtração.","Números","Problemas de adição e subtração"),
+         sk("EF04MA05","Utilizar as propriedades das operações para desenvolver estratégias de cálculo.","Números","Propriedades das operações"),
+         sk("EF04MA06","Resolver e elaborar problemas envolvendo diferentes significados da multiplicação e da divisão.","Números","Significados da multiplicação e divisão"),
+         sk("EF04MA09","Reconhecer as frações unitárias mais usuais (1/2, 1/3, 1/4, 1/5, 1/10) como unidades de medida.","Números","Frações unitárias"),
+         sk("EF04MA13","Reconhecer, por meio de investigações, características de figuras geométricas espaciais.","Geometria","Figuras espaciais e suas características"),
+         sk("EF04MA17","Medir, comparar e estimar perímetro de figuras planas desenhadas em malha quadriculada.","Grandezas e Medidas","Perímetro"),
+         sk("EF04MA20","Medir e estimar comprimentos, massas e capacidades, escolhendo a unidade adequada.","Grandezas e Medidas","Escolha da unidade de medida"),
+         sk("EF04MA27","Analisar dados apresentados em tabelas simples ou de dupla entrada e em gráficos de colunas ou pictóricos.","Probabilidade e Estatística","Análise de dados em tabelas e gráficos")],
+    ef5: [sk("EF05MA01","Ler, escrever e ordenar números naturais até a ordem das centenas de milhar.","Números","Números até centenas de milhar"),
+         sk("EF05MA02","Ler, escrever e ordenar números racionais na forma decimal com compreensão do valor posicional.","Números","Números decimais e valor posicional"),
+         sk("EF05MA03","Identificar e representar frações, associando-as ao resultado de uma divisão ou à ideia de parte de um todo.","Números","Fração como parte do todo e como divisão"),
+         sk("EF05MA05","Comparar e ordenar números racionais positivos, utilizando a reta numérica.","Números","Comparação de racionais na reta"),
+         sk("EF05MA07","Resolver e elaborar problemas de adição e subtração com números naturais e racionais.","Números","Problemas com naturais e racionais"),
+         sk("EF05MA08","Resolver e elaborar problemas de multiplicação e divisão com números naturais e racionais decimais.","Números","Multiplicação e divisão com decimais"),
+         sk("EF05MA12","Resolver problemas que envolvam variação de proporcionalidade direta entre duas grandezas.","Álgebra","Proporcionalidade direta"),
+         sk("EF05MA16","Associar figuras espaciais a suas planificações e analisar, nomear e comparar seus atributos.","Geometria","Planificação de sólidos"),
+         sk("EF05MA19","Resolver e elaborar problemas envolvendo medidas das grandezas comprimento, área, massa, tempo, temperatura e capacidade.","Grandezas e Medidas","Problemas com grandezas e medidas"),
+         sk("EF05MA25","Realizar pesquisa envolvendo variáveis categóricas e numéricas, organizar dados e construir tabelas e gráficos.","Probabilidade e Estatística","Pesquisa, tabela e gráfico")],
     ef6: [sk("EF06MA01","Comparar, ordenar, ler e escrever números naturais e inteiros em contextos cotidianos.","Números"),
           sk("EF06MA11","Resolver e elaborar problemas com números racionais positivos nas quatro operações.","Números"),
           sk("EF06MA25","Resolver e elaborar problemas que envolvam o cálculo de área de figuras planas.","Geometria"),
@@ -1037,11 +1113,36 @@ var BNCC = {
          sk("EM13MAT201","Propor ações de intervenção na realidade utilizando modelos matemáticos.","Álgebra")]
   },
   "Ciências da Natureza": {
-    ef1: [sk("EF01CI01","Comparar características de materiais presentes em objetos de uso cotidiano.","Matéria e Energia")],
-    ef2: [sk("EF02CI04","Descrever características de plantas e animais do ambiente próximo.","Vida e Evolução")],
-    ef3: [sk("EF03CI04","Identificar características sobre o modo de vida dos animais.","Vida e Evolução")],
-    ef4: [sk("EF04CI04","Analisar e construir cadeias alimentares simples.","Vida e Evolução")],
-    ef5: [sk("EF05CI08","Concluir sobre a periodicidade das fases da Lua a partir de observações.","Terra e Universo")],
+    ef1: [sk("EF01CI01","Comparar características de diferentes materiais presentes em objetos de uso cotidiano.","Matéria e Energia","Materiais dos objetos do dia a dia"),
+         sk("EF01CI02","Localizar, nomear e representar graficamente partes do corpo humano e explicar suas funções.","Vida e Evolução","Corpo humano: partes e funções"),
+         sk("EF01CI03","Discutir as razões pelas quais os hábitos de higiene são necessários para a manutenção da saúde.","Vida e Evolução","Hábitos de higiene e saúde"),
+         sk("EF01CI04","Comparar características físicas entre os colegas, reconhecendo a diversidade e a importância da valorização do acolhimento.","Vida e Evolução","Diversidade e respeito às diferenças"),
+         sk("EF01CI05","Identificar e nomear diferentes escalas de tempo: os períodos diários e a sucessão de dias, semanas, meses e anos.","Terra e Universo","Escalas de tempo"),
+         sk("EF01CI06","Selecionar exemplos de como a sucessão de dias e noites orienta o ritmo de atividades diárias.","Terra e Universo","Dia e noite e o ritmo das atividades")],
+    ef2: [sk("EF02CI01","Identificar de que materiais são feitos objetos do cotidiano, considerando suas propriedades.","Matéria e Energia","Propriedades dos materiais"),
+         sk("EF02CI02","Propor o uso de diferentes materiais para a construção de objetos de uso cotidiano.","Matéria e Energia","Escolha de materiais e uso"),
+         sk("EF02CI03","Discutir os cuidados necessários à prevenção de acidentes domésticos.","Matéria e Energia","Prevenção de acidentes domésticos"),
+         sk("EF02CI04","Descrever características de plantas e animais que fazem parte do cotidiano.","Vida e Evolução","Plantas e animais do cotidiano"),
+         sk("EF02CI05","Investigar a importância da água e da luz para a manutenção da vida de plantas em geral.","Vida e Evolução","Água e luz na vida das plantas"),
+         sk("EF02CI07","Descrever as posições do Sol em diversos horários do dia e associá-las ao tamanho da sombra projetada.","Terra e Universo","Movimento aparente do Sol e sombras")],
+    ef3: [sk("EF03CI01","Produzir diferentes sons a partir da vibração de variados objetos e identificar variáveis que influem no fenômeno.","Matéria e Energia","Produção de sons e vibração"),
+         sk("EF03CI02","Experimentar e relatar o que ocorre com a passagem da luz através de objetos transparentes, translúcidos e opacos.","Matéria e Energia","Luz e materiais"),
+         sk("EF03CI04","Identificar características sobre o modo de vida dos animais mais comuns no ambiente próximo.","Vida e Evolução","Modo de vida dos animais"),
+         sk("EF03CI06","Comparar alguns animais e organizar grupos com base em características externas comuns.","Vida e Evolução","Agrupamento de animais por características"),
+         sk("EF03CI07","Identificar características da Terra, com base na observação, manipulação e comparação de representações.","Terra e Universo","Representações da Terra"),
+         sk("EF03CI09","Comparar diferentes amostras de solo do entorno da escola com base em características observáveis.","Terra e Universo","Tipos de solo")],
+    ef4: [sk("EF04CI01","Identificar misturas na vida diária com base em suas propriedades observáveis.","Matéria e Energia","Misturas do cotidiano"),
+         sk("EF04CI02","Testar e relatar transformações nos materiais do dia a dia quando expostos a diferentes condições.","Matéria e Energia","Transformações dos materiais"),
+         sk("EF04CI04","Analisar e construir cadeias alimentares simples, reconhecendo a posição ocupada pelos seres vivos.","Vida e Evolução","Cadeia alimentar"),
+         sk("EF04CI06","Relacionar a participação de fungos e bactérias no processo de decomposição.","Vida e Evolução","Decomposição e reciclagem da matéria"),
+         sk("EF04CI08","Propor, a partir do conhecimento das formas de transmissão de alguns microrganismos, atitudes e medidas de prevenção.","Vida e Evolução","Prevenção de doenças"),
+         sk("EF04CI11","Associar os movimentos cíclicos da Lua e da Terra a períodos de tempo regulares.","Terra e Universo","Movimentos da Lua e da Terra")],
+    ef5: [sk("EF05CI01","Explorar fenômenos da vida cotidiana que evidenciem propriedades físicas dos materiais.","Matéria e Energia","Propriedades físicas dos materiais"),
+         sk("EF05CI02","Aplicar os conhecimentos sobre as mudanças de estado físico da água para explicar o ciclo hidrológico.","Matéria e Energia","Ciclo da água"),
+         sk("EF05CI03","Selecionar argumentos que justifiquem a importância da cobertura vegetal para a manutenção do ciclo da água.","Matéria e Energia","Cobertura vegetal e ciclo da água"),
+         sk("EF05CI06","Selecionar argumentos que justifiquem por que os sistemas digestório e respiratório são considerados corresponsáveis pelo processo de nutrição.","Vida e Evolução","Nutrição: digestório e respiratório"),
+         sk("EF05CI08","Organizar um cardápio equilibrado com base nas características dos grupos alimentares.","Vida e Evolução","Alimentação equilibrada"),
+         sk("EF05CI11","Associar o movimento diário do Sol e das demais estrelas no céu ao movimento de rotação da Terra.","Terra e Universo","Rotação da Terra")],
     ef6: [sk("EF06CI06","Selecionar argumentos que evidenciem as funções do sistema locomotor.","Vida e Evolução"),
           sk("EF06CI01","Classificar materiais em condutores e isolantes conforme sua composição.","Matéria e Energia")],
     ef7: [sk("EF07CI04","Discutir a evolução do saneamento básico e seu papel na saúde pública.","Vida e Evolução"),
@@ -1053,11 +1154,36 @@ var BNCC = {
     em: [sk("EM13CNT101","Analisar fenômenos naturais e processos tecnológicos com base em conceitos científicos.","Matéria e Energia")]
   },
   "História": {
-    ef1: [sk("EF01HI01","Identificar aspectos do seu crescimento e da vida em família.","Sujeitos e Fontes")],
-    ef2: [sk("EF02HI01","Reconhecer espaços de sociabilidade e as memórias que os constituem.","Sujeitos e Fontes")],
-    ef3: [sk("EF03HI01","Identificar os grupos populacionais que formam a cidade e o município.","Processos Históricos")],
-    ef4: [sk("EF04HI01","Reconhecer a história como resultado da ação humana no tempo e no espaço.","Processos Históricos")],
-    ef5: [sk("EF05HI01","Identificar os processos de formação das culturas e dos povos.","Processos Históricos")],
+    ef1: [sk("EF01HI01","Identificar aspectos do seu crescimento por meio do registro das lembranças particulares ou de lembranças dos membros de sua família.","Mundo pessoal","Minha história e minhas lembranças"),
+         sk("EF01HI02","Identificar a relação entre as suas histórias e as histórias de sua família e de sua comunidade.","Mundo pessoal","Eu, minha família e minha comunidade"),
+         sk("EF01HI03","Descrever e distinguir os seus papéis e responsabilidades relacionados à família, à escola e à comunidade.","Mundo pessoal","Papéis e responsabilidades"),
+         sk("EF01HI04","Identificar as diferenças entre os variados ambientes em que vive, reconhecendo as especificidades dos hábitos e das regras que os regem.","Mundo pessoal","Ambientes de convivência e suas regras"),
+         sk("EF01HI05","Identificar semelhanças e diferenças entre jogos e brincadeiras atuais e de outras épocas e lugares.","Mundo pessoal","Brincadeiras de ontem e de hoje"),
+         sk("EF01HI06","Conhecer as histórias da família e da escola e identificar o papel desempenhado por diferentes sujeitos.","Mundo pessoal","História da escola e da família")],
+    ef2: [sk("EF02HI01","Reconhecer espaços de sociabilidade e identificar os motivos que aproximam e separam as pessoas.","A comunidade e seus registros","Espaços de convivência"),
+         sk("EF02HI03","Selecionar situações cotidianas que remetam à percepção de mudança, pertencimento e memória.","A comunidade e seus registros","Mudança, memória e pertencimento"),
+         sk("EF02HI05","Selecionar objetos e documentos pessoais e de grupos próximos ao seu convívio e compreender sua função e seu significado.","As formas de registrar as experiências","Objetos e documentos como fontes"),
+         sk("EF02HI06","Identificar e organizar, temporalmente, fatos da vida cotidiana, usando noções relacionadas ao tempo.","As formas de registrar as experiências","Organização temporal dos fatos"),
+         sk("EF02HI09","Identificar objetos e documentos pessoais que remetam à própria experiência no âmbito da família e da escola.","O trabalho e a sustentabilidade","Registros da própria experiência"),
+         sk("EF02HI11","Identificar impactos no ambiente causados pelas diferentes formas de trabalho existentes na comunidade.","O trabalho e a sustentabilidade","Trabalho e ambiente")],
+    ef3: [sk("EF03HI01","Identificar os grupos populacionais que formam a cidade, o município e a região.","O lugar em que vive","Grupos que formam a comunidade"),
+         sk("EF03HI02","Selecionar, por meio da consulta de fontes, informações sobre o município.","O lugar em que vive","Fontes históricas sobre o município"),
+         sk("EF03HI04","Identificar os patrimônios históricos e culturais de sua cidade ou região e discutir as razões culturais, sociais e políticas para que assim sejam considerados.","O lugar em que vive","Patrimônio histórico e cultural"),
+         sk("EF03HI06","Identificar os registros de memória na cidade (nomes de ruas, monumentos, edifícios etc.).","A noção de espaço público e privado","Memória na paisagem urbana"),
+         sk("EF03HI08","Identificar modos de vida na cidade e no campo no presente, comparando-os com os do passado.","A noção de espaço público e privado","Cidade e campo: ontem e hoje"),
+         sk("EF03HI11","Identificar diferenças entre formas de trabalho existentes na cidade e no campo.","O lugar em que vive","Formas de trabalho")],
+    ef4: [sk("EF04HI01","Reconhecer a história como resultado da ação do ser humano no tempo e no espaço.","Transformações e permanências","História como ação humana"),
+         sk("EF04HI02","Identificar mudanças e permanências ao longo do tempo, discutindo os sentidos dos grandes marcos da história da humanidade.","Transformações e permanências","Mudanças e permanências"),
+         sk("EF04HI03","Identificar as transformações ocorridas na cidade ao longo do tempo e discutir suas interferências nos modos de vida.","Transformações e permanências","Transformações da cidade"),
+         sk("EF04HI06","Identificar as transformações ocorridas nos processos de deslocamento das pessoas e mercadorias.","Circulação de pessoas, produtos e culturas","Deslocamentos e transportes"),
+         sk("EF04HI08","Identificar as transformações ocorridas nos meios de comunicação e discutir seus significados.","Circulação de pessoas, produtos e culturas","Meios de comunicação no tempo"),
+         sk("EF04HI11","Analisar, na sociedade em que vive, a existência ou não de mudanças associadas à migração.","As questões históricas relativas às migrações","Migrações e sociedade")],
+    ef5: [sk("EF05HI01","Identificar os processos de formação das culturas e dos povos, relacionando-os com o espaço geográfico ocupado.","Povos e culturas","Formação dos povos e culturas"),
+         sk("EF05HI02","Identificar os mecanismos de organização do poder político com vistas à compreensão da ideia de Estado.","Povos e culturas","Organização do poder político"),
+         sk("EF05HI03","Analisar o papel das culturas e das religiões na composição identitária dos povos antigos.","Povos e culturas","Cultura, religião e identidade"),
+         sk("EF05HI05","Associar o conceito de cidadania à conquista de direitos dos povos e das sociedades.","Registros da história","Cidadania e direitos"),
+         sk("EF05HI07","Identificar os processos de produção, hierarquização e difusão dos marcos de memória.","Registros da história","Marcos de memória"),
+         sk("EF05HI09","Comparar pontos de vista sobre temas que impactam a vida cotidiana no tempo presente, por meio do acesso a diferentes fontes.","Registros da história","Diferentes fontes e pontos de vista")],
     ef6: [sk("EF06HI09","Identificar aspectos e formas de registro das sociedades antigas.","Sujeitos e Fontes"),
           sk("EF06HI01","Identificar diferentes formas de compreensão da noção de tempo.","Processos Históricos")],
     ef7: [sk("EF07HI08","Compreender o significado da Reforma Protestante e da Reforma Católica.","Processos Históricos"),
@@ -1069,11 +1195,36 @@ var BNCC = {
     em: [sk("EM13CHS101","Analisar processos históricos e sociais em diferentes escalas temporais.","Processos Históricos")]
   },
   "Geografia": {
-    ef1: [sk("EF01GE01","Descrever características observadas de seus lugares de vivência.","Lugar e Paisagem")],
-    ef2: [sk("EF02GE01","Descrever a história das migrações no bairro ou na comunidade.","Território e Lugar")],
-    ef3: [sk("EF03GE01","Identificar processos de produção e circulação de bens no município.","Território e Lugar")],
-    ef4: [sk("EF04GE01","Selecionar informações sobre as transformações do espaço geográfico.","Território e Lugar")],
-    ef5: [sk("EF05GE01","Descrever e analisar dinâmicas populacionais no território brasileiro.","Território e Lugar")],
+    ef1: [sk("EF01GE01","Descrever características observadas de seus lugares de vivência (moradia, escola etc.).","O sujeito e seu lugar no mundo","Lugares de vivência"),
+         sk("EF01GE02","Identificar semelhanças e diferenças entre jogos e brincadeiras de diferentes épocas e lugares.","O sujeito e seu lugar no mundo","Brincadeiras em diferentes lugares"),
+         sk("EF01GE03","Identificar e relatar semelhanças e diferenças de usos do espaço público para o lazer e diferentes manifestações.","O sujeito e seu lugar no mundo","Uso do espaço público"),
+         sk("EF01GE05","Observar e descrever ritmos naturais (dia e noite, variação de temperatura e umidade etc.).","Natureza, ambientes e qualidade de vida","Ritmos da natureza"),
+         sk("EF01GE08","Criar mapas mentais e desenhos com base em itinerários, contos literários, histórias inventadas e brincadeiras.","Formas de representação","Mapa mental e itinerário"),
+         sk("EF01GE09","Elaborar e utilizar mapas simples para localizar elementos do local de vivência.","Formas de representação","Mapa simples do lugar de vivência")],
+    ef2: [sk("EF02GE01","Descrever a história das migrações no bairro ou comunidade em que vive.","O sujeito e seu lugar no mundo","Migrações no bairro"),
+         sk("EF02GE02","Comparar costumes e tradições de diferentes populações inseridas no bairro ou comunidade.","O sujeito e seu lugar no mundo","Costumes e tradições locais"),
+         sk("EF02GE03","Comparar diferentes meios de transporte e de comunicação, indicando o seu papel na conexão entre lugares.","Conexões e escalas","Transportes e comunicação"),
+         sk("EF02GE05","Analisar mudanças e permanências, comparando imagens de um mesmo lugar em diferentes tempos.","Mundo do trabalho","Mudanças e permanências no lugar"),
+         sk("EF02GE09","Identificar objetos e lugares de vivência (escola e moradia) em imagens aéreas e mapas.","Formas de representação","Imagem aérea e mapa"),
+         sk("EF02GE11","Reconhecer a importância do solo e da água para a vida, identificando seus diferentes usos.","Natureza, ambientes e qualidade de vida","Solo e água: usos e importância")],
+    ef3: [sk("EF03GE01","Identificar e comparar aspectos culturais dos grupos sociais de seus lugares de vivência.","O sujeito e seu lugar no mundo","Aspectos culturais dos grupos sociais"),
+         sk("EF03GE03","Reconhecer os diferentes modos de vida de povos e comunidades tradicionais em distintos lugares.","O sujeito e seu lugar no mundo","Povos e comunidades tradicionais"),
+         sk("EF03GE04","Explicar como os processos naturais e históricos atuam na produção e na mudança das paisagens.","Conexões e escalas","Formação das paisagens"),
+         sk("EF03GE06","Identificar e interpretar imagens bidimensionais e tridimensionais em diferentes tipos de representação cartográfica.","Formas de representação","Representações cartográficas"),
+         sk("EF03GE08","Relacionar a produção de lixo doméstico ou da escola aos problemas causados pelo consumo excessivo.","Natureza, ambientes e qualidade de vida","Lixo, consumo e ambiente"),
+         sk("EF03GE11","Comparar impactos das atividades econômicas urbanas e rurais sobre o ambiente físico natural.","Natureza, ambientes e qualidade de vida","Atividades econômicas e ambiente")],
+    ef4: [sk("EF04GE01","Selecionar, em seus lugares de vivência e em suas histórias familiares, elementos de distintas culturas.","O sujeito e seu lugar no mundo","Diversidade cultural nos lugares de vivência"),
+         sk("EF04GE02","Descrever processos migratórios e suas contribuições para a formação da sociedade brasileira.","O sujeito e seu lugar no mundo","Migrações e formação do povo brasileiro"),
+         sk("EF04GE04","Reconhecer especificidades e analisar a interdependência do campo e da cidade.","Conexões e escalas","Campo e cidade: interdependência"),
+         sk("EF04GE06","Identificar e descrever territórios étnico-culturais existentes no Brasil.","Mundo do trabalho","Territórios étnico-culturais"),
+         sk("EF04GE09","Utilizar as direções cardeais na localização de componentes físicos e humanos nas paisagens rurais e urbanas.","Formas de representação","Pontos cardeais e localização"),
+         sk("EF04GE11","Identificar as características das paisagens naturais e antrópicas nos ambientes urbanos e rurais.","Natureza, ambientes e qualidade de vida","Paisagem natural e antrópica")],
+    ef5: [sk("EF05GE01","Descrever e analisar dinâmicas populacionais na Unidade da Federação em que vive.","O sujeito e seu lugar no mundo","Dinâmica populacional do estado"),
+         sk("EF05GE02","Identificar diferenças étnico-raciais e étnico-culturais e desigualdades sociais entre grupos em diferentes territórios.","O sujeito e seu lugar no mundo","Diferenças e desigualdades"),
+         sk("EF05GE04","Reconhecer as diferentes formas de trabalho existentes no campo e na cidade.","Mundo do trabalho","Formas de trabalho no campo e na cidade"),
+         sk("EF05GE07","Identificar os diferentes tipos de energia utilizados na produção industrial, agrícola e extrativa.","Mundo do trabalho","Fontes de energia e produção"),
+         sk("EF05GE09","Estabelecer conexões e hierarquias entre diferentes cidades, utilizando mapas temáticos.","Formas de representação","Mapas temáticos e rede de cidades"),
+         sk("EF05GE11","Identificar e descrever problemas ambientais que ocorrem no entorno da escola e da residência.","Natureza, ambientes e qualidade de vida","Problemas ambientais do entorno")],
     ef6: [sk("EF06GE08","Relacionar padrões climáticos à formação de tipos de vegetação e solo.","Natureza e Ambiente"),
           sk("EF06GE01","Comparar modificações das paisagens nos lugares de vivência.","Território e Lugar")],
     ef7: [sk("EF07GE09","Relacionar industrialização e inovação tecnológica às transformações do trabalho.","Território e Lugar"),
@@ -1085,11 +1236,36 @@ var BNCC = {
     em: [sk("EM13CHS106","Utilizar linguagens cartográficas e estatísticas na análise do território.","Território e Lugar")]
   },
   "Artes / Educação Artística": {
-    ef1: [sk("EF15AR01","Identificar e apreciar formas distintas das artes visuais.","Artes Visuais")],
-    ef2: [sk("EF15AR02","Explorar e reconhecer elementos constitutivos das artes visuais.","Artes Visuais")],
-    ef3: [sk("EF15AR04","Experimentar diferentes formas de expressão artística.","Artes Visuais")],
-    ef4: [sk("EF15AR06","Dialogar sobre a sua criação e as dos colegas para desenvolver percepção.","Artes Visuais")],
-    ef5: [sk("EF15AR07","Reconhecer categorias do sistema das artes visuais em diferentes contextos.","Artes Visuais")],
+    ef1: [sk("EF15AR01","Identificar e apreciar formas distintas das artes visuais tradicionais e contemporâneas.","Artes Visuais","Apreciação de artes visuais"),
+         sk("EF15AR02","Explorar e reconhecer elementos constitutivos das artes visuais (ponto, linha, forma, cor, espaço, movimento).","Artes Visuais","Elementos das artes visuais"),
+         sk("EF15AR04","Experimentar diferentes formas de expressão artística, fazendo uso sustentável de materiais e recursos.","Artes Visuais","Materiais e suportes na produção"),
+         sk("EF15AR13","Identificar e apreciar criações de dança de diferentes matrizes estéticas e culturais.","Dança","Apreciação de dança"),
+         sk("EF15AR16","Explorar diferentes fontes sonoras e materiais para propostas artístico-musicais.","Música","Fontes sonoras e exploração musical"),
+         sk("EF15AR18","Reconhecer e apreciar formas distintas de manifestações do teatro presentes em diferentes contextos.","Teatro","Apreciação teatral")],
+    ef2: [sk("EF15AR03","Reconhecer e analisar a influência de distintas matrizes estéticas e culturais das artes visuais.","Artes Visuais","Matrizes estéticas e culturais"),
+         sk("EF15AR05","Experimentar a criação em artes visuais de modo individual, coletivo e colaborativo.","Artes Visuais","Criação individual e coletiva"),
+         sk("EF15AR09","Estabelecer relações entre partes do corpo e destas com o todo corporal na construção do movimento dançado.","Dança","Corpo e movimento dançado"),
+         sk("EF15AR14","Perceber e explorar os elementos constitutivos da música (altura, intensidade, timbre, melodia, ritmo).","Música","Elementos da música"),
+         sk("EF15AR17","Experimentar improvisações, composições e sonorização de histórias.","Música","Sonorização de histórias"),
+         sk("EF15AR21","Exercitar a imitação e o faz de conta, ressignificando objetos e fatos, experimentando personagens e narrativas.","Teatro","Faz de conta e criação de personagens")],
+    ef3: [sk("EF15AR06","Dialogar sobre a sua criação e as dos colegas, para alcançar sentidos plurais.","Artes Visuais","Diálogo sobre as produções"),
+         sk("EF15AR07","Reconhecer algumas categorias do sistema das artes visuais (museus, galerias, artistas, artesãos).","Artes Visuais","Sistema das artes visuais"),
+         sk("EF15AR10","Experimentar diferentes formas de orientação no espaço e ritmos de movimento na dança.","Dança","Espaço e ritmo na dança"),
+         sk("EF15AR15","Explorar fontes sonoras diversas para reconhecer elementos constitutivos da música.","Música","Paisagem sonora"),
+         sk("EF15AR19","Descobrir teatralidades na vida cotidiana, identificando elementos teatrais.","Teatro","Teatralidade no cotidiano"),
+         sk("EF15AR23","Reconhecer e experimentar, em projetos temáticos, as relações processuais entre diversas linguagens artísticas.","Artes integradas","Projeto com várias linguagens")],
+    ef4: [sk("EF15AR08","Experimentar e apreciar formas distintas de manifestações da dança presentes em diferentes contextos.","Dança","Manifestações da dança"),
+         sk("EF15AR11","Criar e improvisar movimentos dançados de modo individual, coletivo e colaborativo.","Dança","Improvisação em dança"),
+         sk("EF15AR12","Discutir, com respeito e sem preconceito, as experiências pessoais e coletivas em dança.","Dança","Respeito à diversidade na dança"),
+         sk("EF15AR20","Experimentar o trabalho colaborativo, coletivo e autoral em improvisações teatrais.","Teatro","Improvisação teatral colaborativa"),
+         sk("EF15AR24","Caracterizar e experimentar brinquedos, brincadeiras, jogos, danças, canções e histórias de diferentes matrizes estéticas.","Artes integradas","Matrizes estéticas em brincadeiras e canções"),
+         sk("EF15AR25","Conhecer e valorizar o patrimônio cultural, material e imaterial, de culturas diversas.","Artes integradas","Patrimônio cultural material e imaterial")],
+    ef5: [sk("EF15AR22","Experimentar possibilidades criativas de movimento e de voz na criação de um personagem teatral.","Teatro","Movimento e voz na criação teatral"),
+         sk("EF15AR26","Explorar diferentes tecnologias e recursos digitais nos processos de criação artística.","Artes integradas","Tecnologias na criação artística"),
+         sk("EF15AR03","Reconhecer e analisar a influência de distintas matrizes estéticas e culturais das artes visuais.","Artes Visuais","Matrizes estéticas nas artes visuais"),
+         sk("EF15AR06","Dialogar sobre a sua criação e as dos colegas, para alcançar sentidos plurais.","Artes Visuais","Leitura crítica das produções"),
+         sk("EF15AR17","Experimentar improvisações, composições e sonorização de histórias.","Música","Composição e sonorização"),
+         sk("EF15AR23","Reconhecer e experimentar, em projetos temáticos, as relações processuais entre diversas linguagens artísticas.","Artes integradas","Projeto artístico integrado")],
     ef6: [sk("EF69AR01","Pesquisar e analisar diferentes estilos visuais, contextualizando-os no tempo.","Artes Visuais")],
     ef7: [sk("EF69AR04","Analisar aspectos históricos, sociais e políticos da produção artística.","Artes Visuais")],
     ef8: [sk("EF69AR29","Analisar criticamente usos da criatividade e da participação em processos artísticos.","Patrimônio Cultural")],
@@ -1097,11 +1273,36 @@ var BNCC = {
     em: [sk("EM13LGG601","Apropriar-se do patrimônio artístico de diferentes tempos e lugares.","Artes Visuais")]
   },
   "Educação Física": {
-    ef1: [sk("EF12EF01","Experimentar e fruir brincadeiras e jogos da cultura popular.","Brincadeiras e Jogos")],
-    ef2: [sk("EF12EF05","Experimentar e fruir diferentes danças do contexto comunitário.","Danças")],
-    ef3: [sk("EF35EF01","Experimentar e fruir brincadeiras e jogos populares do Brasil e do mundo.","Brincadeiras e Jogos")],
-    ef4: [sk("EF35EF05","Experimentar e fruir diversos tipos de esportes de campo e taco.","Esportes")],
-    ef5: [sk("EF35EF09","Experimentar e fruir ginásticas geral e de condicionamento físico.","Ginásticas")],
+    ef1: [sk("EF12EF01","Experimentar, fruir e recriar diferentes brincadeiras e jogos da cultura popular presentes no contexto comunitário e regional.","Brincadeiras e jogos","Brincadeiras da cultura popular"),
+         sk("EF12EF02","Explicar, por meio de múltiplas linguagens, as brincadeiras e os jogos populares do contexto comunitário e regional.","Brincadeiras e jogos","Registro das brincadeiras populares"),
+         sk("EF12EF03","Planejar e utilizar estratégias para resolver desafios de brincadeiras e jogos populares.","Brincadeiras e jogos","Estratégias em jogos populares"),
+         sk("EF12EF05","Experimentar e fruir, prezando pelo trabalho coletivo e pelo protagonismo, a prática de esportes de marca e de precisão.","Esportes","Esportes de marca e de precisão"),
+         sk("EF12EF07","Experimentar, fruir e identificar diferentes elementos básicos da ginástica e da ginástica geral.","Ginástica","Elementos básicos da ginástica"),
+         sk("EF12EF11","Experimentar e fruir diferentes danças do contexto comunitário e regional.","Danças","Danças da comunidade e da região")],
+    ef2: [sk("EF12EF04","Colaborar na proposição e na produção de alternativas para a prática de brincadeiras e jogos populares.","Brincadeiras e jogos","Adaptação de jogos e brincadeiras"),
+         sk("EF12EF06","Discutir a importância da observação das normas e das regras dos esportes de marca e de precisão.","Esportes","Regras e segurança nos esportes"),
+         sk("EF12EF08","Planejar e utilizar estratégias para a execução de diferentes elementos básicos da ginástica.","Ginástica","Estratégias na prática da ginástica"),
+         sk("EF12EF09","Participar da ginástica geral, identificando as potencialidades e os limites do corpo.","Ginástica","Potencialidades e limites do corpo"),
+         sk("EF12EF10","Descrever, por meio de múltiplas linguagens, as características dos elementos básicos da ginástica.","Ginástica","Registro dos elementos da ginástica"),
+         sk("EF12EF12","Identificar os elementos constitutivos (ritmo, espaço, gestos) das danças do contexto comunitário e regional.","Danças","Ritmo, espaço e gesto na dança")],
+    ef3: [sk("EF35EF01","Experimentar e fruir brincadeiras e jogos populares do Brasil e do mundo, incluindo aqueles de matriz indígena e africana.","Brincadeiras e jogos","Jogos do Brasil e do mundo"),
+         sk("EF35EF02","Planejar e utilizar estratégias para possibilitar a participação segura de todos os alunos em brincadeiras e jogos.","Brincadeiras e jogos","Participação segura e inclusiva"),
+         sk("EF35EF03","Descrever, por meio de múltiplas linguagens, as brincadeiras e os jogos populares do Brasil e do mundo.","Brincadeiras e jogos","Registro dos jogos populares"),
+         sk("EF35EF05","Experimentar e fruir diversos tipos de esportes de campo e taco, rede/parede e invasão.","Esportes","Esportes de campo, rede e invasão"),
+         sk("EF35EF07","Experimentar e fruir, de forma coletiva, combinações de diferentes elementos da ginástica geral.","Ginástica","Combinações na ginástica geral"),
+         sk("EF35EF09","Experimentar, recriar e fruir danças populares do Brasil e do mundo e danças de matriz indígena e africana.","Danças","Danças populares brasileiras")],
+    ef4: [sk("EF35EF04","Recriar, individual e coletivamente, e experimentar, na escola e fora dela, brincadeiras e jogos populares.","Brincadeiras e jogos","Recriação de brincadeiras"),
+         sk("EF35EF06","Diferenciar os conceitos de jogo e esporte, identificando as características que os constituem.","Esportes","Jogo e esporte: diferenças"),
+         sk("EF35EF08","Planejar e utilizar estratégias para resolver desafios na execução de elementos básicos de apresentações coletivas de ginástica.","Ginástica","Apresentação coletiva de ginástica"),
+         sk("EF35EF10","Comparar e identificar os elementos constitutivos comuns e diferentes nas danças populares.","Danças","Elementos comuns nas danças"),
+         sk("EF35EF11","Formular e utilizar estratégias para a execução de elementos constitutivos das danças populares.","Danças","Execução de coreografias populares"),
+         sk("EF35EF12","Identificar situações de injustiça e preconceito geradas nas danças e discutir alternativas para superá-las.","Danças","Respeito e superação de preconceitos")],
+    ef5: [sk("EF35EF13","Experimentar, fruir e recriar diferentes lutas presentes no contexto comunitário e regional.","Lutas","Lutas do contexto regional"),
+         sk("EF35EF14","Planejar e utilizar estratégias básicas das lutas experimentadas, respeitando o colega como oponente.","Lutas","Estratégias e respeito ao oponente"),
+         sk("EF35EF15","Identificar as características das lutas do contexto comunitário e regional, reconhecendo as diferenças entre lutas e brigas.","Lutas","Luta não é briga"),
+         sk("EF35EF05","Experimentar e fruir diversos tipos de esportes de campo e taco, rede/parede e invasão.","Esportes","Modalidades esportivas coletivas"),
+         sk("EF35EF07","Experimentar e fruir, de forma coletiva, combinações de diferentes elementos da ginástica geral.","Ginástica","Ginástica geral em grupo"),
+         sk("EF35EF09","Experimentar, recriar e fruir danças populares do Brasil e do mundo.","Danças","Repertório de danças populares")],
     ef6: [sk("EF67EF01","Experimentar e fruir esportes de marca, valorizando o trabalho coletivo e a ética.","Esportes")],
     ef7: [sk("EF67EF07","Discutir a importância da preservação do patrimônio esportivo local e nacional.","Esportes")],
     ef8: [sk("EF89EF07","Analisar as transformações históricas dos esportes de invasão.","Esportes")],
@@ -1109,11 +1310,36 @@ var BNCC = {
     em: [sk("EM13LGG502","Analisar criticamente práticas corporais e seus sentidos culturais.","Corpo e Movimento")]
   },
   "Ensino Religioso": {
-    ef1: [sk("EF01ER01","Identificar e valorizar o próprio nome e o dos colegas como elemento de identidade.","Identidades e Alteridades")],
-    ef2: [sk("EF02ER01","Reconhecer os diferentes espaços de convivência e seus significados.","Identidades e Alteridades")],
-    ef3: [sk("EF03ER01","Identificar e respeitar diferentes práticas de convivência religiosa.","Manifestações Religiosas")],
-    ef4: [sk("EF04ER01","Identificar ritos presentes em diferentes tradições religiosas.","Manifestações Religiosas")],
-    ef5: [sk("EF05ER01","Identificar e respeitar acontecimentos sagrados de diferentes culturas.","Manifestações Religiosas")],
+    ef1: [sk("EF01ER01","Identificar e acolher as semelhanças e diferenças entre o eu, o outro e o nós.","Identidades e alteridades","O eu, o outro e o nós"),
+         sk("EF01ER02","Reconhecer que o seu nome e o das demais pessoas os identificam e os diferenciam.","Identidades e alteridades","O nome como identidade"),
+         sk("EF01ER03","Reconhecer e respeitar as características físicas e subjetivas de cada um.","Identidades e alteridades","Respeito às características de cada um"),
+         sk("EF01ER04","Valorizar a diversidade de formas de vida.","Manifestações religiosas","Diversidade das formas de vida"),
+         sk("EF01ER05","Identificar e acolher sentimentos, lembranças, memórias e saberes de cada um.","Identidades e alteridades","Sentimentos, memórias e saberes"),
+         sk("EF01ER06","Identificar as diferentes formas pelas quais as pessoas manifestam sentimentos, ideias, memórias, gostos e crenças em diferentes espaços.","Manifestações religiosas","Formas de manifestar crenças e sentimentos")],
+    ef2: [sk("EF02ER01","Reconhecer os diferentes espaços de convivência.","Identidades e alteridades","Espaços de convivência"),
+         sk("EF02ER02","Identificar costumes, crenças e formas diversas de viver em variados ambientes de convivência.","Identidades e alteridades","Costumes e crenças nos ambientes"),
+         sk("EF02ER03","Identificar as diferentes formas de registro das experiências religiosas e não religiosas.","Manifestações religiosas","Registros das experiências"),
+         sk("EF02ER04","Identificar os símbolos presentes nos variados espaços de convivência.","Manifestações religiosas","Símbolos nos espaços de convivência"),
+         sk("EF02ER05","Identificar, distinguir e respeitar símbolos religiosos de distintas manifestações, tradições e instituições religiosas.","Manifestações religiosas","Símbolos religiosos e respeito"),
+         sk("EF02ER06","Exemplificar alimentos considerados sagrados por diferentes culturas, tradições e expressões religiosas.","Manifestações religiosas","Alimentos sagrados")],
+    ef3: [sk("EF03ER01","Identificar e respeitar os diferentes espaços e territórios religiosos de diferentes tradições e movimentos religiosos.","Manifestações religiosas","Espaços e territórios religiosos"),
+         sk("EF03ER02","Caracterizar os espaços e territórios religiosos como locais de realização das práticas celebrativas.","Manifestações religiosas","Práticas celebrativas"),
+         sk("EF03ER03","Identificar e respeitar práticas celebrativas (cerimônias, rituais, festas) de diferentes tradições religiosas.","Manifestações religiosas","Cerimônias, rituais e festas"),
+         sk("EF03ER04","Caracterizar as práticas celebrativas como parte integrante do conjunto das manifestações religiosas.","Manifestações religiosas","Sentido das práticas celebrativas"),
+         sk("EF03ER05","Reconhecer as indumentárias (roupas, acessórios, símbolos, pinturas corporais) utilizadas em diferentes manifestações e tradições religiosas.","Manifestações religiosas","Indumentárias religiosas"),
+         sk("EF03ER06","Caracterizar as indumentárias como elementos integrantes das identidades religiosas.","Manifestações religiosas","Indumentária e identidade")],
+    ef4: [sk("EF04ER01","Identificar ritos presentes no cotidiano pessoal, familiar, escolar e comunitário.","Manifestações religiosas","Ritos do cotidiano"),
+         sk("EF04ER02","Identificar ritos e suas funções em diferentes manifestações e tradições religiosas.","Manifestações religiosas","Função dos ritos"),
+         sk("EF04ER03","Caracterizar ritos de iniciação e de passagem em diversos grupos religiosos e não religiosos.","Manifestações religiosas","Ritos de iniciação e passagem"),
+         sk("EF04ER04","Identificar as diversas formas de expressão da espiritualidade (orações, cantos, gestos, posturas, movimentos, meditações).","Manifestações religiosas","Formas de expressão da espiritualidade"),
+         sk("EF04ER05","Identificar representações religiosas em diferentes expressões artísticas (pinturas, arquitetura, esculturas, ícones, símbolos, imagens).","Crenças religiosas e filosofias de vida","Arte e representações religiosas"),
+         sk("EF04ER06","Identificar nomes, significados e representações de divindades nos contextos familiar e comunitário.","Crenças religiosas e filosofias de vida","Divindades: nomes e representações")],
+    ef5: [sk("EF05ER01","Identificar e respeitar acontecimentos sagrados de diferentes culturas e tradições religiosas como recurso para preservar a memória.","Crenças religiosas e filosofias de vida","Acontecimentos sagrados e memória"),
+         sk("EF05ER02","Identificar mitos de criação em diferentes culturas e tradições religiosas.","Crenças religiosas e filosofias de vida","Mitos de criação"),
+         sk("EF05ER03","Reconhecer funções e mensagens religiosas contidas nos mitos de criação.","Crenças religiosas e filosofias de vida","Mensagens dos mitos"),
+         sk("EF05ER04","Reconhecer a importância da tradição oral para preservar memórias e acontecimentos religiosos.","Crenças religiosas e filosofias de vida","Tradição oral e memória"),
+         sk("EF05ER05","Identificar elementos da tradição oral nas culturas e religiosidades indígenas, afro-brasileiras, ciganas, entre outras.","Crenças religiosas e filosofias de vida","Oralidade nas culturas indígenas e afro-brasileiras"),
+         sk("EF05ER06","Identificar o papel dos sábios e anciãos na comunicação e preservação da tradição oral.","Crenças religiosas e filosofias de vida","Sábios e anciãos na tradição")],
     ef6: [sk("EF06ER01","Reconhecer o papel da tradição escrita na preservação de memórias.","Crenças e Filosofias")],
     ef7: [sk("EF07ER01","Reconhecer princípios éticos em diferentes tradições religiosas e filosóficas.","Crenças e Filosofias")],
     ef8: [sk("EF08ER01","Discutir como as crenças influenciam escolhas e comportamentos pessoais.","Crenças e Filosofias")],
@@ -6452,10 +6678,21 @@ var RECURSO_ACERTA_BRASIL = "Livro Acerta Brasil";
 /* Junta a lista oficial do município com os recursos que o plano gerou,
    descartando repetições (compara sem acento, sem maiúscula e sem pontuação). */
 function recursosDoPlano(pc, gerados) {
+  /* Os anos iniciais têm outra lista de recursos no modelo da rede (tintas
+     naturais, cartazes, paradidáticos, DCTMA) — nada de livro Acerta Brasil,
+     que é do 9º ano. */
+  if (typeof ehAnosIniciais === "function" && ehAnosIniciais(pc && pc.gradeLevel)) {
+    var baseAI = RECURSOS_ANOS_INICIAIS.slice();
+    return _juntarRecursos(baseAI, gerados);
+  }
   var base = RECURSOS_MUNICIPIO.slice();
   var ehPortugues = String(pc && pc.subject || "").toLowerCase().indexOf("portug") >= 0;
   var ehNono = String(pc && pc.gradeLevel || "").indexOf("9º") >= 0;
   if (ehPortugues && ehNono) base.splice(1, 0, RECURSO_ACERTA_BRASIL);
+  return _juntarRecursos(base, gerados);
+}
+
+function _juntarRecursos(base, gerados) {
 
   /* Compara por palavras significativas: o gerador costuma escrever a mesma
      coisa com outras palavras de ligação ("Livro didático e paradidáticos"
@@ -6651,6 +6888,188 @@ function ofMetodologiaTimeline(methodology) {
   }).join("");
 
   return head + cards;
+}
+
+/* =========================================================
+   MODELO OFICIAL — ANOS INICIAIS (1º ao 5º ano)
+   Estrutura conforme o modelo enviado pela SEMED Santa Luzia
+   ("PLANEJAMENTO DE ENSINO RELIGIOSO — MAIO"): unidades temáticas,
+   objeto de conhecimento, habilidades, competências gerais e específicas,
+   metodologias abertas pela ROTINA / Atividades Permanentes, recursos,
+   avaliação contínua e referências próprias da rede.
+   A diferença central para o modelo do 6º ao 9º ano é a rotina: nos anos
+   iniciais ela é parte obrigatória do plano, não um detalhe da aula.
+   ========================================================= */
+function ehAnosIniciais(gradeLevel) {
+  var g = String(gradeLevel || "");
+  if (g.indexOf("Fundamental I ") < 0 && g.indexOf("Fundamental I(") < 0) return false;
+  return /[1-5]º\s*Ano/.test(g);
+}
+
+/* Rotina padrão da rede, exatamente na ordem do modelo. O professor pode
+   trocar em Ajustes — cada escola tem pequenas variações. */
+var ROTINA_PADRAO = [
+  "Acolhida (oração e cantigas de roda)",
+  "Hora da Leitura",
+  "Calendário interativo",
+  "Chamadinha lúdica",
+  "Leitura dos cartazes",
+  "Correção do para casa",
+  "Aula do dia",
+  "Atividade para casa"
+];
+function rotinaAtual() {
+  var r = state.cfg && state.cfg.rotina;
+  if (Array.isArray(r) && r.length) return r;
+  if (typeof r === "string" && r.trim()) {
+    return r.split(/\r?\n/).map(function(x){ return x.trim(); }).filter(Boolean);
+  }
+  return ROTINA_PADRAO;
+}
+
+var RECURSOS_ANOS_INICIAIS = [
+  "DCTMA (Documento Curricular do Território Maranhense)",
+  "Quadro e seus acessórios",
+  "Caderno de atividades e atividades xerocopiadas",
+  "Lápis com borracha, lápis de cor e giz de cera",
+  "Cartaz, cola, tesoura, revistas ou livros usados",
+  "Tintas guache e tintas extraídas da natureza (jenipapo, urucum)",
+  "Papel A4, paradidáticos e livro didático",
+  "Kit multimídia e internet"
+];
+
+var REFERENCIAS_ANOS_INICIAIS = [
+  "BRASIL. Documento Curricular do Território Maranhense para a Educação Infantil e o Ensino Fundamental. Rio de Janeiro: FGV Editora, 2019.",
+  "Referencial Curricular Municipal para a BNCC Computação — Educação Infantil e Ensino Fundamental (Anos Iniciais e Anos Finais). Santa Luzia — MA: 2026."
+];
+/* Referência extra que só existe para Ensino Religioso na rede. */
+var REFERENCIA_MATRIZ_ER = "Matriz de Referência de Ensino Religioso do 1º ao 9º ano do Ensino Fundamental. Santa Luzia — MA: 2022.";
+
+var AVALIACAO_ANOS_INICIAIS = [
+  "Avaliação contínua envolvendo atividades orais, escritas e de expressão corporal",
+  "Produção oral, escrita e corporal",
+  "Atividades individuais, em grupo ou coletivas",
+  "Participação, socialização, desempenho e interação",
+  "Nível de conhecimento demonstrado ao longo do período"
+];
+
+function viewPlanAnosIniciais(pl, c, pc, cfg) {
+  var unidades = {};
+  A(c.knowledgeObjects).forEach(function(k) {
+    var eixo = k.axis || "Unidade temática";
+    if (!unidades[eixo]) unidades[eixo] = [];
+    unidades[eixo].push(k);
+  });
+
+  var unidadesRows = "";
+  Object.keys(unidades).forEach(function(eixo) {
+    var itens = unidades[eixo];
+    itens.forEach(function(k, idx) {
+      var codigos = A(k.codes).length ? A(k.codes).join(", ") : "—";
+      unidadesRows += "<tr>" +
+        (idx === 0
+          ? "<td rowspan='" + itens.length + "' style='padding:7px 10px;border:1px solid " + OF_BRD +
+            ";vertical-align:top;width:26%;font-weight:700;font-size:11.5px;color:" + OF_TXT + "'>" + esc(eixo) + "</td>"
+          : "") +
+        "<td style='padding:7px 10px;border:1px solid " + OF_BRD + ";vertical-align:top;font-size:11.5px;color:" + OF_TXT + "'>" +
+          esc(k.content || k.note || "") + "</td>" +
+        "<td style='padding:7px 10px;border:1px solid " + OF_BRD + ";vertical-align:top;width:30%;font-size:11px;font-weight:700;color:" + OF_TXT + "'>" +
+          esc(codigos) + "</td></tr>";
+    });
+  });
+
+  var thUnid = function(t) {
+    return "<td style='padding:6px 10px;border:1px solid " + OF_BRD + ";background:" + OF_GRAFITE +
+      ";color:#fff;font-weight:800;font-size:10px;letter-spacing:.03em'>" + t + "</td>";
+  };
+  var unidadesHtml = unidadesRows
+    ? '<table style="width:100%;border-collapse:collapse">' +
+        "<tr>" + thUnid("UNIDADES TEM&Aacute;TICAS") + thUnid("OBJETO DE CONHECIMENTO") + thUnid("HABILIDADES") + "</tr>" +
+        unidadesRows + "</table>"
+    : ofBullets([c.title]);
+
+  var habilidadesHtml = A(c.bnccSkills).length
+    ? ofBullets(A(c.bnccSkills).map(function(s) {
+        return "(" + s.code + ") " + s.description;
+      }))
+    : '<div style="color:' + OF_TXT2 + ';font-style:italic">Nenhuma habilidade registrada.</div>';
+
+  /* Metodologias: a rotina abre a seção, como no modelo da rede. */
+  var rotinaHtml =
+    '<div style="margin:2px 0 6px;font-size:11.5px;font-weight:800;letter-spacing:.02em;color:' + OF_TXT + '">' +
+      "ROTINA / ATIVIDADES PERMANENTES" +
+    "</div>" +
+    ofBullets(rotinaAtual());
+
+  var atividadesHtml = A(c.methodology).length
+    ? ofBullets(A(c.methodology).map(function(m) {
+        return (m.title ? m.title + " — " : "") + (m.description || "");
+      }))
+    : (A(c.activities).length ? ofBullets(A(c.activities).map(function(a) {
+        return (a.title ? a.title + " — " : "") + (a.description || "");
+      })) : "");
+
+  var metodologiaHtml = rotinaHtml +
+    (atividadesHtml
+      ? ofSubBanner("Atividades do mês") + atividadesHtml
+      : "");
+
+  var recursosFinal = recursosDoPlano(pc, A(c.materials).concat(A(c.digitalResources)));
+  var ehReligioso = String(pc.subject || "").toLowerCase().indexOf("religios") >= 0;
+  var referenciasFinal = REFERENCIAS_ANOS_INICIAIS.concat(ehReligioso ? [REFERENCIA_MATRIZ_ER] : []);
+
+  var ap = ofAulasPrevistas(pc, cfg);
+  var periodoTxt = periodoOficialTexto(pc.month);
+
+  var toolbar = '<div class="noprint" style="display:flex;flex-wrap:wrap;gap:9px;align-items:center;justify-content:space-between;margin-bottom:18px">' +
+    '<button class="btn btn-ghost btn-sm" onclick="go(\'' + (state.activeSaved ? "plans" : "gen") + '\')">&larr; Voltar</button>' +
+    "<div style='display:flex;gap:7px;flex-wrap:wrap'>" +
+      (state.activeSaved ? "" : '<button class="btn btn-primary btn-sm" onclick="savePlan()">Salvar no Hist&oacute;rico</button>') +
+      '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / PDF</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="downloadDoc()">Baixar Word</button>' +
+      (state.activeSaved ? '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deletePlan(\'' + pl.id + '\')">Excluir</button>' : "") +
+    "</div></div>";
+
+  var body =
+    '<div style="text-align:center;font-size:11px;color:' + OF_TXT2 + ';font-weight:700;margin-bottom:2px">ESTADO DO MARANH&Atilde;O</div>' +
+    '<div style="text-align:center;font-size:11px;color:' + OF_TXT2 + ';margin-bottom:2px">' + esc(cfg.network || "SECRETARIA MUNICIPAL DE EDUCAÇÃO") + "</div>" +
+    '<div style="text-align:center;font-size:11px;color:' + OF_TXT2 + ';margin-bottom:16px">' + esc(cfg.schoolName || "") + "</div>" +
+    '<h1 style="text-align:center;font-size:20px;font-weight:800;color:' + OF_TXT + ';margin:0 0 16px">PLANEJAMENTO DE ' +
+      esc((pc.subject || "").toUpperCase()) + "</h1>" +
+
+    '<table class="of-info-table" style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:2px">' +
+      "<tr><td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;width:26%;color:" + OF_TXT + "'>Professor(a):</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "' colspan='3'>" + esc(cfg.teacherName || "—") + "</td></tr>" +
+      "<tr><td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;color:" + OF_TXT + "'>Componente Curricular:</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>" + esc(pc.subject) + "</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;width:18%;color:" + OF_TXT + "'>Tipo de Per&iacute;odo:</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>Mensal</td></tr>" +
+      "<tr><td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;color:" + OF_TXT + "'>Turma:</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>" + esc(pc.gradeLevel) + "</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;color:" + OF_TXT + "'>Per&iacute;odo:</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>" + esc(pc.month) +
+        (periodoTxt ? "<div style='font-size:10px;color:" + OF_TXT2 + "'>" + esc(periodoTxt) + "</div>" : "") + "</td></tr>" +
+      "<tr><td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;color:" + OF_TXT + "'>Turno:</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>" + esc(pc.shift || cfg.defaultShift || "—") + "</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;color:" + OF_TXT + "'>Aulas Previstas:</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>" + ap.aulas + " aula(s) &middot; " + esc(ap.total) + "</td></tr>" +
+    "</table>" +
+
+    ofSec("1", "Unidades Temáticas, Objeto de Conhecimento e Habilidades", unidadesHtml) +
+    ofSec("2", "Habilidades (descrição completa)", habilidadesHtml) +
+    ofSec("3", "Competências Gerais", OF_COMP_GERAIS) +
+    ofSec("4", "Competências Específicas", ofBullets(c.specificCompetencies)) +
+    ofSec("5", "Metodologias", metodologiaHtml,
+      "A rotina abre o trabalho de cada dia; as atividades do m&ecirc;s vêm em seguida.") +
+    ofSec("6", "Recursos", ofRecursosTable(recursosFinal, 2)) +
+    ofSec("7", "Avaliação", ofBullets(AVALIACAO_ANOS_INICIAIS.concat(
+      A(c.assessment).map(function(a) {
+        return a.instrument + (a.criteria ? " — " + a.criteria : "");
+      })))) +
+    ofSec("8", "Referências", ofBullets(referenciasFinal));
+
+  return '<div class="wrap fade" style="padding:28px 18px 56px">' + toolbar +
+    '<div class="card" id="planPaper" style="padding:32px 36px;max-width:880px">' + body + "</div></div>";
 }
 
 function viewPlanOficial(pl, c, pc, cfg) {
@@ -7181,6 +7600,10 @@ function viewPlan() {
   var pl = state.activePlan;
   if (!pl) return viewHome();
   var c = pl.content, pc = pl.config, cfg = state.cfg;
+  /* Do 1º ao 5º ano a rede usa outro modelo de plano (unidades temáticas,
+     rotina/atividades permanentes, avaliação contínua) — ver o modelo de
+     Ensino Religioso enviado pela SEMED. */
+  if (ehAnosIniciais(pc.gradeLevel)) return viewPlanAnosIniciais(pl, c, pc, cfg);
   if ((pc.layout || "").indexOf("Oficial") >= 0) return viewPlanOficial(pl, c, pc, cfg);
   var serif = (pc.layout || "").indexOf("Minimalista") >= 0;
 
@@ -7839,6 +8262,21 @@ function viewSettings() {
       '<button class="btn btn-primary" style="margin-top:16px" onclick="saveIdentity()">Salvar Identidade</button>' +
     "</div>" +
 
+    /* Rotina — anos iniciais */
+    '<div class="card" style="padding:22px;margin-bottom:16px">' +
+      '<h2 style="font-size:15px;margin:0 0 6px">Rotina / Atividades Permanentes</h2>' +
+      '<p style="font-size:11.5px;color:var(--t4);margin:0 0 13px;line-height:1.6">' +
+        "Usada nos planos do <strong>1&ordm; ao 5&ordm; ano</strong>, no in&iacute;cio da se&ccedil;&atilde;o Metodologias &mdash; " +
+        "como no modelo da SEMED. Uma atividade por linha. Nos planos do 6&ordm; ao 9&ordm; ano ela n&atilde;o aparece." +
+      "</p>" +
+      '<textarea class="inp" id="s_rotina" rows="8" style="resize:vertical;line-height:1.6">' +
+        esc(rotinaAtual().join("\n")) + "</textarea>" +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">' +
+        '<button class="btn btn-primary btn-sm" onclick="saveRotina()">Salvar rotina</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="restaurarRotina()">Restaurar rotina padr&atilde;o</button>' +
+      "</div>" +
+    "</div>" +
+
     /* Tema e tipografia */
     '<div class="card" style="padding:22px;margin-bottom:16px">' +
       '<h2 style="font-size:15px;margin:0 0 6px">Tema e Tipografia</h2>' +
@@ -8010,7 +8448,12 @@ function viewSettings() {
         '<button class="btn btn-primary btn-sm" onclick="exportBackup()">Exportar backup (.json)</button>' +
         '<button class="btn btn-outline btn-sm" onclick="el(\'importFile\').click()">Importar backup</button>' +
         '<input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(this)" />' +
+        '<button class="btn btn-outline btn-sm" onclick="limparHistorico()">Limpar hist&oacute;rico de planos</button>' +
         '<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="wipeAll()">Apagar todos os dados</button>' +
+      "</div>" +
+      '<div style="font-size:10.5px;color:var(--t4);margin-top:9px;line-height:1.5">' +
+        "<strong>Limpar hist&oacute;rico</strong> apaga os planos e o registro de aulas &mdash; &uacute;til para come&ccedil;ar o ano " +
+        "sem os planos de teste e zerar a Cobertura BNCC. Seus ajustes, hor&aacute;rio semanal e perfil continuam." +
       "</div>" +
     "</div>" +
 
@@ -8441,6 +8884,23 @@ function saveIdentity() {
   render();
   toast("Identidade salva.");
 }
+function saveRotina() {
+  var campo = el("s_rotina");
+  if (!campo) return;
+  var linhas = campo.value.split(/\r?\n/).map(function(x){ return x.trim(); }).filter(Boolean);
+  state.cfg.rotina = linhas.length ? linhas : ROTINA_PADRAO.slice();
+  saveCfg();
+  pushSnapshot("Rotina atualizada");
+  render();
+  toast(linhas.length ? "Rotina salva." : "Rotina vazia — restaurada para a padrão.");
+}
+function restaurarRotina() {
+  state.cfg.rotina = ROTINA_PADRAO.slice();
+  saveCfg();
+  render();
+  toast("Rotina padrão restaurada.");
+}
+
 function savePrefs() {
   var gs = [], ss = [];
   document.querySelectorAll("[data-grade]").forEach(function(c){ if (c.checked) gs.push(GRADES[parseInt(c.getAttribute("data-grade"),10)]); });
@@ -8916,6 +9376,29 @@ function importBackup(input) {
   fr.readAsText(file);
   input.value = "";
 }
+/* Zera só o que alimenta o histórico e a Cobertura BNCC (planos e registro
+   de aulas), preservando perfil, horário semanal, tema e chaves. É o que o
+   professor precisa depois de testar o app e antes de começar o ano de
+   verdade — apagar tudo obrigaria a reconfigurar a escola e o horário. */
+function limparHistorico() {
+  if (!state.plans.length && !Object.keys(state.diary || {}).length) {
+    toast("Não há planos nem registros para limpar.");
+    return;
+  }
+  if (!confirm("Apagar os " + state.plans.length + " plano(s) salvos e o registro de aulas?\n\n" +
+      "Seus ajustes, horário semanal e perfil serão mantidos. A Cobertura BNCC volta a zero.")) return;
+  pushSnapshot("Antes de limpar o histórico de planos", true);
+  state.plans = [];
+  state.diary = {};
+  savePlans();
+  saveDiary();
+  state.activePlan = null;
+  state.activeSaved = false;
+  state.view = "home";
+  render();
+  toast("Histórico limpo. Se foi engano, restaure em Ajustes → Backup e Versões.");
+}
+
 function wipeAll() {
   if (!confirm("Apagar TODOS os dados (planos, registros, ajustes)? Esta ação não pode ser desfeita.")) return;
   if (!confirm("Confirma definitivamente? Considere exportar um backup antes.")) return;
