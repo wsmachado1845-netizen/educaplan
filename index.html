@@ -230,6 +230,13 @@ textarea.inp { resize: vertical; }
 /* Tabelas roláveis no celular */
 .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 @media (max-width: 720px) { .tscroll table.tb { min-width: 640px; } }
+/* Tabelas curtas (poucas colunas, conteúdo curto) cabem na tela do celular
+   sem rolagem lateral — sem isso o professor só enxergava a primeira coluna. */
+@media (max-width: 720px) {
+  .tscroll table.tb.tb-compact { min-width: 0; font-size: 11.5px; }
+  .tscroll table.tb.tb-compact th, .tscroll table.tb.tb-compact td { padding: 6px 5px; }
+  .tscroll table.tb.tb-compact th { font-size: 9.5px; letter-spacing: 0; }
+}
 
 /* ── Estatísticas ── */
 .stat { padding: 20px 22px; }
@@ -358,6 +365,19 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
   #planPaper div, #planPaper td { text-align: left !important; text-justify: auto !important; }
   #planPaper h1 { font-size: 19px !important; line-height: 1.25 !important; }
   #planPaper h2 { font-size: 14px !important; }
+  /* Nenhuma tabela do plano pode ser mais larga que a tela. */
+  #planPaper table { max-width: 100% !important; }
+  /* Mosaico de desempenho: 8 selos numa linha não cabem em 350px e a
+     tabela acabava empurrando o conteúdo para fora da tela. Aqui os selos
+     passam a quebrar em várias linhas, ocupando a largura disponível. */
+  .of-mosaico, .of-mosaico tbody { display: block; }
+  .of-mosaico tr { display: flex; flex-wrap: wrap; gap: 4px; }
+  .of-mosaico td { display: block; width: auto !important; flex: 1 1 84px; }
+  .of-mosaico td:empty { display: none; }
+  /* Faixa de indicadores: 2 por linha em vez de 4 espremidos. */
+  .of-kpi, .of-kpi tbody { display: block; }
+  .of-kpi tr { display: flex; flex-wrap: wrap; }
+  .of-kpi td { display: block; width: 50% !important; flex: 0 0 50%; box-sizing: border-box; }
 }
 
 /* ── Impressão: páginas preenchidas de ponta a ponta ── */
@@ -377,8 +397,10 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
      imprimir a partir do celular (onde a tela mostra os blocos empilhados). */
   .of-wide-only { display: block !important; }
   .of-narrow-only { display: none !important; }
-  .of-2col, .of-2col tbody, .of-2col tr { display: revert !important; }
-  .of-2col td { display: table-cell !important; }
+  .of-2col, .of-2col tbody, .of-2col tr,
+  .of-mosaico, .of-mosaico tbody, .of-mosaico tr,
+  .of-kpi, .of-kpi tbody, .of-kpi tr { display: revert !important; }
+  .of-2col td, .of-mosaico td, .of-kpi td { display: table-cell !important; }
   .noprint, .side, .topbar, .side-ovl, footer { display: none !important; }
   html, body { background: #fff !important; }
   body { color: #000 !important; font-size: 11pt; }
@@ -495,6 +517,41 @@ var MONTHS_FULL = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
   "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
 var SHIFTS = ["Matutino","Vespertino","Noturno","Integral"];
+
+/* =========================================================
+   CALENDÁRIO OFICIAL DE PLANEJAMENTO — 2026
+   Fonte: Ofício nº 017/2026, de 04 de fevereiro de 2026, do Departamento
+   Pedagógico da SEMED Santa Luzia/MA (Profª. Cleudimar Soares Lopes),
+   "Organização dos Períodos de Planejamento Mensal de 2026".
+   São 10 planejamentos no ano. Cada entrada traz a data do encontro de
+   planejamento e o período que aquele plano cobre (início e término) —
+   é esse período que deve constar no diário eletrônico.
+   ========================================================= */
+var PLANEJAMENTO_2026 = [
+  { mes:"Fevereiro", rotulo:"Fevereiro e Março", data:"19/02", inicio:"19/02", fim:"25/03" },
+  { mes:"Março",     rotulo:"Fevereiro e Março", data:"19/02", inicio:"19/02", fim:"25/03" },
+  { mes:"Abril",     rotulo:"Abril",             data:"27/03", inicio:"27/03", fim:"29/04" },
+  { mes:"Maio",      rotulo:"Maio",              data:"30/04", inicio:"30/04", fim:"28/05" },
+  { mes:"Junho",     rotulo:"Junho",             data:"29/05", inicio:"29/05", fim:"25/06" },
+  { mes:"Julho",     rotulo:"Julho",             data:"26/06", inicio:"26/06", fim:"17/07" },
+  { mes:"Agosto",    rotulo:"Agosto",            data:"03/08", inicio:"03/08", fim:"27/08" },
+  { mes:"Setembro",  rotulo:"Setembro",          data:"28/08", inicio:"28/08", fim:"24/09" },
+  { mes:"Outubro",   rotulo:"Outubro",           data:"25/09", inicio:"25/09", fim:"29/10" },
+  { mes:"Novembro",  rotulo:"Novembro",          data:"30/10", inicio:"30/10", fim:"25/11" },
+  { mes:"Dezembro",  rotulo:"Dezembro",          data:"26/11", inicio:"26/11", fim:"18/12" }
+];
+function planejamentoDoMes(mes) {
+  var alvo = deaccent(String(mes || "")).toLowerCase();
+  for (var i = 0; i < PLANEJAMENTO_2026.length; i++) {
+    if (deaccent(PLANEJAMENTO_2026[i].mes).toLowerCase() === alvo) return PLANEJAMENTO_2026[i];
+  }
+  return null;
+}
+/* Texto curto para o campo "Período" do cabeçalho do plano. */
+function periodoOficialTexto(mes) {
+  var p = planejamentoDoMes(mes);
+  return p ? (p.inicio + " a " + p.fim + "/2026") : "";
+}
 
 var DURATIONS = [
   "45 minutos (1 Horário)",
@@ -6268,6 +6325,56 @@ var LP_REFERENCIAS_9ANO = [
   REFERENCIAS_MARANHAO
 ];
 
+/* Recursos do plano modelo da SEMED Santa Luzia — a mesma lista que a escola
+   espera ver no campo "Recursos". Entram sempre; os recursos específicos que
+   o plano gerar são acrescentados depois, sem repetir. */
+var RECURSOS_MUNICIPIO = [
+  "Livro didático e paradidáticos",
+  "Kit multimídia (caixa de som, notebook, datashow ou TV com internet), com acesso a plataformas de produção de apresentações",
+  "Celular",
+  "Cartazes, revistas, jornais e folhetos publicitários",
+  "Quadro branco e acessórios"
+];
+var RECURSO_ACERTA_BRASIL = "Livro Acerta Brasil";
+
+/* Junta a lista oficial do município com os recursos que o plano gerou,
+   descartando repetições (compara sem acento, sem maiúscula e sem pontuação). */
+function recursosDoPlano(pc, gerados) {
+  var base = RECURSOS_MUNICIPIO.slice();
+  var ehPortugues = String(pc && pc.subject || "").toLowerCase().indexOf("portug") >= 0;
+  var ehNono = String(pc && pc.gradeLevel || "").indexOf("9º") >= 0;
+  if (ehPortugues && ehNono) base.splice(1, 0, RECURSO_ACERTA_BRASIL);
+
+  /* Compara por palavras significativas: o gerador costuma escrever a mesma
+     coisa com outras palavras de ligação ("Livro didático e paradidáticos"
+     vs. "Livro didático, paradidáticos e livro Acerta Brasil"), e uma
+     comparação literal deixaria os dois na lista. */
+  function palavras(txt) {
+    return deaccent(String(txt || "")).toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ").split(/\s+/)
+      .filter(function(p){ return p.length > 3 && ["para","como","pelo","pela","dos","das","com","sem"].indexOf(p) < 0; });
+  }
+  function repetido(novo, jaAceitos) {
+    var a = palavras(novo);
+    if (!a.length) return false;
+    return jaAceitos.some(function(velho) {
+      var b = palavras(velho);
+      if (!b.length) return false;
+      var menor = a.length <= b.length ? a : b, maior = a.length <= b.length ? b : a;
+      var comuns = menor.filter(function(p){ return maior.indexOf(p) >= 0; }).length;
+      return (comuns / menor.length) >= 0.6;
+    });
+  }
+
+  var saida = [];
+  base.concat(A(gerados)).forEach(function(item) {
+    var txt = String(item || "").trim();
+    if (!txt || repetido(txt, saida)) return;
+    saida.push(txt);
+  });
+  return saida;
+}
+
 /* Barra proporcional (mesmo conceito do docx: retângulo cinza cuja largura
    representa o %, sem depender de realce de texto). */
 function ofBar(pct) {
@@ -6300,7 +6407,7 @@ function ofKpiStrip(skills) {
       '<div style="font-size:8.5px;font-weight:700;letter-spacing:.04em;color:' + (txtColor === "#fff" ? "#e4e4e4" : OF_TXT2) + '">' + label + "</div>" +
     "</td>";
   }
-  return '<table style="width:100%;border-collapse:collapse;border:1px solid ' + OF_BRD + ';margin:14px 0"><tr>' +
+  return '<table class="of-kpi" style="width:100%;border-collapse:collapse;border:1px solid ' + OF_BRD + ';margin:14px 0"><tr>' +
     kpi("HABILIDADES NESTE PLANO", String(skills.length), OF_SOFT, OF_TXT) +
     kpi("CR&Iacute;TICAS", String(crit), OF_CRIT, "#fff") +
     kpi("ATEN&Ccedil;&Atilde;O", String(aten), OF_ATEN, "#fff") +
@@ -6325,7 +6432,7 @@ function ofMosaico(skills) {
       "</td>";
     }).join("") + (slice.length < perRow ? "<td colspan='" + (perRow - slice.length) + "'></td>" : "") + "</tr>";
   }
-  return '<table style="width:100%;border-collapse:separate;border-spacing:4px;margin:10px 0 16px">' + rowsHtml + "</table>";
+  return '<table class="of-mosaico" style="width:100%;border-collapse:separate;border-spacing:4px;margin:10px 0 16px">' + rowsHtml + "</table>";
 }
 
 /* Painel de acompanhamento genérico — checklist a partir dos objetos de
@@ -6559,16 +6666,18 @@ function viewPlanOficial(pl, c, pc, cfg) {
      enviado pela SEMED. Nas demais combinações, mantém a bibliografia
      pedagógica gerada e acrescenta o documento curricular do Maranhão
      (estadual/municipal, válido para qualquer componente e série). */
-  var referenciasFinal = (isPortugues && pc.gradeLevel === "9º Ano")
+  var referenciasFinal = (isPortugues && String(pc.gradeLevel || "").indexOf("9º") >= 0)
     ? LP_REFERENCIAS_9ANO
     : A(c.references).concat([REFERENCIAS_MARANHAO]);
 
   var metodologiaHtml = ofMetodologiaTimeline(c.methodology);
 
+  /* Recursos: lista oficial do município primeiro (é o que a coordenação
+     confere), seguida dos recursos específicos gerados para este plano. */
+  var materiaisFinal = recursosDoPlano(pc, c.materials);
   var recursosHtml =
-    (A(c.materials).length ? ofSubBanner("Materiais impressos e físicos") + ofRecursosTable(c.materials, 2) : "") +
-    (A(c.digitalResources).length ? ofSubBanner("Recursos tecnológicos e digitais") + ofRecursosTable(c.digitalResources, 2) : "") +
-    (!A(c.materials).length && !A(c.digitalResources).length ? '<div style="color:' + OF_TXT2 + ';font-style:italic">Nenhum recurso registrado.</div>' : "");
+    ofSubBanner("Materiais impressos e físicos") + ofRecursosTable(materiaisFinal, 2) +
+    (A(c.digitalResources).length ? ofSubBanner("Recursos tecnológicos e digitais") + ofRecursosTable(c.digitalResources, 2) : "");
 
   var ap = ofAulasPrevistas(pc, cfg);
 
@@ -6599,7 +6708,13 @@ function viewPlanOficial(pl, c, pc, cfg) {
       "<tr><td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;color:" + OF_TXT + "'>Componente Curricular:</td>" +
       "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>" + esc(pc.subject) + "</td>" +
       "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;width:16%;color:" + OF_TXT + "'>Per&iacute;odo:</td>" +
-      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>" + esc(pc.month) + "</td></tr>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>" + esc(pc.month) +
+        /* Período oficial do Ofício 017/2026 — é esse intervalo que vai
+           para o diário eletrônico, não apenas o nome do mês. */
+        (periodoOficialTexto(pc.month)
+          ? "<div style='font-size:10px;color:" + OF_TXT2 + ";margin-top:1px'>" + esc(periodoOficialTexto(pc.month)) + "</div>"
+          : "") +
+      "</td></tr>" +
       "<tr><td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;color:" + OF_TXT + "'>Turma:</td>" +
       "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>" + esc(pc.gradeLevel) + "</td>" +
       "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;font-weight:700;color:" + OF_TXT + "'>Turno:</td>" +
@@ -6638,7 +6753,7 @@ function viewPlanOficial(pl, c, pc, cfg) {
     ofSec("6", "Objetos de Conhecimento e Temas das Aulas", objetosHtml) +
     ofSec("7", "Metodologias", metodologiaHtml,
       "Sequ&ecirc;ncia did&aacute;tica passo a passo, com o tempo de cada etapa &mdash; pronta para ser seguida durante a aula.") +
-    ofSec("8", "Materiais e Recursos Did&aacute;ticos", recursosHtml) +
+    ofSec("8", "Materiais e Recursos Didáticos", recursosHtml) +
     ofSec("9", "Avaliação", avaliacaoHtml) +
     ofSec("10", "Referências", ofBullets(referenciasFinal));
 
@@ -7270,13 +7385,49 @@ function viewAgenda() {
       "</div>" +
       '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">' + cells + "</div>" +
     "</div>" +
-    '<div class="card" style="padding:20px">' +
+    '<div class="card" style="padding:20px;margin-bottom:20px">' +
       '<div style="font-size:12.5px;font-weight:700;margin-bottom:4px">Grade Semanal de Aulas</div>' +
       '<div style="font-size:10.5px;color:var(--t4);margin-bottom:12px">Configure em Ajustes &rarr; Hor&aacute;rio Semanal</div>' +
       (weekRows.length
         ? weekGridHtml()
         : '<div class="card-soft" style="padding:24px;text-align:center;color:var(--t3);font-size:12.5px">Nenhum hor&aacute;rio configurado.</div>') +
-    "</div></div>";
+    "</div>" +
+    calendarioPlanejamentoHtml(m) +
+  "</div>";
+}
+
+/* Calendário oficial de planejamento mensal (Ofício 017/2026 — SEMED Santa
+   Luzia). Fica na Agenda porque é a informação que o professor consulta
+   para saber em que dia é o encontro de planejamento e que intervalo de
+   datas aquele plano cobre no diário eletrônico. */
+function calendarioPlanejamentoHtml(mesAtual) {
+  var alvo = deaccent(String(mesAtual || "")).toLowerCase();
+  var vistos = {};
+  var linhas = PLANEJAMENTO_2026.filter(function(p) {
+    if (vistos[p.rotulo]) return false;
+    vistos[p.rotulo] = true;
+    return true;
+  }).map(function(p) {
+    var destaque = deaccent(p.mes).toLowerCase() === alvo ||
+      (p.rotulo.indexOf("e") > 0 && deaccent(p.rotulo).toLowerCase().indexOf(alvo) >= 0 && alvo.length > 3);
+    return "<tr" + (destaque ? " style='background:var(--acc3)'" : "") + ">" +
+      "<td" + (destaque ? " style='font-weight:700'" : "") + ">" + esc(p.rotulo) + "</td>" +
+      "<td style='text-align:center'>" + esc(p.data) + "</td>" +
+      "<td style='text-align:center'>" + esc(p.inicio) + "</td>" +
+      "<td style='text-align:center'>" + esc(p.fim) + "</td></tr>";
+  }).join("");
+
+  return '<div class="card" style="padding:20px">' +
+    '<div style="font-size:12.5px;font-weight:700;margin-bottom:4px">Planejamento Mensal 2026 &mdash; Calend&aacute;rio Oficial</div>' +
+    '<div style="font-size:10.5px;color:var(--t4);margin-bottom:12px">' +
+      "Of&iacute;cio n&ordm; 017/2026 &middot; Departamento Pedag&oacute;gico da SEMED Santa Luzia &middot; 10 planejamentos no ano. " +
+      "O per&iacute;odo de cada plano deve ser lan&ccedil;ado no di&aacute;rio eletr&ocirc;nico." +
+    "</div>" +
+    '<div class="tscroll"><table class="tb tb-compact"><thead><tr>' +
+      "<th>M&ecirc;s</th><th style='width:96px;text-align:center'>Planejamento</th>" +
+      "<th style='width:80px;text-align:center'>In&iacute;cio</th><th style='width:80px;text-align:center'>T&eacute;rmino</th>" +
+    "</tr></thead><tbody>" + linhas + "</tbody></table></div>" +
+  "</div>";
 }
 
 /* ---------------- REGISTRO DE AULAS (DIÁRIO) ---------------- */
