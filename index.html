@@ -775,7 +775,7 @@ function slotEntryTime(horarios, grade) {
 /* =========================================================
    BASE BNCC — habilidades por componente e ano
    ========================================================= */
-function sk(code, description, axis) { return { code:code, description:description, axis:axis }; }
+function sk(code, description, axis, conteudo) { return { code:code, description:description, axis:axis, conteudo: conteudo || null }; }
 
 var BNCC = {
   "Língua Portuguesa": {
@@ -796,29 +796,47 @@ var BNCC = {
     ef5: [sk("EF05LP01","Grafar palavras aplicando regras de concordância nominal e verbal.","Análise Linguística"),
           sk("EF05LP04","Diferenciar vozes ativa e passiva em enunciados de textos lidos.","Análise Linguística"),
           sk("EF05LP10","Ler e compreender verbetes de enciclopédia infantil, reconhecendo sua estrutura.","Leitura")],
-    ef6: [sk("EF06LP01","Reconhecer textos de diferentes gêneros por características composicionais e propósito comunicativo.","Leitura"),
-          sk("EF06LP05","Inferir e justificar tema, assunto e propósitos comunicativos por meio de pistas textuais.","Leitura"),
-          sk("EF06LP10","Produzir resumos reconhecendo a estrutura de textos expositivos e argumentativos.","Escrita"),
-          sk("EF06LP14","Produzir e publicar notícias e textos multissemióticos, adequando linguagem ao suporte.","Escrita"),
-          sk("EF06LP25","Planejar e produzir verbetes e textos injuntivos com linguagem adequada.","Escrita")],
-    ef7: [sk("EF07LP01","Identificar e produzir argumentos e contra-argumentos coerentes para sustentar posicionamentos.","Análise Linguística"),
-          sk("EF07LP06","Identificar em notícias o fato central, o contexto e os atores, distinguindo fato de opinião.","Leitura"),
-          sk("EF07LP18","Analisar a função e os efeitos de sentido de recursos linguísticos em textos jornalísticos.","Análise Linguística"),
-          sk("EF07LP29","Reconhecer a divisão da forma poética em versos e estrofes e sua relação com o sentido.","Leitura"),
-          sk("EF07LP09","Identificar marcas de avaliação e julgamento que evidenciam o ponto de vista do autor.","Leitura")],
-    ef8: [sk("EF08LP01","Identificar e analisar posicionamentos defendidos e refutados em textos argumentativos.","Oralidade"),
-          sk("EF08LP05","Criar argumentos consistentes e empregá-los em produções escritas argumentativas.","Escrita"),
-          sk("EF08LP12","Distinguir fatos de opiniões em textos jornalísticos ou científicos.","Leitura"),
-          sk("EF08LP20","Utilizar, ao produzir texto, estratégias de coesão referencial e sequencial.","Escrita"),
-          sk("EF08LP33","Estabelecer relação entre partes do texto, identificando substituições lexicais.","Análise Linguística")],
-    ef9: [sk("EF09LP01","Analisar diferentes graus de parcialidade em textos noticiosos, comparando fontes.","Leitura"),
-          sk("EF09LP04","Escrever textos opinativos e argumentativos, com posição sustentada por argumentos.","Escrita"),
-          sk("EF09LP05","Analisar regras de concordância nominal e verbal e o efeito de sentido de sua violação.","Análise Linguística"),
-          sk("EF89LP31","Ler textos literários de diferentes gêneros, identificando vozes narrativas e ponto de vista.","Leitura"),
-          sk("EF89LP33","Analisar efeitos de sentido de escolhas morfossintáticas e de recursos expressivos.","Análise Linguística")],
-    em: [sk("EM13LP01","Relacionar o texto a seu contexto de produção, compreendendo os efeitos de sentido.","Leitura"),
-         sk("EM13LP06","Analisar efeitos de sentido decorrentes de escolhas de recursos linguísticos.","Análise Linguística"),
-         sk("EM13LP14","Estabelecer relações de interdiscursividade e intertextualidade entre textos.","Leitura")]
+    ef6: [sk("EF06LP01","Reconhecer textos de diferentes gêneros por características composicionais e propósito comunicativo.","Leitura","Gêneros textuais e propósito comunicativo"),
+          sk("EF06LP03","Identificar a forma de organização de verbetes de dicionário e localizar informações.","Leitura","Uso do dicionário e verbete"),
+          sk("EF06LP05","Inferir e justificar tema, assunto e propósitos comunicativos por meio de pistas textuais.","Leitura","Inferência de tema e propósito comunicativo"),
+          sk("EF06LP08","Identificar efeitos de sentido decorrentes do uso de recursos de pontuação em textos diversos.","Análise Linguística","Pontuação e efeitos de sentido"),
+          sk("EF06LP10","Produzir resumos reconhecendo a estrutura de textos expositivos e argumentativos.","Escrita","Resumo de texto expositivo e argumentativo"),
+          sk("EF06LP12","Reconhecer e usar mecanismos de coesão referencial (pronomes, sinônimos) na leitura e escrita.","Análise Linguística","Coesão referencial: pronomes e sinônimos"),
+          sk("EF06LP14","Produzir e publicar notícias e textos multissemióticos, adequando linguagem ao suporte.","Escrita","Notícia e texto multissemiótico"),
+          sk("EF06LP18","Identificar, em tirinhas e histórias em quadrinhos, os efeitos de humor e ironia.","Leitura","Tirinha e história em quadrinhos"),
+          sk("EF06LP22","Empregar regras básicas de concordância nominal na revisão de textos próprios.","Análise Linguística","Concordância nominal"),
+          sk("EF06LP25","Planejar e produzir verbetes e textos injuntivos com linguagem adequada.","Escrita","Verbete e texto injuntivo (receita, regra de jogo)"),
+          sk("EF67LP08","Analisar diferenças de sentido entre palavras de mesmo campo semântico em textos lidos.","Análise Linguística","Sinônimos, antônimos e campo semântico")],
+    ef7: [sk("EF07LP01","Identificar e produzir argumentos e contra-argumentos coerentes para sustentar posicionamentos.","Análise Linguística","Argumentos e contra-argumentos em texto de opinião"),
+          sk("EF07LP06","Identificar em notícias o fato central, o contexto e os atores, distinguindo fato de opinião.","Leitura","Fato x opinião em notícia"),
+          sk("EF07LP09","Identificar marcas de avaliação e julgamento que evidenciam o ponto de vista do autor.","Leitura","Ponto de vista do autor em artigo de opinião"),
+          sk("EF07LP11","Reconhecer, em textos de campanhas de conscientização, estratégias de persuasão.","Leitura","Campanha de conscientização e persuasão"),
+          sk("EF07LP15","Empregar regras de concordância verbal na revisão e reescrita de textos.","Análise Linguística","Concordância verbal"),
+          sk("EF07LP18","Analisar a função e os efeitos de sentido de recursos linguísticos em textos jornalísticos.","Análise Linguística","Recursos linguísticos em texto jornalístico"),
+          sk("EF07LP20","Planejar e produzir roteiro para podcast ou entrevista sobre tema de interesse da turma.","Escrita","Roteiro de podcast e entrevista"),
+          sk("EF07LP24","Analisar o uso de recursos de coesão sequencial (conectivos) em textos argumentativos.","Análise Linguística","Conectivos e coesão sequencial"),
+          sk("EF07LP27","Identificar, em cartas de leitor e comentários, a defesa de opinião com argumentos.","Leitura","Carta de leitor e comentário argumentativo"),
+          sk("EF07LP29","Reconhecer a divisão da forma poética em versos e estrofes e sua relação com o sentido.","Leitura","Estrutura do poema: versos e estrofes"),
+          sk("EF67LP19","Planejar e produzir textos de divulgação científica (verbete, relato) sobre temas de interesse.","Escrita","Texto de divulgação científica")],
+    ef8: [sk("EF08LP01","Identificar e analisar posicionamentos defendidos e refutados em textos argumentativos.","Oralidade","Refutação de posicionamentos em debate"),
+          sk("EF08LP03","Analisar, em comentários e textos de opinião publicados na internet, a validade dos argumentos.","Leitura","Comentário e argumento em mídia digital"),
+          sk("EF08LP05","Criar argumentos consistentes e empregá-los em produções escritas argumentativas.","Escrita","Construção de argumentos em texto argumentativo"),
+          sk("EF08LP09","Reconhecer e empregar corretamente o uso da crase em contextos de escrita formal.","Análise Linguística","Uso da crase"),
+          sk("EF08LP12","Distinguir fatos de opiniões em textos jornalísticos ou científicos.","Leitura","Fato x opinião em texto jornalístico e científico"),
+          sk("EF08LP16","Planejar e produzir vlog ou podcast argumentativo sobre tema polêmico atual.","Escrita","Vlog/podcast argumentativo"),
+          sk("EF08LP20","Utilizar, ao produzir texto, estratégias de coesão referencial e sequencial.","Escrita","Coesão referencial e sequencial na produção"),
+          sk("EF08LP24","Identificar e analisar efeitos de sentido de figuras de linguagem em poemas e letras de música.","Leitura","Figuras de linguagem em poema e letra de música"),
+          sk("EF08LP28","Empregar adequadamente os sinais de pontuação no discurso direto e indireto.","Análise Linguística","Pontuação no discurso direto e indireto"),
+          sk("EF08LP33","Estabelecer relação entre partes do texto, identificando substituições lexicais.","Análise Linguística","Substituição lexical e progressão referencial"),
+          sk("EF89LP17","Analisar, em debates regrados, o uso de argumentos de autoridade e de exemplificação.","Oralidade","Debate regrado: tipos de argumento")],
+    ef9: [sk("EF09LP01","Analisar diferentes graus de parcialidade em textos noticiosos, comparando fontes.","Leitura","Parcialidade e comparação de fontes noticiosas"),
+          sk("EF09LP04","Escrever textos opinativos e argumentativos, com posição sustentada por argumentos.","Escrita","Texto opinativo e argumentativo"),
+          sk("EF09LP05","Analisar regras de concordância nominal e verbal e o efeito de sentido de sua violação.","Análise Linguística","Concordância nominal e verbal: efeitos de sentido"),
+          sk("EF89LP31","Ler textos literários de diferentes gêneros, identificando vozes narrativas e ponto de vista.","Leitura","Voz narrativa e ponto de vista em texto literário"),
+          sk("EF89LP33","Analisar efeitos de sentido de escolhas morfossintáticas e de recursos expressivos.","Análise Linguística","Escolhas morfossintáticas e recursos expressivos")],
+    em: [sk("EM13LP01","Relacionar o texto a seu contexto de produção, compreendendo os efeitos de sentido.","Leitura","Contexto de produção e efeitos de sentido"),
+         sk("EM13LP06","Analisar efeitos de sentido decorrentes de escolhas de recursos linguísticos.","Análise Linguística","Escolhas linguísticas e efeitos de sentido"),
+         sk("EM13LP14","Estabelecer relações de interdiscursividade e intertextualidade entre textos.","Leitura","Intertextualidade e interdiscursividade")]
   },
   "Produção de Texto": {
     ef1: [sk("EF01LP02","Escrever, espontaneamente ou por ditado, palavras e frases de forma alfabética.","Escrita")],
@@ -826,15 +844,21 @@ var BNCC = {
     ef3: [sk("EF03LP12","Produzir cartas pessoais e diários com autonomia crescente.","Escrita")],
     ef4: [sk("EF04LP15","Produzir textos distinguindo fatos de opiniões e sugestões.","Escrita")],
     ef5: [sk("EF05LP10","Produzir verbetes e textos expositivos reconhecendo sua estrutura.","Escrita")],
-    ef6: [sk("EF67LP04","Planejar e produzir textos argumentativos de opinião sobre temas de interesse social.","Escrita"),
-          sk("EF06LP10","Produzir resumos reconhecendo a estrutura organizacional dos textos base.","Escrita")],
-    ef7: [sk("EF07LP01","Produzir argumentos e contra-argumentos coerentes para sustentar posicionamentos.","Escrita"),
-          sk("EF67LP04","Planejar e produzir textos argumentativos com progressão temática.","Escrita")],
-    ef8: [sk("EF08LP05","Criar argumentos consistentes e empregá-los em produções escritas argumentativas.","Escrita"),
-          sk("EF08LP20","Utilizar estratégias de coesão referencial e sequencial na produção textual.","Escrita")],
-    ef9: [sk("EF09LP04","Escrever textos opinativos e argumentativos, com posição sustentada por argumentos.","Escrita"),
-          sk("EF89LP33","Revisar a produção considerando efeitos de sentido das escolhas de linguagem.","Escrita")],
-    em: [sk("EM13LP26","Produzir textos considerando o contexto de circulação e o público-alvo.","Escrita")]
+    ef6: [sk("EF67LP04","Planejar e produzir textos argumentativos de opinião sobre temas de interesse social.","Escrita","Texto argumentativo de opinião"),
+          sk("EF06LP10","Produzir resumos reconhecendo a estrutura organizacional dos textos base.","Escrita","Resumo de texto-base"),
+          sk("EF06LP14","Planejar e produzir notícia para jornal mural ou blog da turma, com título e lide.","Escrita","Notícia: título e lide"),
+          sk("EF06LP25","Produzir verbete de curiosidades ou regra de jogo, adequando ao formato injuntivo.","Escrita","Verbete e regra de jogo")],
+    ef7: [sk("EF07LP01","Produzir argumentos e contra-argumentos coerentes para sustentar posicionamentos.","Escrita","Argumentos e contra-argumentos"),
+          sk("EF67LP04","Planejar e produzir textos argumentativos com progressão temática.","Escrita","Progressão temática em texto argumentativo"),
+          sk("EF07LP20","Planejar e produzir roteiro de entrevista e transcrever respostas com clareza.","Escrita","Roteiro e transcrição de entrevista"),
+          sk("EF67LP19","Produzir texto de divulgação científica (verbete, relato de experimento).","Escrita","Texto de divulgação científica")],
+    ef8: [sk("EF08LP05","Criar argumentos consistentes e empregá-los em produções escritas argumentativas.","Escrita","Construção de argumentos"),
+          sk("EF08LP20","Utilizar estratégias de coesão referencial e sequencial na produção textual.","Escrita","Coesão na produção textual"),
+          sk("EF08LP16","Produzir roteiro de podcast argumentativo sobre tema polêmico atual.","Escrita","Roteiro de podcast argumentativo"),
+          sk("EF89LP17","Produzir texto de apoio para debate regrado, com argumentos organizados.","Escrita","Texto de apoio para debate regrado")],
+    ef9: [sk("EF09LP04","Escrever textos opinativos e argumentativos, com posição sustentada por argumentos.","Escrita","Texto opinativo e argumentativo"),
+          sk("EF89LP33","Revisar a produção considerando efeitos de sentido das escolhas de linguagem.","Escrita","Revisão textual e escolhas de linguagem")],
+    em: [sk("EM13LP26","Produzir textos considerando o contexto de circulação e o público-alvo.","Escrita","Contexto de circulação e público-alvo")]
   },
   "Língua Inglesa / Inglês": {
     ef1: [sk("EF01LI01","Identificar palavras conhecidas em língua inglesa associadas a objetos ou ilustrações.","Vocabulário")],
@@ -842,19 +866,25 @@ var BNCC = {
     ef3: [sk("EF03LI01","Compreender instruções simples em língua inglesa no contexto escolar.","Oralidade")],
     ef4: [sk("EF04LI01","Reconhecer vocabulário básico referente a cores, animais e família em inglês.","Vocabulário")],
     ef5: [sk("EF05LI01","Ler e compreender palavras e frases curtas em inglês com apoio visual.","Leitura")],
-    ef6: [sk("EF06LI01","Relacionar práticas do cotidiano aos usos da língua inglesa em diferentes contextos.","Oralidade"),
-          sk("EF06LI03","Formular hipóteses sobre a função comunicativa de textos em inglês, com ou sem imagens.","Leitura"),
-          sk("EF06LI08","Utilizar estratégias de leitura em língua inglesa para compreender textos escritos.","Leitura")],
-    ef7: [sk("EF07LI01","Reconhecer que textos em inglês variam conforme o gênero discursivo.","Leitura"),
-          sk("EF07LI04","Identificar tema e informações principais em textos orais e escritos em inglês.","Leitura"),
-          sk("EF07LI09","Produzir textos escritos em inglês com adequação ao propósito comunicativo.","Escrita")],
-    ef8: [sk("EF08LI01","Reconhecer marcas linguísticas que evidenciam o ponto de vista do produtor do texto.","Análise Linguística"),
-          sk("EF08LI05","Inferir informações implícitas em textos em inglês, relacionando-as ao contexto.","Leitura"),
-          sk("EF08LI10","Produzir textos orais e escritos em inglês considerando a situação comunicativa.","Escrita")],
-    ef9: [sk("EF09LI01","Analisar criticamente textos em inglês, identificando pontos de vista e argumentos.","Leitura"),
-          sk("EF09LI04","Identificar e avaliar posicionamentos explícitos e implícitos em textos de opinião.","Leitura"),
-          sk("EF09LI08","Produzir textos argumentativos em inglês com tese, argumentos e conclusão.","Escrita")],
-    em: [sk("EM13LGG101","Compreender o funcionamento das diferentes linguagens e práticas culturais.","Linguagens")]
+    ef6: [sk("EF06LI01","Relacionar práticas do cotidiano aos usos da língua inglesa em diferentes contextos.","Oralidade","Usos cotidianos da língua inglesa"),
+          sk("EF06LI03","Formular hipóteses sobre a função comunicativa de textos em inglês, com ou sem imagens.","Leitura","Função comunicativa de textos em inglês"),
+          sk("EF06LI08","Utilizar estratégias de leitura em língua inglesa para compreender textos escritos.","Leitura","Estratégias de leitura em inglês (skimming/scanning)"),
+          sk("EF06LI11","Utilizar o dicionário (impresso ou on-line) como ferramenta de aprendizagem.","Leitura","Uso do dicionário bilíngue"),
+          sk("EF06LI14","Descrever pessoas e rotinas usando vocabulário e estruturas básicas do Simple Present.","Escrita","Simple Present: rotina e descrição pessoal")],
+    ef7: [sk("EF07LI01","Reconhecer que textos em inglês variam conforme o gênero discursivo.","Leitura","Gêneros discursivos em inglês"),
+          sk("EF07LI04","Identificar tema e informações principais em textos orais e escritos em inglês.","Leitura","Ideia principal e informações-chave"),
+          sk("EF07LI09","Produzir textos escritos em inglês com adequação ao propósito comunicativo.","Escrita","Produção escrita adequada ao propósito"),
+          sk("EF07LI13","Utilizar o Simple Past para relatar experiências e fatos passados em inglês.","Análise Linguística","Simple Past: relatos de experiências passadas"),
+          sk("EF07LI16","Explorar ambientes virtuais para interagir e produzir sentidos em língua inglesa.","Oralidade","Comunicação em ambiente virtual (chat, comentário)")],
+    ef8: [sk("EF08LI01","Reconhecer marcas linguísticas que evidenciam o ponto de vista do produtor do texto.","Análise Linguística","Ponto de vista do autor em inglês"),
+          sk("EF08LI05","Inferir informações implícitas em textos em inglês, relacionando-as ao contexto.","Leitura","Inferência de informações implícitas"),
+          sk("EF08LI10","Produzir textos orais e escritos em inglês considerando a situação comunicativa.","Escrita","Situação comunicativa em produção oral/escrita"),
+          sk("EF08LI12","Utilizar o Future (going to / will) para expressar planos e previsões em inglês.","Análise Linguística","Futuro: planos e previsões (going to / will)"),
+          sk("EF08LI15","Comparar culturas por meio da análise de aspectos verbais e não verbais em textos em inglês.","Leitura","Aspectos interculturais em textos em inglês")],
+    ef9: [sk("EF09LI01","Analisar criticamente textos em inglês, identificando pontos de vista e argumentos.","Leitura","Análise crítica de pontos de vista em inglês"),
+          sk("EF09LI04","Identificar e avaliar posicionamentos explícitos e implícitos em textos de opinião.","Leitura","Posicionamento em texto de opinião em inglês"),
+          sk("EF09LI08","Produzir textos argumentativos em inglês com tese, argumentos e conclusão.","Escrita","Texto argumentativo em inglês: tese e conclusão")],
+    em: [sk("EM13LGG101","Compreender o funcionamento das diferentes linguagens e práticas culturais.","Linguagens","Linguagens e práticas culturais")]
   },
   "Matemática": {
     ei: [sk("EI03ET01","Estabelecer relações de comparação entre objetos observando cor, forma e tamanho.","Espaços e Formas")],
@@ -1144,7 +1174,7 @@ function periodoMatch(skillPeriodo, calendarPeriodo) {
 function skillPool(subject, grade, month) {
   var bank = BNCC[subject] || BNCC["Língua Portuguesa"];
   var pool = (bank[gradeKey(grade)] || []).map(function(k) {
-    return { code:k.code, saeb:null, description:k.description, objeto:extractConteudo(k.description), axis:k.axis,
+    return { code:k.code, saeb:null, description:k.description, objeto:(k.conteudo || extractConteudo(k.description)), axis:k.axis,
       subject:subject, grade:grade, pct:null, periodo:null, fonte:"BNCC" };
   });
   var acerta = ACERTA_MATRIZ.filter(function(a){
@@ -1547,6 +1577,11 @@ function lsSet(k, v) {
    ========================================================= */
 var DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 var DRIVE_FILENAME = "educaplan_backup.json";
+/* Chave OAuth do EducaPlan (projeto educaplan-505719). O Client ID é um
+   identificador público — fica visível no navegador de qualquer forma — e
+   deixá-lo embutido evita ter que digitá-lo à mão em cada aparelho. */
+var DEFAULT_GOOGLE_CLIENT_ID = "530916123457-8985ml66a91c8v4h4agtgc0q1f30m2hb.apps.googleusercontent.com";
+var K_CLIENTID_FIX = "educaplan_clientid_fix_v17";
 var _driveSyncThrottleMs = 20000;
 var _lastDriveSyncAt = 0;
 var _applyingRemoteData = false;
@@ -1570,15 +1605,29 @@ function buildBackupPayload() {
 }
 
 function driveConfigure(clientId) {
-  state.cfg.googleClientId = (clientId || "").trim();
+  var novo = (clientId || "").trim();
+  if (novo !== state.cfg.googleClientId) driveState().tokenClient = null;
+  state.cfg.googleClientId = novo;
   saveCfg();
+}
+
+/* Volta para a chave que vem embutida no app. Útil quando alguém colou
+   uma chave incompleta ou de outro projeto e passou a ver "invalid_client". */
+function driveResetClientId() {
+  var g = driveState();
+  state.cfg.googleClientId = DEFAULT_GOOGLE_CLIENT_ID;
+  g.tokenClient = null;
+  g.lastError = "";
+  saveCfg();
+  render();
+  toast("Chave padrão do EducaPlan restaurada. Agora toque em Conectar ao Google Drive.");
 }
 
 function driveEnsureTokenClient() {
   var g = driveState();
   if (g.tokenClient) return g.tokenClient;
   if (typeof google === "undefined" || !google.accounts || !google.accounts.oauth2) return null;
-  if (!state.cfg.googleClientId) return null;
+  if (!state.cfg.googleClientId) state.cfg.googleClientId = DEFAULT_GOOGLE_CLIENT_ID;
   g.tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: state.cfg.googleClientId,
     scope: DRIVE_SCOPE,
@@ -1592,6 +1641,18 @@ function driveEnsureTokenClient() {
         g.lastError = "Não foi possível autorizar o acesso ao Google Drive.";
         render();
       }
+    },
+    error_callback: function(err) {
+      var tipo = (err && err.type) || "";
+      if (tipo === "popup_closed") {
+        g.lastError = "A janela do Google foi fechada antes de concluir a autorização.";
+      } else if (tipo === "popup_failed_to_open") {
+        g.lastError = "O navegador bloqueou a janela do Google. Tente abrir o EducaPlan pelo Chrome, em vez do ícone do app.";
+      } else {
+        g.lastError = "Não foi possível autorizar o acesso ao Google Drive" + (tipo ? " (" + tipo + ")" : "") + ". Confira a chave em Ajustes.";
+      }
+      toast(g.lastError);
+      render();
     }
   });
   return g.tokenClient;
@@ -1600,7 +1661,7 @@ function driveEnsureTokenClient() {
 function driveConnect() {
   var field = el("s_google_clientid");
   if (field) driveConfigure(field.value);
-  if (!state.cfg.googleClientId) { toast("Informe o Client ID do Google antes de conectar."); return; }
+  if (!state.cfg.googleClientId) { state.cfg.googleClientId = DEFAULT_GOOGLE_CLIENT_ID; saveCfg(); }
   if (!(location.protocol === "https:" || location.hostname === "localhost")) {
     toast("A sincronização com o Google só funciona quando o app está hospedado em um endereço https://.");
     return;
@@ -4241,6 +4302,23 @@ var state = {
 };
 if (!Array.isArray(state.plans)) state.plans = [];
 
+/* v1.7 — a chave do Google passou a vir embutida no app. Aparelhos que
+   ficaram com uma chave digitada errada (erro 401 invalid_client) são
+   corrigidos automaticamente, uma única vez. Depois disso, quem quiser
+   usar uma chave própria pode trocar em Ajustes normalmente. */
+(function corrigirClientIdUmaVez() {
+  try {
+    if (!localStorage.getItem(K_CLIENTID_FIX)) {
+      state.cfg.googleClientId = DEFAULT_GOOGLE_CLIENT_ID;
+      lsSet(K_CFG, state.cfg);
+      localStorage.setItem(K_CLIENTID_FIX, "1");
+    } else if (!state.cfg.googleClientId) {
+      state.cfg.googleClientId = DEFAULT_GOOGLE_CLIENT_ID;
+      lsSet(K_CFG, state.cfg);
+    }
+  } catch (e) {}
+})();
+
 function saveCfg() { lsSet(K_CFG, state.cfg); markChanged(); }
 function savePlans() { lsSet(K_PLANS, state.plans); markChanged(); }
 function saveDiary() { lsSet(K_DIARY, state.diary); markChanged(); }
@@ -6644,6 +6722,7 @@ function viewHome() {
       [["gen","&#10022;","Criar Planejamento","Gerar um plano de aula completo, alinhado &agrave;s habilidades da BNCC"],
        ["diario","&#9636;","Registro de Aulas","Di&aacute;rio de classe com as datas reais do calend&aacute;rio letivo"],
        ["plans","&#10064;","Hist&oacute;rico de Planos","Todos os planejamentos que voc&ecirc; j&aacute; salvou"],
+       ["cobertura","&#9733;","Cobertura BNCC","Veja quais habilidades j&aacute; foram trabalhadas e quais faltam no ano"],
        ["archive","&#10061;","Arquivo Bimestral","Seus planos organizados nas pastas de cada bimestre"],
        ["agenda","&#9635;","Agenda Letiva","Calend&aacute;rio do m&ecirc;s e a sua grade semanal de aulas"],
        ["aee","&#9855;","Hub AEE","Estrat&eacute;gias de inclus&atilde;o e recursos por diagn&oacute;stico"],
@@ -7288,6 +7367,106 @@ function viewDiario() {
     "</div></div>";
 }
 
+/* ---------------- COBERTURA CURRICULAR BNCC ----------------
+   Painel que cruza o banco de habilidades (BNCC + Acerta Brasil/SAEB) com
+   os planos já salvos, para mostrar ao professor quais habilidades daquela
+   disciplina/turma já foram trabalhadas ao longo do ano e quais ainda
+   faltam — usando dados que o app já guarda (nenhum dado novo precisa ser
+   digitado). Pedido pelo professor após perceber que 7º/8º ano pareciam
+   "mais vazios" que o 9º ano na hora de escolher habilidades. */
+function setCoberturaSubject(v) { state.covSubject = v; render(); }
+function setCoberturaGrade(v) { state.covGrade = v; render(); }
+
+function coberturaData(subject, grade) {
+  var pool = skillPool(subject, grade);
+  var seen = {}, unique = [];
+  pool.forEach(function(s) {
+    if (!seen[s.code]) { seen[s.code] = 1; unique.push(s); }
+  });
+  var used = {};
+  state.plans.forEach(function(p) {
+    if (p.config.subject !== subject || p.config.gradeLevel !== grade) return;
+    A(p.content && p.content.bnccSkills).forEach(function(s) {
+      if (!used[s.code]) used[s.code] = [];
+      used[s.code].push({ month: p.config.month, planId: p.id });
+    });
+  });
+  var trabalhadas = unique.filter(function(s){ return !!used[s.code]; });
+  var pendentes = unique.filter(function(s){ return !used[s.code]; });
+  return { unique: unique, used: used, trabalhadas: trabalhadas, pendentes: pendentes };
+}
+
+function goGenWithSkill(subject, grade, code) {
+  var pool = skillPool(subject, grade);
+  var sk = null;
+  for (var i = 0; i < pool.length; i++) if (pool[i].code === code) { sk = pool[i]; break; }
+  if (!sk) return;
+  state.form = { subject: subject, gradeLevel: grade, forcedSkills: [sk], theme: sk.objeto || "" };
+  go("gen");
+}
+
+function viewCobertura() {
+  var subject = state.covSubject || state.cfg.preferredSubjects[0] || SUBJECTS[0];
+  var grade = state.covGrade || state.cfg.preferredGrades[0] || GRADES[7];
+  var d = coberturaData(subject, grade);
+  var total = d.unique.length;
+  var feitas = d.trabalhadas.length;
+  var pct = total ? Math.round((feitas / total) * 100) : 0;
+
+  var subjList = (state.cfg.preferredSubjects && state.cfg.preferredSubjects.length) ? state.cfg.preferredSubjects : SUBJECTS;
+  var gradeList = (state.cfg.preferredGrades && state.cfg.preferredGrades.length) ? state.cfg.preferredGrades : GRADES;
+
+  function skillCard(s, feita) {
+    var uses = d.used[s.code];
+    var mesesSet = {}, meses = [];
+    if (uses) uses.forEach(function(u){ if (u.month && !mesesSet[u.month]) { mesesSet[u.month] = 1; meses.push(u.month); } });
+    return '<div class="card-soft" style="padding:9px 11px;margin-bottom:7px;border-left:3px solid ' + (feita ? "var(--grn)" : "#ccc") + '">' +
+      '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">' +
+        '<span style="font-weight:700;color:var(--acc);font-size:11.5px">' + esc(s.code) + "</span>" +
+        '<span class="badge' + (feita ? "" : " badge-mute") + '" style="font-size:9px' + (feita ? ";background:var(--grn);color:#fff;border-color:var(--grn)" : "") + '">' +
+          (feita ? "Trabalhada" + (uses && uses.length > 1 ? " (" + uses.length + "x)" : "") : "Pendente") + "</span>" +
+      "</div>" +
+      '<div style="font-size:11.5px;margin-top:3px;font-weight:600">' + esc(s.objeto) + "</div>" +
+      '<div style="font-size:10px;color:var(--t4);margin-top:2px">' + esc(s.description) + "</div>" +
+      (feita
+        ? '<div style="font-size:10px;color:var(--t4);margin-top:3px">Trabalhada em: ' + esc(meses.join(", ")) + "</div>"
+        : '<button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="goGenWithSkill(\'' +
+          subject.replace(/'/g,"\\'") + "','" + grade.replace(/'/g,"\\'") + "','" + s.code.replace(/'/g,"\\'") +
+          '\')">Usar num plano novo</button>') +
+    "</div>";
+  }
+
+  return '<div class="wrap fade" style="padding:34px 18px 56px">' +
+    pageHead("Cobertura Curricular BNCC",
+      "Veja quais habilidades j&aacute; foram trabalhadas ao longo do ano e quais ainda faltam, por turma e disciplina.",
+      "home") +
+    '<div class="card" style="padding:18px 20px;margin-bottom:18px">' +
+      '<div class="g2">' +
+        '<div><label class="lbl">Disciplina</label><select class="inp" onchange="setCoberturaSubject(this.value)">' + opts(subjList, subject) + "</select></div>" +
+        '<div><label class="lbl">Turma</label><select class="inp" onchange="setCoberturaGrade(this.value)">' + opts(gradeList, grade) + "</select></div>" +
+      "</div>" +
+    "</div>" +
+    '<div class="card" style="padding:20px;margin-bottom:18px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">' +
+        '<div style="font-size:13px;font-weight:700;color:var(--t2)">' + feitas + " de " + total + " habilidades trabalhadas neste ano</div>" +
+        '<div style="font-size:20px;font-weight:800;color:var(--acc)">' + pct + "%</div>" +
+      "</div>" +
+      '<div style="height:10px;border-radius:6px;background:var(--acc3);overflow:hidden">' +
+        '<div style="height:100%;width:' + pct + '%;background:var(--grn);border-radius:6px"></div>' +
+      "</div>" +
+      (total === 0 ? '<div style="font-size:11.5px;color:var(--t4);margin-top:8px">Nenhuma habilidade cadastrada para esta combina&ccedil;&atilde;o de disciplina e turma.</div>' : "") +
+    "</div>" +
+    (d.pendentes.length
+      ? '<div style="font-size:13px;font-weight:700;color:var(--t2);margin-bottom:8px">Ainda faltam trabalhar (' + d.pendentes.length + ")</div>" +
+        d.pendentes.map(function(s){ return skillCard(s, false); }).join("") + '<div style="height:14px"></div>'
+      : "") +
+    (d.trabalhadas.length
+      ? '<div style="font-size:13px;font-weight:700;color:var(--t2);margin:14px 0 8px">J&aacute; trabalhadas (' + d.trabalhadas.length + ")</div>" +
+        d.trabalhadas.map(function(s){ return skillCard(s, true); }).join("")
+      : "") +
+  "</div>";
+}
+
 /* ---------------- HUB AEE ---------------- */
 function viewAee() {
   var sel = state.aeeSel || AEE_TYPES[0];
@@ -7495,12 +7674,16 @@ function viewSettings() {
       '<p style="font-size:11.5px;color:var(--t3);margin:0 0 13px;line-height:1.6">' +
         "Mant&eacute;m planos, di&aacute;rio e ajustes iguais entre o computador e o celular, salvando um arquivo " +
         "privado na sua pr&oacute;pria conta do Google (vis&iacute;vel s&oacute; para o EducaPlan, nunca para o resto do Drive). " +
-        "Para ativar, crie um <strong>Client ID OAuth</strong> gratuito em <strong>console.cloud.google.com</strong> " +
-        "(APIs e servi&ccedil;os &rarr; Credenciais) e cole abaixo. S&oacute; funciona com o app hospedado em um endere&ccedil;o " +
-        "https:// (n&atilde;o funciona abrindo o arquivo direto do computador), e cada aparelho autoriza o acesso separadamente." +
+        "A chave de acesso j&aacute; vem configurada no app &mdash; &eacute; s&oacute; tocar em <strong>Conectar ao Google Drive</strong> " +
+        "e escolher sua conta. S&oacute; funciona com o app hospedado em um endere&ccedil;o https:// " +
+        "(n&atilde;o funciona abrindo o arquivo direto do computador), e cada aparelho autoriza o acesso separadamente." +
       "</p>" +
       '<div class="g2">' +
-        '<div><label class="lbl">Google Client ID</label><input class="inp" id="s_google_clientid" value="' + esc(c.googleClientId || "") + '" placeholder="xxxxx.apps.googleusercontent.com" /></div>' +
+        '<div><label class="lbl">Google Client ID (avan&ccedil;ado)</label><input class="inp" id="s_google_clientid" value="' + esc(c.googleClientId || DEFAULT_GOOGLE_CLIENT_ID) + '" placeholder="xxxxx.apps.googleusercontent.com" /></div>' +
+      "</div>" +
+      '<div style="font-size:11px;color:var(--t4);margin-top:6px">' +
+        "Se aparecer o erro <em>401: invalid_client</em>, a chave deste aparelho est&aacute; incorreta &mdash; " +
+        '<a href="javascript:void(0)" onclick="driveResetClientId()" style="color:var(--acc)">restaurar a chave padr&atilde;o</a>.' +
       "</div>" +
       '<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-top:13px">' +
         "<span style='width:8px;height:8px;border-radius:50%;background:" + (gConnected ? "var(--grn)" : "var(--t4)") + "'></span>" +
@@ -8201,7 +8384,8 @@ var SIDE_MENU = [
   { group:"Planejamento", items:[
     { id:"home",   label:"Painel Principal",  icon:"&#8962;" },
     { id:"gen",    label:"Criar Planejamento", icon:"&#10022;" },
-    { id:"plans",  label:"Hist&oacute;rico de Planos", icon:"&#10064;" }
+    { id:"plans",  label:"Hist&oacute;rico de Planos", icon:"&#10064;" },
+    { id:"cobertura", label:"Cobertura BNCC", icon:"&#9733;" }
   ]},
   { group:"Rotina Escolar", items:[
     { id:"diario", label:"Registro de Aulas", icon:"&#9636;" },
@@ -8265,6 +8449,7 @@ function render() {
   else if (state.view === "gen") html = viewGen();
   else if (state.view === "plan") html = viewPlan();
   else if (state.view === "plans") html = viewPlans();
+  else if (state.view === "cobertura") html = viewCobertura();
   else if (state.view === "diario") html = viewDiario();
   else if (state.view === "archive") html = viewArchive();
   else if (state.view === "agenda") html = viewAgenda();
