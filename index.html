@@ -688,8 +688,11 @@ var CALENDAR = {
 /* Horário semanal padrão (day: 1=Seg ... 5=Sex) */
 var W_SCHEDULE = {
   "Língua Inglesa / Inglês": {
-    "6º Ano A": [{ day:4, aulas:2, horarios:[4,5] }],
-    "6º Ano B": [{ day:5, aulas:2, horarios:[1,2] }],
+    /* As duas turmas de 6º ano de Inglês são do turno da manhã; as demais
+       são vespertinas. Sem essa marcação, o 4º tempo do 6º A parecia
+       colidir com o 4º tempo vespertino de outra turma. */
+    "6º Ano A": [{ day:4, aulas:2, horarios:[4,5], turno:"Matutino" }],
+    "6º Ano B": [{ day:5, aulas:2, horarios:[1,2], turno:"Matutino" }],
     "7º Ano U": [{ day:1, aulas:1, horarios:[3] }, { day:4, aulas:1, horarios:[1] }],
     "8º Ano U": [{ day:4, aulas:2, horarios:[2,3] }],
     "9º Ano U": [{ day:3, aulas:2, horarios:[4,5] }]
@@ -4824,6 +4827,40 @@ function activeSchedule() {
    Achata horarioSemanal[componente][turma] = [{day,aulas,horarios}] numa lista
    única de "aulas" (uma linha por combinação dia+tempo), reaproveitada tanto
    pelo grid visual quanto pela detecção de choques de horário. */
+/* O turno faz parte do horário: o 1º tempo da manhã e o 1º tempo da tarde
+   são momentos diferentes do dia. Horários cadastrados antes desta versão
+   não têm turno gravado — nesse caso vale o turno de trabalho do professor
+   configurado em Ajustes. */
+/* O turno de cada turma já está cadastrado em Ajustes (gradeShifts) — no seu
+   caso, 6º ano A e B são matutinos e as demais vespertinas. O horário usa o
+   nome curto da turma ("6º Ano A") e os ajustes usam o nome completo
+   ("Ensino Fundamental II (6º Ano A)"), por isso a busca é por conteúdo. */
+function turnoDaTurma(gradeCurto) {
+  var mapa = state.cfg && state.cfg.gradeShifts;
+  if (!mapa) return null;
+  var alvo = deaccent(String(gradeCurto || "")).toLowerCase().trim();
+  if (!alvo) return null;
+  var chaves = Object.keys(mapa);
+  for (var i = 0; i < chaves.length; i++) {
+    var k = deaccent(chaves[i]).toLowerCase();
+    if (k === alvo || k.indexOf("(" + alvo + ")") >= 0) return mapa[chaves[i]];
+  }
+  return null;
+}
+function turnoDoSlot(slot, grade) {
+  /* Ordem: o turno gravado na própria aula vence (o professor pode ter
+     ajustado à mão), depois o turno cadastrado para a turma, e por último
+     o turno de trabalho geral. */
+  return (slot && slot.turno) || turnoDaTurma(grade) || state.cfg.defaultShift || "Vespertino";
+}
+function turnoCurto(t) {
+  var s = String(t || "");
+  if (s.indexOf("Mat") === 0) return "Manhã";
+  if (s.indexOf("Vesp") === 0) return "Tarde";
+  if (s.indexOf("Not") === 0) return "Noite";
+  return s || "—";
+}
+
 function flatSchedule() {
   var sched = activeSchedule();
   var out = [];
@@ -4831,7 +4868,8 @@ function flatSchedule() {
     Object.keys(sched[subj]).forEach(function(grade) {
       A(sched[subj][grade]).forEach(function(slot, idx) {
         A(slot.horarios).forEach(function(h) {
-          out.push({ subject:subj, grade:grade, day:slot.day, tempo:h, aulas:slot.aulas, idx:idx });
+          out.push({ subject:subj, grade:grade, day:slot.day, tempo:h,
+            aulas:slot.aulas, idx:idx, turno:turnoDoSlot(slot, grade) });
         });
       });
     });
@@ -4839,14 +4877,15 @@ function flatSchedule() {
   return out;
 }
 
-/* Uma "coisa fora do eixo" real: o mesmo dia+tempo (horário) atribuído a mais
-   de uma turma/componente ao mesmo tempo — fisicamente impossível, quase
-   sempre um erro de cadastro que vale a pena avisar o professor. */
+/* Choque de horário de verdade: o mesmo dia, o mesmo tempo E o mesmo turno
+   atribuídos a mais de uma turma. Duas aulas no 1º tempo, uma de manhã e
+   outra à tarde, não se chocam — é o caso do 6º ano A e B de Inglês, que
+   são matutinos, contra as turmas vespertinas. */
 function scheduleConflicts() {
   var flat = flatSchedule();
   var byKey = {};
   flat.forEach(function(r) {
-    var k = r.day + "|" + r.tempo;
+    var k = r.day + "|" + r.tempo + "|" + r.turno;
     if (!byKey[k]) byKey[k] = [];
     byKey[k].push(r);
   });
@@ -4856,7 +4895,7 @@ function scheduleConflicts() {
     var distinct = [...new Set(rows.map(function(r){ return r.subject + " — " + r.grade; }))];
     if (distinct.length > 1) {
       var parts = k.split("|");
-      conflicts.push({ day:Number(parts[0]), tempo:Number(parts[1]), items:distinct });
+      conflicts.push({ day:Number(parts[0]), tempo:Number(parts[1]), turno:parts[2], items:distinct });
     }
   });
   conflicts.sort(function(a,b){ return a.day - b.day || a.tempo - b.tempo; });
@@ -4888,37 +4927,59 @@ function weekGridHtml() {
   var flat = flatSchedule();
   var conflicts = scheduleConflicts();
   var conflictKeys = {};
-  conflicts.forEach(function(c){ conflictKeys[c.day + "|" + c.tempo] = true; });
+  conflicts.forEach(function(c){ conflictKeys[c.day + "|" + c.tempo + "|" + c.turno] = true; });
 
-  var cellMap = {};
-  flat.forEach(function(r) {
-    var k = r.day + "|" + r.tempo;
-    if (!cellMap[k]) cellMap[k] = [];
-    cellMap[k].push(r);
+  /* Uma grade por turno: misturar manhã e tarde na mesma tabela faz o 1º
+     tempo da manhã parecer o mesmo momento que o 1º da tarde. */
+  var turnos = [];
+  ["Matutino","Vespertino","Noturno","Integral"].forEach(function(t) {
+    if (flat.some(function(r){ return r.turno === t; })) turnos.push(t);
   });
+  flat.forEach(function(r){ if (turnos.indexOf(r.turno) < 0) turnos.push(r.turno); });
+  if (!turnos.length) turnos = [state.cfg.defaultShift || "Vespertino"];
 
   var days = [1,2,3,4,5], tempos = [1,2,3,4,5];
   var head = '<tr><td style="width:52px"></td>' + days.map(function(d) {
     return "<td style='padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.04em'>" + DAYS_SHORT[d] + "</td>";
   }).join("") + "</tr>";
 
-  var rows = tempos.map(function(t) {
-    var cells = days.map(function(d) {
-      var k = d + "|" + t;
-      var items = cellMap[k] || [];
-      var isConflict = !!conflictKeys[k];
-      if (!items.length) {
-        return "<td style='border:1px solid var(--border2);padding:3px;height:40px;background:var(--bg3)'></td>";
-      }
-      var chips = items.map(function(r) {
-        return "<div style='font-size:9px;font-weight:700;color:#fff;background:" + (isConflict ? "var(--red)" : subjColor(r.subject)) +
-          ";border-radius:4px;padding:2px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' title='" +
-          esc(r.subject + " — " + r.grade) + "'>" + esc(subjAbbrev(r.subject)) + " " + esc(r.grade.replace(/^.*?(\d)/,"$1")) + "</div>";
+  var grades = turnos.map(function(turno) {
+    var doTurno = flat.filter(function(r){ return r.turno === turno; });
+    var cellMap = {};
+    doTurno.forEach(function(r) {
+      var k = r.day + "|" + r.tempo;
+      if (!cellMap[k]) cellMap[k] = [];
+      cellMap[k].push(r);
+    });
+    var horas = turno === "Matutino" ? SLOT_TIMES_MATUTINO : SLOT_TIMES_VESPERTINO;
+
+    var rows = tempos.map(function(t) {
+      var cells = days.map(function(d) {
+        var k = d + "|" + t;
+        var items = cellMap[k] || [];
+        var isConflict = !!conflictKeys[d + "|" + t + "|" + turno];
+        if (!items.length) {
+          return "<td style='border:1px solid var(--border2);padding:3px;height:40px;background:var(--bg3)'></td>";
+        }
+        var chips = items.map(function(r) {
+          return "<div style='font-size:9px;font-weight:700;color:#fff;background:" + (isConflict ? "var(--red)" : subjColor(r.subject)) +
+            ";border-radius:4px;padding:2px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' title='" +
+            esc(r.subject + " — " + r.grade + " · " + turnoCurto(turno)) + "'>" + esc(subjAbbrev(r.subject)) + " " +
+            esc(r.grade.replace(/^.*?(\d)/,"$1")) + "</div>";
+        }).join("");
+        return "<td style='border:1px solid var(--border2);padding:3px;vertical-align:top;" +
+          (isConflict ? "background:var(--redBg)" : "background:var(--bg2)") + "'>" + chips + "</td>";
       }).join("");
-      return "<td style='border:1px solid var(--border2);padding:3px;vertical-align:top;" +
-        (isConflict ? "background:var(--redBg)" : "background:var(--bg2)") + "'>" + chips + "</td>";
+      return "<tr><td style='padding:4px 6px;font-size:9.5px;font-weight:700;color:var(--t4);text-align:right' title='" +
+        esc(horas[t] || "") + "'>" + t + "&ordm;</td>" + cells + "</tr>";
     }).join("");
-    return "<tr><td style='padding:4px 6px;font-size:9.5px;font-weight:700;color:var(--t4);text-align:right'>" + t + "&ordm;</td>" + cells + "</tr>";
+
+    return '<div style="margin-bottom:14px">' +
+      '<div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:6px">' +
+        esc(turnoCurto(turno)) + " &middot; " + esc(turno) +
+        " <span style='font-weight:500;color:var(--t4)'>(" + doTurno.length + " aula(s) na semana)</span></div>" +
+      '<div class="tscroll"><table style="width:100%;border-collapse:collapse">' + head + rows + "</table></div>" +
+    "</div>";
   }).join("");
 
   var legend = [...new Set(flat.map(function(r){ return r.subject; }))].map(function(s) {
@@ -4930,12 +4991,14 @@ function weekGridHtml() {
     ? '<div style="margin-top:10px;padding:9px 12px;border:1px solid var(--red);background:var(--redBg);border-radius:8px;font-size:11.5px">' +
       "<strong style='color:var(--red)'>&#9888; " + conflicts.length + " choque(s) de hor&aacute;rio encontrado(s):</strong>" +
       conflicts.map(function(c) {
-        return "<div style='margin-top:4px'>" + DAYS_FULL[c.day] + ", " + c.tempo + "&ordm; hor&aacute;rio &mdash; " + esc(c.items.join(" + ")) + "</div>";
+        return "<div style='margin-top:4px'>" + DAYS_FULL[c.day] + ", " + c.tempo + "&ordm; hor&aacute;rio (" +
+          esc(turnoCurto(c.turno)) + ") &mdash; " + esc(c.items.join(" + ")) + "</div>";
       }).join("") + "</div>"
-    : "";
+    : (flat.length
+      ? '<div style="margin-top:10px;font-size:11px;color:var(--grn)">&#10003; Nenhum choque de hor&aacute;rio &mdash; turnos conferidos separadamente.</div>'
+      : "");
 
-  return '<div class="tscroll"><table style="width:100%;border-collapse:collapse">' + head + rows + "</table></div>" +
-    '<div style="margin-top:10px">' + legend + "</div>" + conflictHtml;
+  return grades + '<div style="margin-top:4px">' + legend + "</div>" + conflictHtml;
 }
 
 /* Dois temas: Claro e Escuro, cada um com seu par tipográfico */
@@ -8679,6 +8742,10 @@ function viewSettings() {
                   "border:1px solid var(--border2);border-radius:999px;padding:4px 6px 4px 10px'>" +
                   "<strong>" + esc(subjAbbrev(r.subject)) + "</strong> " + esc(r.grade) + " &middot; " +
                   r.horarios.map(function(h){ return h + "º"; }).join("/") +
+                  " <button style='border:none;background:none;color:var(--acc);cursor:pointer;font-size:11px;padding:0 2px;" +
+                    "text-decoration:underline;font-family:inherit' title='Tocar para trocar o turno desta aula' " +
+                    "onclick=\"alternarTurno('" + esc(r.subject).replace(/'/g,"") + "','" + esc(r.grade).replace(/'/g,"") + "'," + r.idx + ")\">" +
+                    esc(turnoCurto(turnoDoSlot(r, r.grade))) + "</button>" +
                   " <button style='border:none;background:none;color:var(--red);cursor:pointer;font-size:13px;line-height:1;padding:0 2px' " +
                   "onclick=\"removeSlot('" + esc(r.subject).replace(/'/g,"") + "','" + esc(r.grade).replace(/'/g,"") + "'," + r.idx + ")\">&times;</button></span>";
               }).join("") + "</div></div>";
@@ -8694,6 +8761,12 @@ function viewSettings() {
           '<div><label class="lbl">S&eacute;rie / Turma</label><select class="inp" id="h_grade">' + opts(GRADES, GRADES[11]) + "</select></div>" +
           '<div><label class="lbl">Quantidade de Aulas</label><select class="inp" id="h_aulas">' +
             [1,2,3,4,5].map(function(n){ return '<option value="' + n + '"' + (n===2?" selected":"") + ">" + n + " aula" + (n>1?"s":"") + "</option>"; }).join("") + "</select></div>" +
+          '<div><label class="lbl">Turno desta turma</label><select class="inp" id="h_turno">' +
+            opts(SHIFTS, c.defaultShift) + "</select></div>" +
+        "</div>" +
+        '<div style="font-size:10.5px;color:var(--t4);margin-top:7px;line-height:1.5">' +
+          "O turno importa: o 1&ordm; tempo da manh&atilde; e o 1&ordm; da tarde s&atilde;o momentos diferentes. " +
+          "O app s&oacute; acusa choque quando dia, tempo <em>e</em> turno coincidem." +
         "</div>" +
         '<div style="margin-top:11px"><label class="lbl">Selecione os Tempos / Hor&aacute;rios de Aula</label>' +
           '<div style="display:flex;flex-wrap:wrap;gap:7px">' +
@@ -9282,12 +9355,28 @@ function addSlot() {
   var sn = normSubj(subj);
   if (!sc[sn]) sc[sn] = {};
   if (!sc[sn][grade]) sc[sn][grade] = [];
-  sc[sn][grade].push({ day:day, aulas:aulas, horarios:slots.sort(function(a,b){ return a-b; }) });
+  var turnoSel = el("h_turno") ? el("h_turno").value : (state.cfg.defaultShift || "Vespertino");
+  sc[sn][grade].push({ day:day, aulas:aulas, turno:turnoSel,
+    horarios:slots.sort(function(a,b){ return a-b; }) });
   saveCfg();
   pushSnapshot("Horário semanal alterado");
   render();
   toast("Aula adicionada ao horário.");
 }
+/* Troca o turno de uma aula já cadastrada sem precisar apagar e cadastrar de
+   novo — basta tocar no nome do turno na lista do Horário Semanal. */
+function alternarTurno(subject, grade, idx) {
+  var sc = ensureSchedCopy();
+  if (!sc[subject] || !sc[subject][grade] || !sc[subject][grade][idx]) return;
+  var slot = sc[subject][grade][idx];
+  var atual = turnoDoSlot(slot, grade);
+  var i = SHIFTS.indexOf(atual);
+  slot.turno = SHIFTS[(i < 0 ? 0 : i + 1) % SHIFTS.length];
+  saveCfg();
+  render();
+  toast(subjAbbrev(subject) + " " + grade + " agora é " + turnoCurto(slot.turno) + ".");
+}
+
 function removeSlot(subject, grade, idx) {
   var sc = ensureSchedCopy();
   if (sc[subject] && sc[subject][grade]) {
