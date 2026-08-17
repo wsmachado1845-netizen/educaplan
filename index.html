@@ -318,6 +318,15 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
 .row:hover { border-color: var(--acc); }
 
 /* ── Gráfico de barras (CSS puro) ── */
+/* ── Habilidades prioritárias em colunas ──
+   A lista era uma coluna só: no notebook sobrava espaço nas laterais e o
+   professor precisava rolar bastante para ver as habilidades do mês. Três
+   colunas no computador, duas em tela média e uma no celular, onde a coluna
+   única continua sendo a leitura correta. */
+.hab-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; align-items: start; }
+@media (max-width: 1150px) { .hab-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 780px)  { .hab-grid { grid-template-columns: 1fr; } }
+
 /* ── Tela de entrada ──
    Duas colunas no computador (ilustração à esquerda, formulário à direita) e
    empilhada no celular, com a ilustração menor para não empurrar o botão de
@@ -7870,7 +7879,9 @@ function viewGen() {
              : "Sem chave da API configurada &mdash; o plano ser&aacute; montado pelo gerador local. Adicione sua chave em <a href='#' onclick=\"go('settings');return false\">Ajustes</a>.",
       "home") +
 
-    '<div class="card" style="padding:24px;max-width:780px">' +
+    /* Largura maior no computador: a lista de habilidades passou a ocupar
+       três colunas e o formulário aproveita o espaço que sobrava dos lados. */
+    '<div class="card" style="padding:24px;max-width:1080px">' +
       '<div class="g2">' +
         '<div><label class="lbl">Componente Curricular</label><select class="inp" id="f_subject" onchange="genRefresh()">' + opts(SUBJECTS, subject) + "</select></div>" +
         '<div><label class="lbl">S&eacute;rie / Turma</label><select class="inp" id="f_grade" onchange="genRefresh()">' + opts(GRADES, grade) + "</select></div>" +
@@ -7902,7 +7913,7 @@ function viewGen() {
           " (" + esc((mi && mi.periodo) || "per&iacute;odo n&atilde;o letivo") +
           (bimestreOfMonth(month) ? " &middot; " + esc(bimestreOfMonth(month)) : "") +
           "); o banco geral da BNCC continua dispon&iacute;vel o ano todo.</div>" +
-        '<div id="habResults" style="margin-top:9px;max-height:220px;overflow:auto">' + skillSearchResults(f, month) + "</div>" +
+        '<div id="habResults" style="margin-top:9px;max-height:360px;overflow:auto">' + skillSearchResults(f, month) + "</div>" +
         (A(f.forcedSkills).length
           ? '<div style="margin-top:11px;padding-top:10px;border-top:1px dashed var(--border2)">' +
             '<div style="font-size:10.5px;font-weight:700;color:var(--t3);margin-bottom:6px">SELECIONADAS (' + f.forcedSkills.length + ')</div>' +
@@ -8400,24 +8411,53 @@ function viewDiario() {
      de um plano que já foi excluído. */
   var hasMatch = match.length > 0;
   var sourcePlanId = hasMatch ? match[0].id : "";
+
+  /* O diário oficial pede três coisas por aula: CONTEÚDO, HABILIDADE e
+     CURRÍCULO. Antes, a coluna de conteúdo trazia o título inteiro do plano
+     (que é a lista de todos os conteúdos do mês) seguido do conteúdo do dia
+     — daí a sensação de "o tema, o tema, o tema" repetido linha após linha.
+     Agora cada linha traz só o conteúdo daquele dia, e a habilidade exibida
+     é a que corresponde a esse conteúdo, não uma distribuição separada. */
+  function curriculoDoCodigo(codigo, skills) {
+    var achado = A(skills).filter(function(s){ return s.code === codigo; })[0];
+    return (achado && achado.fonte === "Acerta Brasil / SAEB") ? "SAEB / Matriz Santa Luzia" : "BNCC";
+  }
   if (hasMatch) {
     var mp = match[0];
     if (A(mp.content.knowledgeObjects).length) {
-      pool = mp.content.knowledgeObjects.map(function(k){ return mp.content.title + ": " + k.content; });
+      pool = mp.content.knowledgeObjects.map(function(k) {
+        var codigos = A(k.codes).filter(Boolean);
+        var curriculos = [];
+        codigos.forEach(function(cod) {
+          var cur = curriculoDoCodigo(cod, mp.content.bnccSkills);
+          if (curriculos.indexOf(cur) < 0) curriculos.push(cur);
+        });
+        return {
+          conteudo: k.content,
+          habilidades: codigos.join(", "),
+          curriculo: curriculos.join(" / ")
+        };
+      });
     } else if (A(mp.content.activities).length) {
-      pool = mp.content.activities.map(function(a){ return mp.content.title + ": " + a.title; });
+      pool = mp.content.activities.map(function(a){ return { conteudo:a.title, habilidades:"", curriculo:"" }; });
     }
     if (!pool.length) {
-      pool = [d.subject + ": Introdução ao conteúdo e sondagem inicial",
-        d.subject + ": Desenvolvimento conceitual com exercícios dirigidos",
-        d.subject + ": Atividade prática de aplicação e fixação",
-        d.subject + ": Leitura, interpretação e produção orientada",
-        d.subject + ": Revisão integradora e avaliação formativa"];
+      pool = ["Introdução ao conteúdo e sondagem inicial",
+        "Desenvolvimento conceitual com exercícios dirigidos",
+        "Atividade prática de aplicação e fixação",
+        "Leitura, interpretação e produção orientada",
+        "Revisão integradora e avaliação formativa"
+      ].map(function(t){ return { conteudo:t, habilidades:"", curriculo:"" }; });
     }
   }
+
+  /* Reserva de habilidades para os conteúdos que não trouxeram código
+     próprio — mantém a coluna preenchida sem inventar associação. */
   var skillPool = hasMatch && A(match[0].content.bnccSkills).length
-    ? match[0].content.bnccSkills.map(function(s){ return s.code + " — " + s.description; })
-    : (hasMatch ? getSkills(d.subject, d.grade, "").map(function(s){ return s.code + " — " + s.description; }) : []);
+    ? match[0].content.bnccSkills.map(function(s) {
+        return { habilidades:s.code, curriculo:(s.fonte === "Acerta Brasil / SAEB" ? "SAEB / Matriz Santa Luzia" : "BNCC") };
+      })
+    : [];
 
   /* Distribuição conteúdo × data: mesma lógica proporcional de
      buildCronogramaMensal (blocos contíguos ao longo dos encontros reais do
@@ -8427,7 +8467,6 @@ function viewDiario() {
      fiquem corretamente associados a uma data específica ao passar para o
      Registro oficial — nenhum conteúdo some por causa do rodízio. */
   var perItemContent = pool.length ? (lessons.length / pool.length) : 0;
-  var perItemSkill = skillPool.length ? (lessons.length / skillPool.length) : 0;
   var n = 0;
   var body = rows.map(function(r) {
     if (r.type !== "aula") {
@@ -8437,9 +8476,19 @@ function viewDiario() {
     n++;
     var rec = saved[r.iso] || {};
     var contIdx = pool.length ? Math.min(pool.length - 1, Math.floor((n - 1) / perItemContent)) : -1;
-    var cont = rec.content !== undefined ? rec.content : (pool.length ? (pool[contIdx] || "") : "");
-    var sksIdx = skillPool.length ? Math.min(skillPool.length - 1, Math.floor((n - 1) / perItemSkill)) : -1;
-    var sks = rec.skills !== undefined ? rec.skills : (skillPool.length ? (skillPool[sksIdx] || "") : "");
+    var item = contIdx >= 0 ? (pool[contIdx] || null) : null;
+    var cont = rec.content !== undefined ? rec.content : (item ? item.conteudo : "");
+    /* Habilidade + currículo do MESMO conteúdo da linha. Só cai na reserva
+       quando o conteúdo do plano não trouxe código associado. */
+    var sksAuto = "";
+    if (item && item.habilidades) {
+      sksAuto = item.habilidades + (item.curriculo ? " · " + item.curriculo : "");
+    } else if (skillPool.length) {
+      var sksIdx = Math.min(skillPool.length - 1, Math.floor((n - 1) / (lessons.length / skillPool.length)));
+      var alt = skillPool[sksIdx];
+      if (alt) sksAuto = alt.habilidades + (alt.curriculo ? " · " + alt.curriculo : "");
+    }
+    var sks = rec.skills !== undefined ? rec.skills : sksAuto;
     var contPh = hasMatch ? "" : " placeholder='Sem plano gerado — preencha manualmente ou gere um planejamento'";
     var sksPh = hasMatch ? "" : " placeholder='Sem plano gerado'";
     return "<tr><td style='white-space:nowrap;font-weight:600'>" + String(r.day).padStart(2,"0") + "/" +
@@ -8490,7 +8539,7 @@ function viewDiario() {
       (lessons.length
         ? '<div class="tscroll"><table class="tb"><thead><tr><th style="width:66px">Data</th><th style="width:96px">Dia</th>' +
           '<th style="width:56px">Aulas</th><th style="width:52px">Entrada</th>' +
-          "<th>Conte&uacute;do Curricular / Objeto de Conhecimento</th><th style='width:210px'>Habilidades BNCC</th></tr></thead><tbody>" +
+          "<th>Conte&uacute;do Curricular (o que foi trabalhado)</th><th style='width:200px'>Habilidade &middot; Curr&iacute;culo</th></tr></thead><tbody>" +
           body + "<tr style='background:var(--acc3)'><td colspan='2'><strong>SUBTOTAL DO M&Ecirc;S</strong></td>" +
           "<td style='text-align:center'><strong>" + ch.monthlyLessons + "</strong></td><td></td>" +
           "<td><strong>" + ch.encounters + " encontros letivos registrados</strong></td>" +
@@ -9039,10 +9088,12 @@ function skillSearchResults(f, month) {
     chips += '<div style="font-size:10px;color:var(--t4);margin-bottom:7px">Mostrando primeiro as habilidades mais cr&iacute;ticas com dado real de desempenho.</div>';
   }
   if (!results.length) return chips + '<div style="font-size:11.5px;color:var(--t4);padding:8px 2px">Nenhuma habilidade encontrada para esta busca / filtro / turma.</div>';
-  return chips + results.map(function(s) {
+  /* Em três colunas no computador: a lista vertical obrigava a rolar muito
+     para ver as habilidades do mês, enquanto sobrava espaço nas laterais. */
+  return chips + '<div class="hab-grid">' + results.map(function(s) {
     var nv = amkNivel(s.pct);
     var already = !!selectedCodes[s.code];
-    return '<div class="card-soft" style="padding:8px 10px;margin-bottom:6px;cursor:' + (already ? "default" : "pointer") +
+    return '<div class="card-soft" style="padding:8px 10px;cursor:' + (already ? "default" : "pointer") +
       ';opacity:' + (already ? "0.5" : "1") + (nv ? ";border-left:3px solid " + nv.color : "") + '" ' +
       (already ? "" : 'onclick="addFormSkill(\'' + s.code.replace(/'/g,"\\'") + '\')"') + '>' +
       '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">' +
@@ -9058,7 +9109,7 @@ function skillSearchResults(f, month) {
       '<div style="font-size:12px;margin-top:3px">' + esc(s.description) + "</div>" +
       '<div style="font-size:10px;color:var(--t4);margin-top:2px">' + esc(s.objeto) + "</div>" +
     "</div>";
-  }).join("");
+  }).join("") + "</div>";
 }
 
 function syncThemeFromSkills(forcedSkills, currentTheme) {
