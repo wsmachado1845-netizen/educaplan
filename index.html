@@ -280,11 +280,15 @@ textarea.inp { resize: vertical; }
 .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 @media (max-width: 620px) {
-  .gtools { grid-template-columns: 1fr; gap: 9px; }
-  .tool { padding: 13px 14px; gap: 11px; }
-  .tool-ic { width: 40px; height: 40px; font-size: 18px; border-radius: 10px; }
-  .tool-tt { font-size: 14px; margin-bottom: 1px; }
-  .tool-ds { font-size: 11.5px; line-height: 1.35; }
+  /* Duas por linha e sem a descrição: os oito atalhos deixam de ocupar oito
+     blocos de tela e a rolagem do painel cai pela metade. O nome de cada
+     ferramenta continua visível, que é o que identifica o atalho. */
+  .gtools { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tool { padding: 12px 11px; gap: 9px; flex-direction: column; align-items: flex-start; }
+  .tool-ic { width: 34px; height: 34px; font-size: 16px; border-radius: 9px; }
+  .tool-tt { font-size: 13px; margin-bottom: 0; }
+  .tool-ds { display: none; }
+  .tool-ar { display: none; }
   .gauto { gap: 9px; }
   .row { padding: 12px 14px; margin-bottom: 7px; }
   .sec { margin-bottom: 16px; padding-bottom: 16px; }
@@ -314,6 +318,35 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
 .row:hover { border-color: var(--acc); }
 
 /* ── Gráfico de barras (CSS puro) ── */
+/* ── Painel principal: barras horizontais ──
+   As barras verticais precisavam de 150px de altura fixa; com poucos planos
+   sobrava um vazio enorme no topo de cada gráfico. Na horizontal a altura
+   é dada pelo número de linhas, o rótulo cabe inteiro (sem cortar
+   "Língua Portuguesa" em "Língua") e a leitura no celular é direta. */
+.hbar { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+.hbar:last-child { margin-bottom: 0; }
+.hbar-lb { flex: 0 0 40%; font-size: 11.5px; color: var(--t3); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.hbar-track { flex: 1; height: 8px; border-radius: 4px; background: var(--bg3); overflow: hidden; }
+.hbar-fill { height: 100%; border-radius: 4px; background: var(--acc); min-width: 4px; transition: width .25s; }
+.hbar-n { flex: 0 0 20px; text-align: right; font-size: 12px; font-weight: 700; color: var(--t2); }
+.hbar-zero .hbar-lb, .hbar-zero .hbar-n { color: var(--t4); }
+
+/* Indicadores do topo em faixa única, no lugar de quatro cartões grandes. */
+.mini-stats { display: grid; grid-template-columns: repeat(4, 1fr); }
+.mini-stat { text-align: center; padding: 13px 6px; border-right: 1px solid var(--border2); }
+.mini-stat:last-child { border-right: none; }
+.mini-n { font-family: var(--serif); font-size: 23px; font-weight: 700; line-height: 1; }
+.mini-l { font-size: 9.5px; color: var(--t4); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .04em; margin-top: 4px; line-height: 1.25; }
+@media (max-width: 620px) {
+  .mini-stats { grid-template-columns: repeat(2, 1fr); }
+  .mini-stat:nth-child(2n) { border-right: none; }
+  .mini-stat:nth-child(-n+2) { border-bottom: 1px solid var(--border2); }
+  .mini-stat { padding: 11px 6px; }
+  .mini-n { font-size: 21px; }
+}
+
 .bar-wrap { display: flex; align-items: flex-end; gap: 10px; height: 150px; padding-top: 8px; }
 .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
 .bar { width: 100%; max-width: 48px; background: var(--acc); border-radius: 5px 5px 0 0; min-height: 3px;
@@ -353,14 +386,18 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
    o texto justificado vira uma sequência de palavras esticadas e cortadas.
    Aqui o plano passa a usar uma coluna só, texto alinhado à esquerda, e a
    tabela de conteúdos de 3 colunas dá lugar a blocos empilhados. Nada disso
-   afeta o computador nem a impressão/PDF, que continuam como estão. */
+   afeta o computador nem a impressão/PDF, que continuam como estão.
+   O seletor body:not(.exporting) existe porque, ao gerar o arquivo Word, o
+   app liga a classe "exporting" por um instante para ler o plano no formato
+   de tabela (o que a escola espera no documento), mesmo estando no celular. */
 .of-narrow-only { display: none; }
 @media (max-width: 640px) {
-  .of-2col, .of-2col tbody, .of-2col tr, .of-2col td { display: block; width: 100% !important; }
-  .of-2col td { padding: 0 0 9px 0 !important; }
-  .of-2col td:empty { display: none; }
-  .of-wide-only { display: none; }
-  .of-narrow-only { display: block; }
+  body:not(.exporting) .of-2col, body:not(.exporting) .of-2col tbody,
+  body:not(.exporting) .of-2col tr, body:not(.exporting) .of-2col td { display: block; width: 100% !important; }
+  body:not(.exporting) .of-2col td { padding: 0 0 9px 0 !important; }
+  body:not(.exporting) .of-2col td:empty { display: none; }
+  body:not(.exporting) .of-wide-only { display: none; }
+  body:not(.exporting) .of-narrow-only { display: block; }
   #planPaper .sec-body p, #planPaper .sec-body li, #planPaper .sec-body div,
   #planPaper div, #planPaper td { text-align: left !important; text-justify: auto !important; }
   #planPaper h1 { font-size: 19px !important; line-height: 1.25 !important; }
@@ -370,14 +407,14 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
   /* Mosaico de desempenho: 8 selos numa linha não cabem em 350px e a
      tabela acabava empurrando o conteúdo para fora da tela. Aqui os selos
      passam a quebrar em várias linhas, ocupando a largura disponível. */
-  .of-mosaico, .of-mosaico tbody { display: block; }
-  .of-mosaico tr { display: flex; flex-wrap: wrap; gap: 4px; }
-  .of-mosaico td { display: block; width: auto !important; flex: 1 1 84px; }
-  .of-mosaico td:empty { display: none; }
+  body:not(.exporting) .of-mosaico, body:not(.exporting) .of-mosaico tbody { display: block; }
+  body:not(.exporting) .of-mosaico tr { display: flex; flex-wrap: wrap; gap: 4px; }
+  body:not(.exporting) .of-mosaico td { display: block; width: auto !important; flex: 1 1 84px; }
+  body:not(.exporting) .of-mosaico td:empty { display: none; }
   /* Faixa de indicadores: 2 por linha em vez de 4 espremidos. */
-  .of-kpi, .of-kpi tbody { display: block; }
-  .of-kpi tr { display: flex; flex-wrap: wrap; }
-  .of-kpi td { display: block; width: 50% !important; flex: 0 0 50%; box-sizing: border-box; }
+  body:not(.exporting) .of-kpi, body:not(.exporting) .of-kpi tbody { display: block; }
+  body:not(.exporting) .of-kpi tr { display: flex; flex-wrap: wrap; }
+  body:not(.exporting) .of-kpi td { display: block; width: 50% !important; flex: 0 0 50%; box-sizing: border-box; }
 }
 
 /* ── Impressão: páginas preenchidas de ponta a ponta ── */
@@ -6152,6 +6189,81 @@ function ofRecursosTable(arr, cols) {
   }
   return "<table style='width:100%;border-collapse:collapse;margin:6px 0 4px'>" + rows + "</table>";
 }
+/* ---------- Avaliação (seção 9 do modelo oficial) ----------
+   No plano modelo da SEMED a avaliação não é uma lista solta: abre com a
+   natureza do processo ("processual, diagnóstica e formativa") e, em cada
+   item, separa o INSTRUMENTO dos CRITÉRIOS. Aqui a mesma organização é
+   montada a partir do que o plano gerou, com o tipo (diagnóstica, formativa,
+   somativa) virando um selo e os critérios numa linha própria — mais fácil
+   de conferir na hora de atribuir nota e de justificar para a coordenação. */
+var AVALIACAO_TIPOS = {
+  "diagnostica": { rotulo:"DIAGNÓSTICA", fundo:"#E8EEF6", texto:"#1F3A5F" },
+  "formativa":   { rotulo:"FORMATIVA",   fundo:"#E7F0E9", texto:"#1E4527" },
+  "somativa":    { rotulo:"SOMATIVA",    fundo:"#F3ECE0", texto:"#5A4212" },
+  "processual":  { rotulo:"PROCESSUAL",  fundo:"#EDEAF3", texto:"#3A2F55" }
+};
+function ofAvaliacaoSelo(tipo) {
+  var chave = deaccent(String(tipo || "")).toLowerCase();
+  var achado = null;
+  for (var k in AVALIACAO_TIPOS) { if (chave.indexOf(k) >= 0) { achado = AVALIACAO_TIPOS[k]; break; } }
+  var rotulo = achado ? achado.rotulo : String(tipo || "").toUpperCase();
+  var fundo = achado ? achado.fundo : OF_SOFT;
+  var cor = achado ? achado.texto : OF_TXT;
+  if (!rotulo) return "";
+  return "<span style='display:inline-block;font-size:8.5px;font-weight:800;letter-spacing:.05em;" +
+    "padding:2px 6px;background:" + fundo + ";color:" + cor + ";border:1px solid " + OF_BRD + "'>" + esc(rotulo) + "</span>";
+}
+function ofAvaliacaoBloco(assessment, recovery) {
+  var itens = A(assessment);
+  if (!itens.length) return "";
+
+  var tipos = {};
+  itens.forEach(function(a) {
+    var t = deaccent(String(a.type || "")).toLowerCase();
+    for (var k in AVALIACAO_TIPOS) { if (t.indexOf(k) >= 0) tipos[AVALIACAO_TIPOS[k].rotulo.toLowerCase()] = true; }
+  });
+  var naturezas = Object.keys(tipos).filter(function(n){ return n !== "processual"; });
+  var listaNaturezas = naturezas.length > 1
+    ? naturezas.slice(0, -1).join(", ") + " e " + naturezas[naturezas.length - 1]
+    : (naturezas[0] || "");
+  var abertura = "Avaliação processual" + (listaNaturezas ? ", " + listaNaturezas : "") + ", com base em:";
+
+  var linhas = itens.map(function(a, i) {
+    return "<tr>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:8px 10px;vertical-align:top;width:26px;" +
+        "text-align:center;font-weight:800;font-size:11px;color:" + OF_TXT2 + "'>" + (i + 1) + "</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:8px 10px;vertical-align:top'>" +
+        "<div style='font-weight:700;font-size:12px;color:" + OF_TXT + ";margin-bottom:3px'>" + esc(a.instrument || "") + "</div>" +
+        (a.skills ? "<div style='font-size:10.5px;color:" + OF_TXT2 + ";margin-bottom:3px'>Habilidades: " + esc(a.skills) + "</div>" : "") +
+        (a.criteria
+          ? "<div style='font-size:11.5px;color:" + OF_TXT + "'>" +
+              "<span style='font-weight:700'>Critérios:</span> " + esc(a.criteria) + "</div>"
+          : "") +
+      "</td>" +
+      "<td style='border:1px solid " + OF_BRD + ";padding:8px 10px;vertical-align:top;width:92px;text-align:center'>" +
+        ofAvaliacaoSelo(a.type) + "</td>" +
+    "</tr>";
+  }).join("");
+
+  /* Autoavaliação e coavaliação constam do modelo do município e valem para
+     qualquer componente — entram sempre, ao final. */
+  var fechamento =
+    "<tr><td style='border:1px solid " + OF_BRD + ";padding:8px 10px;text-align:center;font-weight:800;" +
+      "font-size:11px;color:" + OF_TXT2 + "'>" + (itens.length + 1) + "</td>" +
+    "<td style='border:1px solid " + OF_BRD + ";padding:8px 10px'>" +
+      "<div style='font-weight:700;font-size:12px;color:" + OF_TXT + ";margin-bottom:3px'>Autoavaliação e coavaliação</div>" +
+      "<div style='font-size:11.5px;color:" + OF_TXT + "'><span style='font-weight:700'>Critérios:</span> " +
+        "reflexão sobre o próprio desempenho e o dos colegas, promovendo o autoconhecimento e a empatia.</div></td>" +
+    "<td style='border:1px solid " + OF_BRD + ";padding:8px 10px;text-align:center'>" + ofAvaliacaoSelo("formativa") + "</td></tr>";
+
+  return "<div style='font-size:12px;color:" + OF_TXT + ";margin-bottom:8px'>" + esc(abertura) + "</div>" +
+    "<table style='width:100%;border-collapse:collapse;font-size:11.5px'>" + linhas + fechamento + "</table>" +
+    (recovery
+      ? ofSubBanner("Retomada e recomposição") +
+        "<div style='font-size:11.5px;color:" + OF_TXT + ";line-height:1.55'>" + esc(recovery) + "</div>"
+      : "");
+}
+
 /* Layout em N colunas para blocos de HTML já prontos (não escapa o
    conteúdo — cada item já vem formatado). Usado para a lista de
    Habilidades não ficar esticada verticalmente. Tabela (não flex/grid),
@@ -6681,11 +6793,7 @@ function viewPlanOficial(pl, c, pc, cfg) {
 
   var ap = ofAulasPrevistas(pc, cfg);
 
-  var avaliacaoHtml = A(c.assessment).length
-    ? ofBullets(A(c.assessment).map(function(a) {
-        return a.instrument + " [" + a.type + "]" + (a.criteria ? " — " + a.criteria : "");
-      }))
-    : "";
+  var avaliacaoHtml = ofAvaliacaoBloco(c.assessment, c.recovery);
 
   var toolbar = '<div class="noprint" style="display:flex;flex-wrap:wrap;gap:9px;align-items:center;justify-content:space-between;margin-bottom:18px">' +
     '<button class="btn btn-ghost btn-sm" onclick="go(\'' + (state.activeSaved ? "plans" : "gen") + '\')">&larr; Voltar</button>' +
@@ -6807,55 +6915,54 @@ function viewHome() {
   var subjBars = Object.keys(subjCount).sort(function(a,b){ return subjCount[b] - subjCount[a]; }).slice(0, 6);
   var maxSubj = Math.max(1, Math.max.apply(null, subjBars.map(function(s){ return subjCount[s]; })));
 
-  return '<div class="wrap fade" style="padding:36px 18px 56px">' +
-    '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:26px">' +
-      "<div>" +
-        '<span class="badge" style="margin-bottom:12px">Alinhado &agrave; BNCC</span>' +
-        '<h1 style="font-size:34px;line-height:1.15;margin:0 0 8px">' +
+  /* Uma linha de barra horizontal: rótulo, trilho proporcional e valor. */
+  function hbar(rotulo, valor, maximo, cor) {
+    var pct = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
+    return '<div class="hbar' + (valor ? "" : " hbar-zero") + '" title="' + esc(rotulo) + '">' +
+      '<div class="hbar-lb">' + esc(rotulo) + "</div>" +
+      '<div class="hbar-track"><div class="hbar-fill" style="width:' + (valor ? Math.max(pct, 8) : 0) + "%" +
+        (cor ? ";background:" + cor : "") + '"></div></div>' +
+      '<div class="hbar-n">' + valor + "</div></div>";
+  }
+
+  return '<div class="wrap fade" style="padding:26px 18px 46px">' +
+    '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;margin-bottom:18px">' +
+      "<div style='min-width:0'>" +
+        '<h1 style="font-size:27px;line-height:1.15;margin:0 0 5px">' +
           (firstName ? "Ol&aacute;, " + esc(firstName) + "." : "Painel Principal") + "</h1>" +
-        '<p style="font-size:14px;color:var(--t3);margin:0;max-width:540px">' +
+        '<p style="font-size:12.5px;color:var(--t3);margin:0;max-width:540px">' +
           esc(cfg.schoolName) + (cfg.city ? " &middot; " + esc(cfg.city) : "") +
           " &middot; Turno " + esc(cfg.defaultShift) + "</p>" +
       "</div>" +
-      '<button class="btn btn-primary btn-lg" onclick="go(\'gen\')">&#10022;&nbsp; Criar Planejamento</button>' +
+      '<button class="btn btn-primary" onclick="go(\'gen\')">&#10022;&nbsp; Criar Planejamento</button>' +
     "</div>" +
 
     backupReminderHtml() +
 
-    /* Estatísticas */
-    '<div class="g4" style="margin-bottom:22px">' +
-      '<div class="card stat"><div class="stat-n">' + plans.length + '</div><div class="stat-l">Planejamentos</div></div>' +
-      '<div class="card stat"><div class="stat-n" style="color:var(--grn)">' + Object.keys(subjCount).length + '</div><div class="stat-l">Disciplinas</div></div>' +
-      '<div class="card stat"><div class="stat-n" style="color:var(--acc)">' + aeeCount + '</div><div class="stat-l">Com AEE</div></div>' +
-      '<div class="card stat"><div class="stat-n" style="color:var(--blu)">' + aiCount + '</div><div class="stat-l">Gerados por IA</div></div>' +
+    /* Indicadores em faixa única */
+    '<div class="card mini-stats" style="margin-bottom:14px">' +
+      '<div class="mini-stat"><div class="mini-n">' + plans.length + '</div>' +
+        '<div class="mini-l">' + (plans.length === 1 ? "Planejamento" : "Planejamentos") + "</div></div>" +
+      '<div class="mini-stat"><div class="mini-n" style="color:var(--grn)">' + Object.keys(subjCount).length + '</div>' +
+        '<div class="mini-l">' + (Object.keys(subjCount).length === 1 ? "Disciplina" : "Disciplinas") + "</div></div>" +
+      '<div class="mini-stat"><div class="mini-n" style="color:var(--acc)">' + aeeCount + '</div>' +
+        '<div class="mini-l">Com AEE</div></div>' +
+      '<div class="mini-stat"><div class="mini-n" style="color:var(--blu)">' + aiCount + '</div>' +
+        '<div class="mini-l">Gerados por IA</div></div>' +
     "</div>" +
 
-    '<div class="g2" style="margin-bottom:22px">' +
-      /* Gráfico por bimestre */
-      '<div class="card" style="padding:20px">' +
-        '<div style="font-size:12.5px;font-weight:700;color:var(--t2);margin-bottom:4px">Distribui&ccedil;&atilde;o por Bimestre</div>' +
-        '<div style="font-size:10.5px;color:var(--t4);margin-bottom:8px">Planos salvos em cada bimestre letivo</div>' +
-        '<div class="bar-wrap">' +
-          bimCount.map(function(x) {
-            var h = Math.round((x.n / maxBim) * 100);
-            return '<div class="bar-col"><div class="bar-vl">' + x.n + "</div>" +
-              '<div class="bar" style="height:' + (x.n ? Math.max(h,6) : 2) + '%;background:' + x.b.cor + '"></div>' +
-              '<div class="bar-lb">' + x.b.emoji + " " + esc(x.b.label.replace(" Bimestre","º Bim")) + "</div></div>";
-          }).join("") +
-        "</div>" +
+    '<div class="g2" style="margin-bottom:14px">' +
+      '<div class="card" style="padding:15px 17px">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:9px">Distribui&ccedil;&atilde;o por Bimestre</div>' +
+        bimCount.map(function(x) {
+          return hbar(x.b.emoji + " " + x.b.label, x.n, maxBim, x.b.cor);
+        }).join("") +
       "</div>" +
-      /* Gráfico por disciplina */
-      '<div class="card" style="padding:20px">' +
-        '<div style="font-size:12.5px;font-weight:700;color:var(--t2);margin-bottom:4px">Planos por Componente</div>' +
-        '<div style="font-size:10.5px;color:var(--t4);margin-bottom:8px">Componentes curriculares mais planejados</div>' +
+      '<div class="card" style="padding:15px 17px">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:9px">Planos por Componente</div>' +
         (subjBars.length
-          ? '<div class="bar-wrap">' + subjBars.map(function(s) {
-              var h = Math.round((subjCount[s] / maxSubj) * 100);
-              return '<div class="bar-col"><div class="bar-vl">' + subjCount[s] + "</div>" +
-                '<div class="bar" style="height:' + Math.max(h,6) + '%"></div>' +
-                '<div class="bar-lb" title="' + esc(s) + '">' + esc(s.split(" ")[0].substring(0,9)) + "</div></div>";
-            }).join("") + "</div>"
-          : '<div style="height:130px;display:flex;align-items:center;justify-content:center;color:var(--t4);font-size:12.5px">Sem dados ainda</div>') +
+          ? subjBars.map(function(s) { return hbar(s, subjCount[s], maxSubj, null); }).join("")
+          : '<div style="color:var(--t4);font-size:12px;padding:6px 0">Nenhum plano salvo ainda.</div>') +
       "</div>" +
     "</div>" +
 
@@ -6863,8 +6970,8 @@ function viewHome() {
     (function() {
       var mi = CALENDAR.meses[state.agendaMonth];
       if (!mi) return "";
-      return '<div class="card" style="padding:18px 20px;margin-bottom:22px">' +
-        '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">' +
+      return '<div class="card" style="padding:14px 17px;margin-bottom:18px">' +
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">' +
           "<div><div style='font-size:12.5px;font-weight:700;color:var(--t2)'>Calend&aacute;rio Letivo 2026 &mdash; " +
             esc(state.agendaMonth) + "</div>" +
           "<div style='font-size:10.5px;color:var(--t4);margin-top:2px'>" + esc(mi.periodo || "Período não letivo") +
@@ -6878,9 +6985,8 @@ function viewHome() {
     })() +
 
     /* Ferramentas */
-    '<div style="font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px;font-family:var(--serif)">Minhas Ferramentas</div>' +
-    '<div style="font-size:12.5px;color:var(--t4);margin-bottom:14px">Acesso r&aacute;pido a todas as &aacute;reas do EducaPlan</div>' +
-    '<div class="gtools" style="margin-bottom:30px">' +
+    '<div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:10px;font-family:var(--serif)">Minhas Ferramentas</div>' +
+    '<div class="gtools" style="margin-bottom:22px">' +
       [["gen","&#10022;","Criar Planejamento","Gerar um plano de aula completo, alinhado &agrave;s habilidades da BNCC"],
        ["diario","&#9636;","Registro de Aulas","Di&aacute;rio de classe com as datas reais do calend&aacute;rio letivo"],
        ["plans","&#10064;","Hist&oacute;rico de Planos","Todos os planejamentos que voc&ecirc; j&aacute; salvou"],
@@ -8443,6 +8549,268 @@ function exportCss() {
     "strong{font-weight:bold}em{font-style:italic}";
 }
 
+/* =========================================================
+   EXPORTAÇÃO PARA WORD (.docx de verdade)
+   Antes o app salvava um HTML com a extensão .doc. O Word do computador
+   até abria, mas no celular o visualizador fechava sozinho — o arquivo não
+   era um documento Word real. Agora o app monta um pacote .docx válido
+   (um ZIP com o XML do Word dentro), sem depender de nenhuma biblioteca
+   externa: o plano continua funcionando offline.
+   ========================================================= */
+
+function _utf8Bytes(str) {
+  if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(str);
+  var s = unescape(encodeURIComponent(str)), a = new Uint8Array(s.length);
+  for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i);
+  return a;
+}
+var _crcTabela = null;
+function _crc32(buf) {
+  if (!_crcTabela) {
+    _crcTabela = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      _crcTabela[n] = c >>> 0;
+    }
+  }
+  var crc = 0xFFFFFFFF;
+  for (var i = 0; i < buf.length; i++) crc = (_crcTabela[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8)) >>> 0;
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function _b32(a, v) { a.push(v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255); }
+function _b16(a, v) { a.push(v & 255, (v >>> 8) & 255); }
+
+/* ZIP sem compressão (método "store"): é o suficiente para o Word e evita
+   ter que implementar deflate à mão. */
+function zipSemCompressao(entradas, mime) {
+  var partes = [], central = [], deslocamento = 0;
+  var dataDos = ((2026 - 1980) << 9) | (1 << 5) | 1;
+  entradas.forEach(function(e) {
+    var nome = _utf8Bytes(e.name), dados = e.data, crc = _crc32(dados);
+    var lh = [];
+    _b32(lh, 0x04034b50); _b16(lh, 20); _b16(lh, 0); _b16(lh, 0);
+    _b16(lh, 0); _b16(lh, dataDos);
+    _b32(lh, crc); _b32(lh, dados.length); _b32(lh, dados.length);
+    _b16(lh, nome.length); _b16(lh, 0);
+    partes.push(new Uint8Array(lh), nome, dados);
+
+    var ch = [];
+    _b32(ch, 0x02014b50); _b16(ch, 20); _b16(ch, 20); _b16(ch, 0); _b16(ch, 0);
+    _b16(ch, 0); _b16(ch, dataDos);
+    _b32(ch, crc); _b32(ch, dados.length); _b32(ch, dados.length);
+    _b16(ch, nome.length); _b16(ch, 0); _b16(ch, 0);
+    _b16(ch, 0); _b16(ch, 0); _b32(ch, 0);
+    _b32(ch, deslocamento);
+    central.push(new Uint8Array(ch), nome);
+    deslocamento += lh.length + nome.length + dados.length;
+  });
+  var tamCentral = central.reduce(function(s, a) { return s + a.length; }, 0);
+  var fim = [];
+  _b32(fim, 0x06054b50); _b16(fim, 0); _b16(fim, 0);
+  _b16(fim, entradas.length); _b16(fim, entradas.length);
+  _b32(fim, tamCentral); _b32(fim, deslocamento); _b16(fim, 0);
+  return new Blob(partes.concat(central, [new Uint8Array(fim)]), { type: mime });
+}
+
+function _xmlEsc(s) {
+  return String(s === null || s === undefined ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+/* Converte um elemento da tela em parágrafos do Word, preservando negrito,
+   itálico, tamanho e centralização — é o que dá ao documento a mesma cara
+   do plano exibido no app. */
+function _wmlPara(texto, el) {
+  if (!texto) return "";
+  var cs = el ? getComputedStyle(el) : null;
+  var negrito = cs && parseInt(cs.fontWeight, 10) >= 600;
+  var italico = cs && cs.fontStyle === "italic";
+  var px = cs ? parseFloat(cs.fontSize) || 12.5 : 12.5;
+  var meiosPontos = Math.max(14, Math.min(44, Math.round(px * 1.5)));
+  var alinha = cs && cs.textAlign === "center" ? "center"
+    : (cs && cs.textAlign === "right" ? "right" : "both");
+  var marcador = el && el.tagName === "LI" ? "• " : "";
+  return "<w:p><w:pPr><w:spacing w:after=\"70\" w:line=\"264\" w:lineRule=\"auto\"/>" +
+      "<w:jc w:val=\"" + alinha + "\"/></w:pPr>" +
+      "<w:r><w:rPr>" + (negrito ? "<w:b/>" : "") + (italico ? "<w:i/>" : "") +
+        "<w:sz w:val=\"" + meiosPontos + "\"/><w:szCs w:val=\"" + meiosPontos + "\"/></w:rPr>" +
+      "<w:t xml:space=\"preserve\">" + _xmlEsc(marcador + texto) + "</w:t></w:r></w:p>";
+}
+
+function _ehBloco(el) {
+  var d = getComputedStyle(el).display;
+  if (d === "block" || d === "flex" || d === "grid" || d === "list-item" || d === "table") return true;
+  return ["DIV","P","H1","H2","H3","H4","UL","OL","LI","SECTION"].indexOf(el.tagName) >= 0;
+}
+
+function _wmlBlocos(el) {
+  var saida = "", buffer = [];
+  function despejar(dono) {
+    var txt = buffer.join("").replace(/\s+/g, " ").trim();
+    buffer = [];
+    if (txt) saida += _wmlPara(txt, dono || el);
+  }
+  [].slice.call(el.childNodes).forEach(function(n) {
+    if (n.nodeType === 3) { buffer.push(n.nodeValue); return; }
+    if (n.nodeType !== 1) return;
+    if (getComputedStyle(n).display === "none") return;
+    if (n.tagName === "TABLE") { despejar(); saida += _wmlTabela(n); return; }
+    if (_ehBloco(n)) { despejar(); saida += _wmlBlocos(n); return; }
+    buffer.push(n.textContent);
+  });
+  despejar();
+  return saida;
+}
+
+/* Monta a grade da tabela levando em conta rowspan/colspan, para que células
+   mescladas (como a coluna CONTEÚDO da tabela de objetos) cheguem ao Word
+   mescladas também, e não desalinhadas. */
+function _gradeTabela(tbl) {
+  var linhas = [].slice.call(tbl.rows);
+  var grade = linhas.map(function() { return []; });
+  linhas.forEach(function(tr, r) {
+    var c = 0;
+    [].slice.call(tr.cells).forEach(function(td) {
+      while (grade[r][c]) c++;
+      var rs = td.rowSpan || 1, cs = td.colSpan || 1;
+      for (var i = 0; i < rs; i++) {
+        if (!grade[r + i]) continue;
+        for (var j = 0; j < cs; j++) {
+          grade[r + i][c + j] = { el:td, origem:(i === 0 && j === 0), inicioCol:(j === 0), colSpan:cs, rowSpan:rs };
+        }
+      }
+      c += cs;
+    });
+  });
+  return grade;
+}
+
+/* Alguma célula desta tabela tem borda visível na tela? As tabelas usadas
+   só para posicionar conteúdo (duas colunas de habilidades, mosaico) não
+   devem virar quadros no Word — só as que realmente são tabelas. */
+function _tabelaTemBorda(tbl) {
+  var celulas = [].slice.call(tbl.rows[0] ? tbl.rows[0].cells : []);
+  for (var i = 0; i < celulas.length; i++) {
+    var cs = getComputedStyle(celulas[i]);
+    if (parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0) return true;
+  }
+  return false;
+}
+
+/* Larguras das colunas no Word copiadas da proporção que elas têm na tela —
+   sem isso, uma coluna estreita (o número do item, por exemplo) ficaria com
+   a mesma largura da coluna de texto e a tabela sairia desequilibrada. */
+function _larguraColunas(tbl, colunas, larguraUtil) {
+  var referencia = null;
+  [].slice.call(tbl.rows).forEach(function(tr) {
+    var celulas = [].slice.call(tr.cells);
+    var somaSpans = 0;
+    celulas.forEach(function(td) { somaSpans += (td.colSpan || 1); });
+    if (celulas.length === colunas && somaSpans === colunas && !referencia) referencia = celulas;
+  });
+  var saida = [], i;
+  if (referencia) {
+    var medidas = referencia.map(function(td) { return Math.max(1, td.getBoundingClientRect().width); });
+    var total = medidas.reduce(function(s, v) { return s + v; }, 0);
+    for (i = 0; i < colunas; i++) saida.push(Math.max(300, Math.round(larguraUtil * medidas[i] / total)));
+  } else {
+    var igual = Math.floor(larguraUtil / colunas);
+    for (i = 0; i < colunas; i++) saida.push(igual);
+  }
+  return saida;
+}
+
+function _wmlTabela(tbl) {
+  /* O título de seção é desenhado como tabelinha na tela (quadrado com o
+     número + texto). No Word ele vira um título de verdade. */
+  if (tbl.classList && tbl.classList.contains("sec-title")) {
+    var texto = (tbl.innerText || "").replace(/\s+/g, " ").trim();
+    if (!texto) return "";
+    return "<w:p><w:pPr><w:spacing w:before=\"220\" w:after=\"90\"/><w:jc w:val=\"left\"/>" +
+      "<w:pBdr><w:bottom w:val=\"single\" w:sz=\"12\" w:space=\"2\" w:color=\"333333\"/></w:pBdr></w:pPr>" +
+      "<w:r><w:rPr><w:b/><w:caps/><w:sz w:val=\"24\"/><w:szCs w:val=\"24\"/></w:rPr>" +
+      "<w:t xml:space=\"preserve\">" + _xmlEsc(texto) + "</w:t></w:r></w:p>";
+  }
+
+  var grade = _gradeTabela(tbl);
+  var colunas = grade.reduce(function(m, l) { return Math.max(m, l.length); }, 0) || 1;
+  var larguraUtil = 10318; /* A4 menos as margens, em twips */
+  var larguras = _larguraColunas(tbl, colunas, larguraUtil);
+  var comBorda = _tabelaTemBorda(tbl);
+
+  var xml = "<w:tbl><w:tblPr><w:tblW w:w=\"5000\" w:type=\"pct\"/>" +
+    "<w:tblBorders>" +
+      ["top","left","bottom","right","insideH","insideV"].map(function(b) {
+        return comBorda
+          ? "<w:" + b + " w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"9AA7B4\"/>"
+          : "<w:" + b + " w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>";
+      }).join("") +
+    "</w:tblBorders><w:tblCellMar>" +
+      "<w:top w:w=\"60\" w:type=\"dxa\"/><w:left w:w=\"90\" w:type=\"dxa\"/>" +
+      "<w:bottom w:w=\"60\" w:type=\"dxa\"/><w:right w:w=\"90\" w:type=\"dxa\"/>" +
+    "</w:tblCellMar></w:tblPr>" +
+    "<w:tblGrid>" + larguras.map(function(w) { return "<w:gridCol w:w=\"" + w + "\"/>"; }).join("") + "</w:tblGrid>";
+
+  grade.forEach(function(linha) {
+    xml += "<w:tr>";
+    for (var c = 0; c < linha.length; c++) {
+      var cel = linha[c];
+      if (!cel || !cel.inicioCol) continue;
+      var conteudo = cel.origem ? _wmlBlocos(cel.el) : "";
+      if (!conteudo) conteudo = "<w:p/>";
+      var larguraCelula = 0;
+      for (var k = 0; k < cel.colSpan && (c + k) < larguras.length; k++) larguraCelula += larguras[c + k];
+      xml += "<w:tc><w:tcPr><w:tcW w:w=\"" + (larguraCelula || 1000) + "\" w:type=\"dxa\"/>" +
+        (cel.colSpan > 1 ? "<w:gridSpan w:val=\"" + cel.colSpan + "\"/>" : "") +
+        (cel.rowSpan > 1 ? "<w:vMerge" + (cel.origem ? " w:val=\"restart\"" : "") + "/>" : "") +
+        "<w:vAlign w:val=\"top\"/></w:tcPr>" + conteudo + "</w:tc>";
+    }
+    xml += "</w:tr>";
+  });
+  return xml + "</w:tbl><w:p/>";
+}
+
+function planDocxBlob(pl) {
+  var papel = el("planPaper");
+  if (!papel) return null;
+  /* Liga o layout "de papel" por um instante: mesmo exportando pelo celular,
+     o documento sai com as tabelas completas, como a escola espera. */
+  document.body.classList.add("exporting");
+  var corpo;
+  try { corpo = _wmlBlocos(papel); }
+  finally { document.body.classList.remove("exporting"); }
+
+  var documentXml =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+    "<w:body>" + corpo +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+    '<w:pgMar w:top="850" w:right="794" w:bottom="850" w:left="794" w:header="0" w:footer="0" w:gutter="0"/>' +
+    "</w:sectPr></w:body></w:document>";
+
+  var contentTypes =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+    "</Types>";
+
+  var rels =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+    "</Relationships>";
+
+  return zipSemCompressao([
+    { name:"[Content_Types].xml", data:_utf8Bytes(contentTypes) },
+    { name:"_rels/.rels",         data:_utf8Bytes(rels) },
+    { name:"word/document.xml",   data:_utf8Bytes(documentXml) }
+  ], "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+}
+
 function planStandaloneHtml(pl) {
   var paper = el("planPaper");
   var inner = paper ? paper.innerHTML : "";
@@ -8453,15 +8821,23 @@ function planStandaloneHtml(pl) {
 function downloadDoc() {
   var pl = state.activePlan;
   if (!pl) return;
-  var html = planStandaloneHtml(pl);
-  var blob = new Blob(["﻿" + html], { type:"application/msword" });
+  var nomeBase = (pl.content.title.replace(/[^\wÀ-ÿ\s-]/g,"").slice(0,58).trim() || "Plano_de_Aula");
+  var blob = null, extensao = ".docx";
+  try { blob = planDocxBlob(pl); } catch (e) { blob = null; }
+  if (!blob) {
+    /* Se por algum motivo o pacote Word não puder ser montado, ainda assim o
+       professor sai com o plano em mãos — em HTML, que abre em qualquer
+       aparelho — em vez de ficar sem nada. */
+    blob = new Blob(["﻿" + planStandaloneHtml(pl)], { type:"text/html;charset=utf-8" });
+    extensao = ".html";
+  }
   var url = URL.createObjectURL(blob);
   var a = document.createElement("a");
   a.href = url;
-  a.download = (pl.content.title.replace(/[^\wÀ-ÿ\s-]/g,"").slice(0,58).trim() || "Plano_de_Aula") + ".doc";
+  a.download = nomeBase + extensao;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  toast("Arquivo Word baixado.");
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  toast(extensao === ".docx" ? "Arquivo Word (.docx) baixado." : "Plano baixado em HTML.");
 }
 function exportAll() {
   if (!state.plans.length) { toast("Nenhum plano para exportar."); return; }
