@@ -318,6 +318,25 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
 .row:hover { border-color: var(--acc); }
 
 /* ── Gráfico de barras (CSS puro) ── */
+/* ── Ajustes recolhíveis ──
+   Nove blocos abertos de uma vez faziam a tela de Ajustes ter uma rolagem
+   muito longa. Cada bloco agora abre ao ser tocado. */
+.aj-sec { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: var(--sh1); margin-bottom: 12px; overflow: hidden; }
+.aj-sum { cursor: pointer; padding: 15px 20px; font-size: 14.5px; font-weight: 700;
+  font-family: var(--serif); list-style: none; display: flex; align-items: center;
+  justify-content: space-between; gap: 10px; }
+.aj-sum::-webkit-details-marker { display: none; }
+.aj-sum::after { content: "\203A"; font-size: 20px; color: var(--t4); line-height: 1;
+  transform: rotate(90deg); transition: transform .18s; }
+.aj-sec[open] > .aj-sum::after { transform: rotate(-90deg); }
+.aj-sum:hover { color: var(--acc); }
+.aj-body { padding: 0 20px 20px; }
+@media (max-width: 620px) {
+  .aj-sum { padding: 13px 15px; font-size: 13.5px; }
+  .aj-body { padding: 0 15px 16px; }
+}
+
 /* ── Habilidades prioritárias em colunas ──
    A lista era uma coluna só: no notebook sobrava espaço nas laterais e o
    professor precisava rolar bastante para ver as habilidades do mês. Três
@@ -4906,12 +4925,25 @@ function activeSchedule() {
 function turnoDaTurma(gradeCurto) {
   var mapa = state.cfg && state.cfg.gradeShifts;
   if (!mapa) return null;
-  var alvo = deaccent(String(gradeCurto || "")).toLowerCase().trim();
-  if (!alvo) return null;
+  var texto = String(gradeCurto || "");
+  if (!texto) return null;
+  var alvo = deaccent(texto).toLowerCase().trim();
   var chaves = Object.keys(mapa);
-  for (var i = 0; i < chaves.length; i++) {
-    var k = deaccent(chaves[i]).toLowerCase();
+  var i, k;
+  /* 1) nome igual ou entre parenteses ("... (6o Ano A)") */
+  for (i = 0; i < chaves.length; i++) {
+    k = deaccent(chaves[i]).toLowerCase();
     if (k === alvo || k.indexOf("(" + alvo + ")") >= 0) return mapa[chaves[i]];
+  }
+  /* 2) por ano e letra: o horario guarda "9o Ano U" e os ajustes guardam
+     "Ensino Fundamental II (9o Ano)" - o "U" (unica) nao existe la. */
+  var m = texto.match(/(\d+)\s*º\s*Ano\s*([AB]?)/i);
+  if (!m) return null;
+  var ano = m[1], letra = (m[2] || "").toUpperCase();
+  for (i = 0; i < chaves.length; i++) {
+    var mk = chaves[i].match(/(\d+)\s*º\s*Ano\s*([AB]?)/i);
+    if (!mk) continue;
+    if (mk[1] === ano && (mk[2] || "").toUpperCase() === letra) return mapa[chaves[i]];
   }
   return null;
 }
@@ -8765,6 +8797,19 @@ function viewAee() {
 }
 
 /* ---------------- AJUSTES ---------------- */
+/* Ajustes recolhiveis: a tela tinha nove blocos abertos ao mesmo tempo e
+   virava uma rolagem longa. Agora cada bloco abre e fecha, e o app lembra
+   quais o professor deixou abertos. A Identidade comeca aberta por ser a
+   primeira coisa a configurar. */
+function ajusteAberto(chave) {
+  if (!state.ajustesAbertos) state.ajustesAbertos = { IdentidadeInst: true };
+  return !!state.ajustesAbertos[chave];
+}
+function marcarAjuste(chave, aberto) {
+  if (!state.ajustesAbertos) state.ajustesAbertos = {};
+  state.ajustesAbertos[chave] = !!aberto;
+}
+
 function viewSettings() {
   var c = state.cfg;
   var gState = driveState();
@@ -8786,8 +8831,9 @@ function viewSettings() {
     pageHead("Ajustes & Identidade", "Perfil docente, hor&aacute;rio semanal, tema e integra&ccedil;&atilde;o com o Claude", "home") +
 
     /* Identidade */
-    '<div class="card" style="padding:22px;margin-bottom:16px">' +
-      '<h2 style="font-size:15px;margin:0 0 14px">Identidade Institucional</h2>' +
+    '<details class="aj-sec" data-sec="IdentidadeInst"' + (ajusteAberto('IdentidadeInst') ? ' open' : '') + '>' +
+      '<summary class="aj-sum">Identidade Institucional</summary>' +
+      '<div class="aj-body">' +
       '<div class="g2">' +
         '<div><label class="lbl">Nome do Professor(a)</label><input class="inp" id="s_teacher" value="' + esc(c.teacherName) + '" /></div>' +
         '<div><label class="lbl">Turno de Trabalho Regular</label><select class="inp" id="s_shift">' + opts(SHIFTS, c.defaultShift) + "</select></div>" +
@@ -8801,11 +8847,12 @@ function viewSettings() {
       '<div style="margin-top:13px;max-width:300px"><label class="lbl">Dura&ccedil;&atilde;o de cada hor&aacute;rio (minutos)</label>' +
         '<input class="inp" id="s_min" type="number" min="20" max="90" value="' + (c.lessonMinutes || 45) + '" /></div>' +
       '<button class="btn btn-primary" style="margin-top:16px" onclick="saveIdentity()">Salvar Identidade</button>' +
-    "</div>" +
+    "</div></details>" +
 
     /* Rotina — anos iniciais */
-    '<div class="card" style="padding:22px;margin-bottom:16px">' +
-      '<h2 style="font-size:15px;margin:0 0 6px">Rotina / Atividades Permanentes</h2>' +
+    '<details class="aj-sec" data-sec="RotinaAtividad"' + (ajusteAberto('RotinaAtividad') ? ' open' : '') + '>' +
+      '<summary class="aj-sum">Rotina / Atividades Permanentes</summary>' +
+      '<div class="aj-body">' +
       '<p style="font-size:11.5px;color:var(--t4);margin:0 0 13px;line-height:1.6">' +
         "Usada nos planos do <strong>1&ordm; ao 5&ordm; ano</strong>, no in&iacute;cio da se&ccedil;&atilde;o Metodologias &mdash; " +
         "como no modelo da SEMED. Uma atividade por linha. Nos planos do 6&ordm; ao 9&ordm; ano ela n&atilde;o aparece." +
@@ -8816,11 +8863,12 @@ function viewSettings() {
         '<button class="btn btn-primary btn-sm" onclick="saveRotina()">Salvar rotina</button>' +
         '<button class="btn btn-ghost btn-sm" onclick="restaurarRotina()">Restaurar rotina padr&atilde;o</button>' +
       "</div>" +
-    "</div>" +
+    "</div></details>" +
 
     /* Tema e tipografia */
-    '<div class="card" style="padding:22px;margin-bottom:16px">' +
-      '<h2 style="font-size:15px;margin:0 0 6px">Tema e Tipografia</h2>' +
+    '<details class="aj-sec" data-sec="TemaeTipografi"' + (ajusteAberto('TemaeTipografi') ? ' open' : '') + '>' +
+      '<summary class="aj-sum">Tema e Tipografia</summary>' +
+      '<div class="aj-body">' +
       '<p style="font-size:11.5px;color:var(--t4);margin:0 0 14px">' +
         "Cada tema tem seu par tipogr&aacute;fico pr&oacute;prio, aplicado tamb&eacute;m ao PDF e ao arquivo Word exportados.</p>" +
       '<div class="g2">' +
@@ -8847,11 +8895,12 @@ function viewSettings() {
           "</div>";
         }).join("") +
       "</div>" +
-    "</div>" +
+    "</div></details>" +
 
     /* Preferências */
-    '<div class="card" style="padding:22px;margin-bottom:16px">' +
-      '<h2 style="font-size:15px;margin:0 0 6px">Turmas e Componentes Preferidos</h2>' +
+    '<details class="aj-sec" data-sec="TurmaseCompone"' + (ajusteAberto('TurmaseCompone') ? ' open' : '') + '>' +
+      '<summary class="aj-sum">Turmas e Componentes Preferidos</summary>' +
+      '<div class="aj-body">' +
       '<p style="font-size:11.5px;color:var(--t4);margin:0 0 13px">Aparecem pr&eacute;-selecionados ao criar um novo planejamento.</p>' +
       '<label class="lbl">S&eacute;ries / Turmas</label>' +
       '<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">' +
@@ -8876,14 +8925,15 @@ function viewSettings() {
         }).join("") +
       "</div>" +
       '<button class="btn btn-primary" onclick="savePrefs()">Salvar Prefer&ecirc;ncias</button>' +
-    "</div>" +
+    "</div></details>" +
 
     /* Horário semanal — grid visual compacto (dias × tempos) em vez de uma
        linha repetida por combinação dia/turma; a lista abaixo (agrupada por
        dia, em chips) serve só para remover, sem duplicar a mesma informação
        em duas tabelas longas. */
-    '<div class="card" style="padding:22px;margin-bottom:16px">' +
-      '<h2 style="font-size:15px;margin:0 0 6px">Hor&aacute;rio Semanal de Aulas</h2>' +
+    '<details class="aj-sec" data-sec="HoraacuterioSe"' + (ajusteAberto('HoraacuterioSe') ? ' open' : '') + '>' +
+      '<summary class="aj-sum">Hor&aacute;rio Semanal de Aulas</summary>' +
+      '<div class="aj-body">' +
       '<p style="font-size:11.5px;color:var(--t4);margin:0 0 13px">Base para o Registro de Aulas, a Agenda e o c&aacute;lculo de carga hor&aacute;ria.</p>' +
       (schedRows.length
         ? weekGridHtml() +
@@ -8915,11 +8965,13 @@ function viewSettings() {
           '<div><label class="lbl">Dia da Semana</label><select class="inp" id="h_day">' +
             [1,2,3,4,5].map(function(d){ return '<option value="' + d + '">' + DAYS_FULL[d] + "</option>"; }).join("") + "</select></div>" +
           '<div><label class="lbl">Disciplina</label><select class="inp" id="h_subj">' + opts(SUBJECTS, SUBJECTS[0]) + "</select></div>" +
-          '<div><label class="lbl">S&eacute;rie / Turma</label><select class="inp" id="h_grade">' + opts(GRADES, GRADES[11]) + "</select></div>" +
+          '<div><label class="lbl">S&eacute;rie / Turma</label><select class="inp" id="h_grade" onchange="turnoAutomatico()">' +
+            opts(GRADES, GRADES[11]) + "</select></div>" +
           '<div><label class="lbl">Quantidade de Aulas</label><select class="inp" id="h_aulas">' +
             [1,2,3,4,5].map(function(n){ return '<option value="' + n + '"' + (n===2?" selected":"") + ">" + n + " aula" + (n>1?"s":"") + "</option>"; }).join("") + "</select></div>" +
-          '<div><label class="lbl">Turno desta turma</label><select class="inp" id="h_turno">' +
-            opts(SHIFTS, c.defaultShift) + "</select></div>" +
+          '<div><label class="lbl">Turno <span style="font-weight:400;color:var(--t4)">(preenchido pela turma)</span></label>' +
+            '<select class="inp" id="h_turno" onchange="atualizarTemposDoTurno()">' +
+            opts(SHIFTS, turnoDaTurma(normGrade(GRADES[11])) || c.defaultShift) + "</select></div>" +
         "</div>" +
         '<div style="font-size:10.5px;color:var(--t4);margin-top:7px;line-height:1.5">' +
           "O turno importa: o 1&ordm; tempo da manh&atilde; e o 1&ordm; da tarde s&atilde;o momentos diferentes. " +
@@ -8931,17 +8983,19 @@ function viewSettings() {
               return '<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;background:var(--bg2);' +
                 'border:1px solid var(--border);padding:6px 11px;border-radius:999px;cursor:pointer">' +
                 '<input type="checkbox" class="chk" style="width:13px;height:13px" data-slot="' + h + '" /> ' +
-                h + "º (" + SLOT_TIMES_MATUTINO[h] + " matut. / " + SLOT_TIMES_VESPERTINO[h] + " vesp.)</label>";
+                h + "º <span class='hora-slot' data-hora='" + h + "'>(" +
+                (turnoInicialHorario() === "Matutino" ? SLOT_TIMES_MATUTINO[h] : SLOT_TIMES_VESPERTINO[h]) + ")</span></label>";
             }).join("") +
           "</div></div>" +
         '<button class="btn btn-primary btn-sm" style="margin-top:13px" onclick="addSlot()">Adicionar ao Hor&aacute;rio</button>' +
         '<button class="btn btn-ghost btn-sm" style="margin-top:13px" onclick="resetSchedule()">Restaurar padr&atilde;o</button>' +
       "</div>" +
-    "</div>" +
+    "</div></details>" +
 
     /* API do Claude */
-    '<div class="card" style="padding:22px;margin-bottom:16px">' +
-      '<h2 style="font-size:15px;margin:0 0 6px">Integra&ccedil;&atilde;o com o Claude (opcional)</h2>' +
+    '<details class="aj-sec" data-sec="Integraccedila"' + (ajusteAberto('Integraccedila') ? ' open' : '') + '>' +
+      '<summary class="aj-sum">Integra&ccedil;&atilde;o com o Claude (opcional)</summary>' +
+      '<div class="aj-body">' +
       '<p style="font-size:11.5px;color:var(--t3);margin:0 0 13px;line-height:1.6">' +
         "Sem chave, os planos s&atilde;o montados pelo gerador local &mdash; funciona offline e sem custo. " +
         "Com a chave, o texto &eacute; redigido pelo Claude. Crie a sua em <strong>console.anthropic.com/settings/keys</strong>. " +
@@ -8955,11 +9009,12 @@ function viewSettings() {
         "<span style='width:8px;height:8px;border-radius:50%;background:" + ((c.apiKey||"").trim() ? "var(--grn)" : "var(--t4)") + "'></span>" +
         ((c.apiKey||"").trim() ? "Chave configurada" : "Sem chave &mdash; usando gerador local") + "</div>" +
       '<button class="btn btn-primary" style="margin-top:14px" onclick="saveKey()">Salvar Chave</button>' +
-    "</div>" +
+    "</div></details>" +
 
     /* Sincronização com Google Drive */
-    '<div class="card" style="padding:22px;margin-bottom:16px">' +
-      '<h2 style="font-size:15px;margin:0 0 6px">Sincroniza&ccedil;&atilde;o com Google Drive (opcional)</h2>' +
+    '<details class="aj-sec" data-sec="Sincronizacced"' + (ajusteAberto('Sincronizacced') ? ' open' : '') + '>' +
+      '<summary class="aj-sum">Sincroniza&ccedil;&atilde;o com Google Drive (opcional)</summary>' +
+      '<div class="aj-body">' +
       '<p style="font-size:11.5px;color:var(--t3);margin:0 0 13px;line-height:1.6">' +
         "Mant&eacute;m planos, di&aacute;rio e ajustes iguais entre o computador e o celular, salvando um arquivo " +
         "privado na sua pr&oacute;pria conta do Google (vis&iacute;vel s&oacute; para o EducaPlan, nunca para o resto do Drive). " +
@@ -8999,11 +9054,12 @@ function viewSettings() {
               : '<button class="btn btn-primary btn-sm" onclick="driveConnect()">Conectar ao Google Drive</button>') +
           "</div>";
       })() +
-    "</div>" +
+    "</div></details>" +
 
     /* Dados */
-    '<div class="card" style="padding:22px;margin-bottom:16px">' +
-      '<h2 style="font-size:15px;margin:0 0 6px">Dados e Backup</h2>' +
+    '<details class="aj-sec" data-sec="DadoseBackup"' + (ajusteAberto('DadoseBackup') ? ' open' : '') + '>' +
+      '<summary class="aj-sum">Dados e Backup</summary>' +
+      '<div class="aj-body">' +
       '<p style="font-size:11.5px;color:var(--t4);margin:0 0 13px">' +
         state.plans.length + " plano(s) salvos neste navegador. " +
         (c.lastBackupAt
@@ -9020,11 +9076,12 @@ function viewSettings() {
         "<strong>Limpar hist&oacute;rico</strong> apaga os planos e o registro de aulas &mdash; &uacute;til para come&ccedil;ar o ano " +
         "sem os planos de teste e zerar a Cobertura BNCC. Seus ajustes, hor&aacute;rio semanal e perfil continuam." +
       "</div>" +
-    "</div>" +
+    "</div></details>" +
 
     /* Histórico de versões automático */
-    '<div class="card" style="padding:22px">' +
-      '<h2 style="font-size:15px;margin:0 0 6px">Desfazer (vers&otilde;es autom&aacute;ticas)</h2>' +
+    '<details class="aj-sec" data-sec="Desfazerversot"' + (ajusteAberto('Desfazerversot') ? ' open' : '') + '>' +
+      '<summary class="aj-sum">Desfazer (vers&otilde;es autom&aacute;ticas)</summary>' +
+      '<div class="aj-body">' +
       '<p style="font-size:11.5px;color:var(--t4);margin:0 0 13px;line-height:1.6">' +
         "Antes de <strong>excluir um plano, limpar o hist&oacute;rico, importar um backup ou trazer dados do Drive</strong>, " +
         "o app guarda uma c&oacute;pia de seguran&ccedil;a. Serve para desfazer um engano &mdash; nada al&eacute;m disso. " +
@@ -9046,7 +9103,7 @@ function viewSettings() {
               "<td><button class='btn btn-ghost btn-sm' style='padding:3px 8px' onclick=\"restoreSnapshot(" + s.ts + ")\">Restaurar</button></td></tr>";
           }).join("") + "</tbody></table></div>";
       })() +
-    "</div></div>";
+    "</div></details></div>";
 }
 /* =========================================================
    BLOCO 5 — AÇÕES, NAVEGAÇÃO E RENDER
@@ -9502,6 +9559,33 @@ function ensureSchedCopy() {
   }
   return state.cfg.horarioSemanal;
 }
+/* O turno da turma ja esta cadastrado em "Turmas e Componentes Preferidos".
+   Ao escolher a turma, o app preenche o turno sozinho e ajusta os horarios
+   mostrados (07:30 para a manha, 13:30 para a tarde) - em vez de o professor
+   ter que lembrar e marcar isso a cada aula cadastrada. */
+function turnoInicialHorario() {
+  var sel = el("h_grade");
+  var turma = sel ? normGrade(sel.value) : null;
+  return (turma && turnoDaTurma(turma)) || state.cfg.defaultShift || "Vespertino";
+}
+function atualizarTemposDoTurno() {
+  var sel = el("h_turno");
+  var turno = sel ? sel.value : turnoInicialHorario();
+  var tabela = (turno === "Matutino") ? SLOT_TIMES_MATUTINO : SLOT_TIMES_VESPERTINO;
+  document.querySelectorAll(".hora-slot").forEach(function(sp) {
+    var h = parseInt(sp.getAttribute("data-hora"), 10);
+    sp.textContent = "(" + (tabela[h] || "") + ")";
+  });
+}
+function turnoAutomatico() {
+  var selTurma = el("h_grade"), selTurno = el("h_turno");
+  if (!selTurma || !selTurno) return;
+  var turno = turnoDaTurma(selTurma.value) || turnoDaTurma(normGrade(selTurma.value)) ||
+    state.cfg.defaultShift || "Vespertino";
+  selTurno.value = turno;
+  atualizarTemposDoTurno();
+}
+
 function addSlot() {
   var day = parseInt(el("h_day").value, 10);
   var subj = el("h_subj").value;
@@ -10106,6 +10190,17 @@ function render() {
   else if (state.view === "settings") html = viewSettings();
   else html = viewHome();
   el("app").innerHTML = html;
+
+  /* Guarda quais blocos de Ajustes ficaram abertos, sem re-renderizar */
+  if (state.view === "settings") {
+    document.querySelectorAll(".aj-sec").forEach(function(d) {
+      d.addEventListener("toggle", function() {
+        marcarAjuste(d.getAttribute("data-sec"), d.open);
+      });
+    });
+    /* Preenche o turno conforme a turma já selecionada ao abrir a tela. */
+    if (el("h_grade")) turnoAutomatico();
+  }
 
   /* Restaura o estado do bloco de AEE após o re-render do formulário */
   if (state.view === "gen" && state.form && state.form.aee && state.form.aee.active) {
