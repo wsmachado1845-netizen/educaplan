@@ -2279,9 +2279,32 @@ function driveSyncNow(reason) {
    proteção contra perder o navegador inteiro (limpar cache, trocar de
    computador) — por isso também existe o aviso lembrando de baixar um
    arquivo de tempos em tempos. */
-var MAX_SNAPSHOTS = 25;
+/* O histórico de versões guarda uma cópia completa dos planos a cada
+   registro. Com 25 cópias, um professor com uma dezena de planos passava de
+   1 MB só de histórico — e o navegador oferece cerca de 5 MB no total, o que
+   podia impedir de salvar um plano novo.
+   Agora o histórico guarda menos cópias e só nas ações que realmente podem
+   fazer o professor perder algo (excluir, importar, restaurar, limpar,
+   sincronizar por cima). Salvar um plano ou mudar um ajuste não gera cópia:
+   isso já é coberto pelo backup em arquivo e pelo Google Drive. */
+var MAX_SNAPSHOTS = 6;
 var SNAP_THROTTLE_MS = 45000;
 var _lastSnapAt = 0;
+
+/* Quanto do navegador o app está ocupando, para o professor enxergar quando
+   o histórico começa a pesar. */
+function usoDoArmazenamento() {
+  var total = 0, hist = 0;
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      var tam = (localStorage.getItem(k) || "").length;
+      total += tam;
+      if (k === K_SNAPSHOTS) hist = tam;
+    }
+  } catch (e) {}
+  return { totalKb: Math.round(total / 1024), historicoKb: Math.round(hist / 1024) };
+}
 
 function pushSnapshot(reason, force) {
   try {
@@ -2317,6 +2340,10 @@ function listSnapshots() {
    esqueça de tirar uma cópia de verdade de tempos em tempos. */
 function backupReminderHtml() {
   if (!state.plans.length) return "";
+  /* Com o Google Drive ligado, os planos já saem deste aparelho sozinhos —
+     insistir em "baixe um arquivo" vira alarme falso ocupando o topo do
+     painel todos os dias. O aviso volta se a sincronização for desligada. */
+  if (typeof driveJaAutorizado === "function" && driveJaAutorizado()) return "";
   /* file:// (computador) e content:// (arquivo baixado aberto direto no
      Android) não são um endereço fixo — cada cópia do arquivo guarda seus
      próprios dados, separado das outras. Por isso, mesmo tendo acabado de
@@ -8867,12 +8894,18 @@ function viewSettings() {
 
     /* Histórico de versões automático */
     '<div class="card" style="padding:22px">' +
-      '<h2 style="font-size:15px;margin:0 0 6px">Backup e Vers&otilde;es (autom&aacute;tico)</h2>' +
+      '<h2 style="font-size:15px;margin:0 0 6px">Desfazer (vers&otilde;es autom&aacute;ticas)</h2>' +
       '<p style="font-size:11.5px;color:var(--t4);margin:0 0 13px;line-height:1.6">' +
-        "Toda vez que voc&ecirc; salva um plano, edita o hor&aacute;rio, muda um ajuste ou exclui algo, o EducaPlan guarda uma " +
-        "c&oacute;pia completa de tudo aqui dentro &mdash; sem precisar clicar em nada. Se algo sumir ou for editado por engano, " +
-        "&eacute; s&oacute; restaurar a vers&atilde;o de antes. Isso <strong>n&atilde;o substitui</strong> o backup em arquivo acima: " +
-        "protege contra erro dentro do app, n&atilde;o contra limpar o navegador ou trocar de computador.</p>" +
+        "Antes de <strong>excluir um plano, limpar o hist&oacute;rico, importar um backup ou trazer dados do Drive</strong>, " +
+        "o app guarda uma c&oacute;pia de seguran&ccedil;a. Serve para desfazer um engano &mdash; nada al&eacute;m disso. " +
+        "Salvar plano e mudar ajustes n&atilde;o geram c&oacute;pia: quem protege isso &eacute; o backup em arquivo e o Google Drive.</p>" +
+      (function() {
+        var uso = usoDoArmazenamento();
+        return '<div style="font-size:11px;color:var(--t4);margin:-6px 0 13px">' +
+          "Espa&ccedil;o usado pelo app neste aparelho: <strong>" + uso.totalKb + " KB</strong>" +
+          (uso.historicoKb ? " (sendo " + uso.historicoKb + " KB destas c&oacute;pias)" : "") + "." +
+        "</div>";
+      })() +
       (function() {
         var snaps = listSnapshots();
         if (!snaps.length) return '<div class="card-soft" style="padding:18px;text-align:center;color:var(--t3);font-size:12px">Nenhuma vers&atilde;o registrada ainda.</div>';
@@ -9188,7 +9221,6 @@ function savePlan() {
   state.plans.unshift(state.activePlan);
   savePlans();
   state.activeSaved = true;
-  pushSnapshot("Plano salvo: " + (state.activePlan.content && state.activePlan.content.title || state.activePlan.config.subject));
   render();
   toast("Plano salvo no histórico.");
 }
@@ -9228,7 +9260,6 @@ function setDiary(key, iso, field, value, planId) {
   state.diary[key][iso][field] = value;
   if (planId) state.diary[key][iso].planId = planId;
   saveDiary();
-  pushSnapshot("Registro de aulas editado");
 }
 /* Sincronização Registro ⇄ Planejamento: ao excluir um plano, qualquer
    célula do diário preenchida com base nele volta a ficar automática
@@ -9297,7 +9328,6 @@ function saveIdentity() {
   state.cfg.lessonMinutes = (mn >= 20 && mn <= 90) ? mn : 45;
   saveCfg();
   applyTheme();
-  pushSnapshot("Identidade atualizada");
   render();
   toast("Identidade salva.");
 }
@@ -9307,7 +9337,6 @@ function saveRotina() {
   var linhas = campo.value.split(/\r?\n/).map(function(x){ return x.trim(); }).filter(Boolean);
   state.cfg.rotina = linhas.length ? linhas : ROTINA_PADRAO.slice();
   saveCfg();
-  pushSnapshot("Rotina atualizada");
   render();
   toast(linhas.length ? "Rotina salva." : "Rotina vazia — restaurada para a padrão.");
 }
@@ -9325,7 +9354,6 @@ function savePrefs() {
   state.cfg.preferredGrades = gs.length ? gs : [GRADES[7]];
   state.cfg.preferredSubjects = ss.length ? ss : [SUBJECTS[0]];
   saveCfg();
-  pushSnapshot("Preferências atualizadas");
   render();
   toast("Preferências salvas.");
 }
@@ -9333,7 +9361,6 @@ function saveKey() {
   state.cfg.apiKey = el("s_key").value.trim();
   state.cfg.model = el("s_model").value.trim() || "claude-sonnet-5";
   saveCfg();
-  pushSnapshot("Chave da API atualizada");
   render();
   toast(state.cfg.apiKey ? "Chave salva. O Claude será usado nas próximas gerações." : "Chave removida. Usando gerador local.");
 }
@@ -9359,7 +9386,6 @@ function addSlot() {
   sc[sn][grade].push({ day:day, aulas:aulas, turno:turnoSel,
     horarios:slots.sort(function(a,b){ return a-b; }) });
   saveCfg();
-  pushSnapshot("Horário semanal alterado");
   render();
   toast("Aula adicionada ao horário.");
 }
