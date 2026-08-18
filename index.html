@@ -465,14 +465,34 @@ body.travado .topbar, body.travado footer, body.travado .side-ovl { display: non
    sobrava um vazio enorme no topo de cada gráfico. Na horizontal a altura
    é dada pelo número de linhas, o rótulo cabe inteiro (sem cortar
    "Língua Portuguesa" em "Língua") e a leitura no celular é direta. */
-.hbar { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+/* Barras do painel (v4.1) — traço fino em vez de faixa grossa.
+   Uma cor só (o azul da marca) porque o dado é quantidade, não categoria:
+   quatro cores diferentes para "quantos planos" fariam o leitor procurar um
+   significado que não existe. O trilho é um tom claro do mesmo azul, como
+   um medidor. O vermelho fica reservado para dizer "é aqui que você está"
+   — e vem sempre com a palavra escrita junto, nunca só a cor. */
+.hbar { display: flex; align-items: center; gap: 9px; margin-bottom: 5px; }
 .hbar:last-child { margin-bottom: 0; }
 .hbar-lb { flex: 0 0 40%; font-size: 11.5px; color: var(--t3); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
-.hbar-track { flex: 1; height: 8px; border-radius: 4px; background: var(--bg3); overflow: hidden; }
-.hbar-fill { height: 100%; border-radius: 4px; background: var(--acc); min-width: 4px; transition: width .25s; }
-.hbar-n { flex: 0 0 20px; text-align: right; font-size: 12px; font-weight: 700; color: var(--t2); }
+.hbar-track { flex: 1; height: 5px; border-radius: 99px; background: var(--acc3); overflow: hidden; }
+.hbar-fill { height: 100%; border-radius: 0 4px 4px 0; background: var(--acc); min-width: 3px;
+  transition: width .62s cubic-bezier(.22,1,.36,1); }
+.hbar-n { flex: 0 0 20px; text-align: right; font-size: 12px; font-weight: 700; color: var(--t2);
+  font-variant-numeric: tabular-nums; }
 .hbar-zero .hbar-lb, .hbar-zero .hbar-n { color: var(--t4); }
+.hbar-zero .hbar-fill { min-width: 0; }
+/* "Você está aqui": ponto vermelho + a palavra, no bimestre corrente.
+   O espaço do selo é reservado em TODAS as linhas do gráfico — se só a linha
+   marcada tivesse esse espaço, o trilho dela ficaria mais curto que os
+   outros e as barras deixariam de ser comparáveis entre si. */
+.hbar-agora .hbar-lb { color: var(--t1); font-weight: 700; }
+.hbar-fim { flex: 0 0 48px; text-align: right; }
+.hbar-tag { font-size: 8.5px; font-weight: 800; color: var(--red); letter-spacing: .06em;
+  text-transform: uppercase; white-space: nowrap; }
+.hbar-tag::before { content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--red); margin-right: 3px; vertical-align: middle; }
+@media (prefers-reduced-motion: reduce) { .hbar-fill { transition: none; } }
 
 /* ── Identidade visual do EducaPlan ──
    A marca (livro + lâmpada + cérebro) fica embutida no próprio arquivo como
@@ -867,6 +887,15 @@ var W_SCHEDULE = {
   }
 };
 
+/* Qual bimestre estamos vivendo agora — usado no painel para marcar em
+   vermelho a linha do bimestre corrente ("agora"). */
+function bimestreCorrente() {
+  var mes = MONTHS_FULL[new Date().getMonth()];
+  for (var i = 0; i < BIMESTRES.length; i++) {
+    if (BIMESTRES[i].meses.indexOf(mes) >= 0) return BIMESTRES[i].id;
+  }
+  return "";
+}
 var BIMESTRES = [
   { id:"b1", label:"1º Bimestre", meses:["Fevereiro","Março","Abril"], cor:"var(--grn)", bg:"var(--grnBg)", emoji:"🌱" },
   { id:"b2", label:"2º Bimestre", meses:["Maio","Junho","Julho"],      cor:"var(--acc)", bg:"var(--acc3)",  emoji:"☀️" },
@@ -7193,10 +7222,10 @@ function ofBadge(pct) {
    apenas um número solto acima de uma linha fina. */
 function ofSec(num, title, body, sub) {
   return '<table class="sec-title" style="border-collapse:collapse;margin:22px 0 6px"><tr>' +
-      "<td style='width:26px;height:26px;background:" + OF_GRAFITE + ";color:#fff;text-align:center;" +
-        "font-weight:800;font-size:12.5px;vertical-align:middle'>" + esc(num) + "</td>" +
-      "<td style='padding-left:9px;font-weight:800;font-size:13.5px;letter-spacing:.015em;color:" + OF_TXT + ";" +
-        "border-bottom:2px solid " + OF_GRAFITE + ";vertical-align:middle'>" + esc(title) + "</td>" +
+      "<td style='width:21px;height:21px;background:" + OF_GRAFITE + ";color:#fff;text-align:center;" +
+        "font-weight:800;font-size:11px;vertical-align:middle'>" + esc(num) + "</td>" +
+      "<td style='padding-left:9px;font-weight:800;font-size:13px;letter-spacing:.02em;color:" + OF_TXT + ";" +
+        "border-bottom:1px solid " + OF_GRAFITE + ";vertical-align:middle'>" + esc(title) + "</td>" +
     "</tr></table>" +
     (sub ? '<div style="font-size:11px;font-style:italic;color:' + OF_TXT2 + ';margin:5px 0 9px">' + sub + "</div>" : "") +
     '<div class="sec-body" style="font-size:12.5px;color:' + OF_TXT + ';line-height:1.55">' + body + "</div>";
@@ -7211,8 +7240,8 @@ function ofBullets(arr) {
    RECOMPOSIÇÃO CICLO II") — reaproveitada para organizar a seção de
    Recursos em categorias, em vez de uma lista única e longa. */
 function ofSubBanner(text) {
-  return '<div class="sec-sub-banner" style="margin:14px 0 4px;padding:5px 9px;background:' + OF_GRAFITE +
-    ';color:#fff;font-size:11px;font-weight:700;letter-spacing:.02em">' + esc(String(text).toUpperCase()) + "</div>";
+  return '<div class="sec-sub-banner" style="margin:14px 0 4px;padding:3px 9px;background:' + OF_GRAFITE +
+    ';color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.06em">' + esc(String(text).toUpperCase()) + "</div>";
 }
 /* Ícone por item de recurso, reconhecível de sala de aula comum — detectado
    por palavra-chave no próprio texto do item (sem exigir campo novo). */
@@ -7675,13 +7704,13 @@ function ofCronograma(cron) {
       " objeto(s) de conhecimento deste plano n&atilde;o puderam ser distribu&iacute;dos no calend&aacute;rio.</div>";
   }
   var kpis = '<table style="width:100%;border-collapse:collapse;border:1px solid ' + OF_BRD + ';margin-bottom:10px"><tr>' +
-    "<td style='width:33.3%;padding:10px 8px;text-align:center;background:" + OF_SOFT + "'>" +
+    "<td style='width:33.3%;padding:7px 8px;text-align:center;background:" + OF_SOFT + "'>" +
       '<div style="font-size:20px;font-weight:800;color:' + OF_TXT + '">' + cron.encounters + '</div>' +
       '<div style="font-size:8.5px;font-weight:700;letter-spacing:.04em;color:' + OF_TXT2 + '">ENCONTROS NO M&Ecirc;S</div></td>' +
-    "<td style='width:33.3%;padding:10px 8px;text-align:center;background:" + OF_GRAFITE + "'>" +
+    "<td style='width:33.3%;padding:7px 8px;text-align:center;background:" + OF_GRAFITE + "'>" +
       '<div style="font-size:20px;font-weight:800;color:#fff">' + cron.monthlyLessons + '</div>' +
       '<div style="font-size:8.5px;font-weight:700;letter-spacing:.04em;color:#e4e4e4">AULAS NO M&Ecirc;S</div></td>' +
-    "<td style='width:33.3%;padding:10px 8px;text-align:center;background:" + OF_SOFT + "'>" +
+    "<td style='width:33.3%;padding:7px 8px;text-align:center;background:" + OF_SOFT + "'>" +
       '<div style="font-size:20px;font-weight:800;color:' + OF_TXT + '">' + cron.itemCount + '</div>' +
       '<div style="font-size:8.5px;font-weight:700;letter-spacing:.04em;color:' + OF_TXT2 + '">OBJETOS DISTRIBU&Iacute;DOS</div></td>' +
   "</tr></table>";
@@ -7715,9 +7744,9 @@ function ofMinBar(minutes, maxMinutes) {
   var m = Number(minutes) || 0;
   var pct = maxMinutes > 0 ? Math.round((m / maxMinutes) * 100) : 0;
   return '<table style="border-collapse:collapse;margin-top:4px"><tr>' +
-    "<td style='width:120px;padding:0'><table style='width:100%;height:7px;border-collapse:collapse'><tr>" +
-      "<td style='width:" + pct + "%;background:" + OF_GRAFITE + ";height:7px;padding:0;font-size:1px;line-height:1px'>&nbsp;</td>" +
-      "<td style='background:" + OF_CONS + ";height:7px;padding:0;font-size:1px;line-height:1px'>&nbsp;</td>" +
+    "<td style='width:120px;padding:0'><table style='width:100%;height:5px;border-collapse:collapse'><tr>" +
+      "<td style='width:" + pct + "%;background:" + OF_GRAFITE + ";height:5px;padding:0;font-size:1px;line-height:1px'>&nbsp;</td>" +
+      "<td style='background:" + OF_CONS + ";height:5px;padding:0;font-size:1px;line-height:1px'>&nbsp;</td>" +
     "</tr></table></td>" +
     "<td style='padding-left:7px;font-size:10.5px;color:" + OF_TXT2 + ";font-weight:700;white-space:nowrap'>" + m + " min</td>" +
   "</tr></table>";
@@ -7734,7 +7763,7 @@ function ofMetodologiaTimeline(methodology) {
   var cards = steps.map(function(m, i) {
     return '<table style="width:100%;border-collapse:collapse;margin-bottom:13px"><tr>' +
       "<td style='width:28px;vertical-align:top;padding-top:1px'>" +
-        "<table style='border-collapse:collapse'><tr><td style='width:22px;height:22px;border-radius:11px;background:" + OF_GRAFITE +
+        "<table style='border-collapse:collapse'><tr><td style='width:19px;height:19px;border-radius:10px;background:" + OF_GRAFITE +
         ";color:#fff;text-align:center;font-weight:800;font-size:10.5px;vertical-align:middle'>" + (i + 1) + "</td></tr></table></td>" +
       "<td style='padding-left:10px;border-left:2px solid " + OF_BRD + ";padding-bottom:2px'>" +
         "<div style='font-weight:700;font-size:12.5px;color:" + OF_TXT + "'>" + esc(m.title) + "</div>" +
@@ -7836,8 +7865,8 @@ function viewPlanAnosIniciais(pl, c, pc, cfg) {
   });
 
   var thUnid = function(t) {
-    return "<td style='padding:6px 10px;border:1px solid " + OF_BRD + ";background:" + OF_GRAFITE +
-      ";color:#fff;font-weight:800;font-size:10px;letter-spacing:.03em'>" + t + "</td>";
+    return "<td style='padding:4px 10px;border:1px solid " + OF_BRD + ";background:" + OF_GRAFITE +
+      ";color:#fff;font-weight:800;font-size:9.5px;letter-spacing:.06em'>" + t + "</td>";
   };
   var unidadesHtml = unidadesRows
     ? '<table style="width:100%;border-collapse:collapse">' +
@@ -7989,8 +8018,8 @@ function viewPlanOficial(pl, c, pc, cfg) {
     });
   });
   var objetoTh = function(text) {
-    return "<td style='padding:6px 10px;border:1px solid " + OF_BRD + ";background:" + OF_GRAFITE +
-      ";color:#fff;font-weight:800;font-size:10px;letter-spacing:.03em'>" + text + "</td>";
+    return "<td style='padding:4px 10px;border:1px solid " + OF_BRD + ";background:" + OF_GRAFITE +
+      ";color:#fff;font-weight:800;font-size:9.5px;letter-spacing:.06em'>" + text + "</td>";
   };
   /* Versão empilhada da mesma tabela, usada só em tela estreita (celular).
      Em 3 colunas dentro de ~350px o conteúdo fica ilegível, então no celular
@@ -8132,10 +8161,10 @@ function viewPlanOficial(pl, c, pc, cfg) {
     (mosaicoHtml ? '<div style="font-size:11px;font-weight:700;color:' + OF_TXT + ';margin-bottom:4px">Panorama geral das habilidades com dado real de desempenho</div>' + mosaicoHtml : "") +
     ofSec("3", "Habilidades", habilidadesHtml,
       "Organizadas do desempenho mais cr&iacute;tico para o mais consolidado &mdash; o plano parte delas, n&atilde;o do conte&uacute;do.") +
-    '<div style="margin:14px 0 4px;padding:5px 9px;background:' + OF_GRAFITE + ';color:#fff;font-size:11px;font-weight:700">HABILIDADES RECOMPOSI&Ccedil;&Atilde;O CICLO II</div>' +
+    '<div style="margin:14px 0 4px;padding:3px 9px;background:' + OF_GRAFITE + ';color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.06em">HABILIDADES RECOMPOSI&Ccedil;&Atilde;O CICLO II</div>' +
     '<div class="sec-body" style="font-size:12.5px">' + recomposicaoHtml + "</div>" +
     (habBnccCompHtml
-      ? '<div style="margin:14px 0 4px;padding:5px 9px;background:' + OF_GRAFITE + ';color:#fff;font-size:11px;font-weight:700">HABILIDADE BNCC COMPUTA&Ccedil;&Atilde;O</div>' +
+      ? '<div style="margin:14px 0 4px;padding:3px 9px;background:' + OF_GRAFITE + ';color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.06em">HABILIDADE BNCC COMPUTA&Ccedil;&Atilde;O</div>' +
         '<div class="sec-body" style="font-size:12.5px">' + habBnccCompHtml + "</div>"
       : "") +
     ofSec("4", "Competências Gerais", OF_COMP_GERAIS) +
@@ -8305,6 +8334,7 @@ function viewHome() {
     return { b:b, n:plans.filter(function(p){ return b.meses.indexOf(p.config.month) >= 0; }).length };
   });
   var maxBim = Math.max(1, Math.max.apply(null, bimCount.map(function(x){ return x.n; })));
+  var bimAtual = bimestreCorrente();
   var aeeCount = plans.filter(function(p){ return p.config.aee && p.config.aee.active; }).length;
   var aiCount = plans.filter(function(p){ return p.generatedByAi; }).length;
   var recent = plans.slice(0, 3);
@@ -8323,13 +8353,20 @@ function viewHome() {
   }
 
   /* Uma linha de barra horizontal: rótulo, trilho proporcional e valor. */
-  function hbar(rotulo, valor, maximo, cor) {
+  /* A largura final vai em data-w e só é aplicada depois que a tela aparece
+     (ver animarBarras) — é isso que produz o crescimento suave ao abrir o
+     app, sem biblioteca de animação e sem atrasar a primeira pintura. */
+  function hbar(rotulo, valor, maximo, agora, reservarSelo) {
     var pct = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
-    return '<div class="hbar' + (valor ? "" : " hbar-zero") + '" title="' + esc(rotulo) + '">' +
+    return '<div class="hbar' + (valor ? "" : " hbar-zero") + (agora ? " hbar-agora" : "") +
+      '" title="' + esc(rotulo) + ": " + valor + (agora ? " (bimestre atual)" : "") + '">' +
       '<div class="hbar-lb">' + esc(rotulo) + "</div>" +
-      '<div class="hbar-track"><div class="hbar-fill" style="width:' + (valor ? Math.max(pct, 8) : 0) + "%" +
-        (cor ? ";background:" + cor : "") + '"></div></div>' +
-      '<div class="hbar-n">' + valor + "</div></div>";
+      '<div class="hbar-track"><div class="hbar-fill" style="width:0" data-w="' +
+        (valor ? Math.max(pct, 6) : 0) + '"></div></div>' +
+      '<div class="hbar-n">' + valor + "</div>" +
+      (reservarSelo ? '<div class="hbar-fim">' +
+        (agora ? '<span class="hbar-tag">agora</span>' : "") + "</div>" : "") +
+    "</div>";
   }
 
   return '<div class="wrap fade" style="padding:26px 18px 46px">' +
@@ -8360,13 +8397,13 @@ function viewHome() {
       '<div class="card" style="padding:15px 17px">' +
         '<div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:9px">Distribui&ccedil;&atilde;o por Bimestre</div>' +
         bimCount.map(function(x) {
-          return hbar(x.b.emoji + " " + x.b.label, x.n, maxBim, x.b.cor);
+          return hbar(x.b.emoji + " " + x.b.label, x.n, maxBim, x.b.id === bimAtual, !!bimAtual);
         }).join("") +
       "</div>" +
       '<div class="card" style="padding:15px 17px">' +
         '<div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:9px">Planos por Componente</div>' +
         (subjBars.length
-          ? subjBars.map(function(s) { return hbar(s, subjCount[s], maxSubj, null); }).join("")
+          ? subjBars.map(function(s) { return hbar(s, subjCount[s], maxSubj, false); }).join("")
           : '<div style="color:var(--t4);font-size:12px;padding:6px 0">Nenhum plano salvo ainda.</div>') +
       "</div>" +
     "</div>" +
@@ -10817,6 +10854,28 @@ function renderSide() {
   s.innerHTML = html;
 }
 
+/* Crescimento das barras ao abrir o painel (v4.1). As barras nascem com
+   largura zero e recebem a largura real no quadro seguinte — o navegador
+   anima a diferença sozinho, com um pequeno atraso em cascata para a leitura
+   acompanhar de cima para baixo. Quem pede menos animação no sistema (Android
+   e iOS têm essa opção de acessibilidade) recebe as barras já prontas. */
+function animarBarras() {
+  var barras = document.querySelectorAll(".hbar-fill[data-w]");
+  if (!barras.length) return;
+  var semAnimacao = false;
+  try { semAnimacao = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+  var aplicar = function() {
+    for (var i = 0; i < barras.length; i++) {
+      var b = barras[i];
+      b.style.transitionDelay = semAnimacao ? "0ms" : (Math.min(i, 8) * 55) + "ms";
+      b.style.width = b.getAttribute("data-w") + "%";
+      b.removeAttribute("data-w");
+    }
+  };
+  if (semAnimacao) { aplicar(); return; }
+  requestAnimationFrame(function(){ requestAnimationFrame(aplicar); });
+}
+
 function renderKeep(focusId) {
   render();
   var f = el(focusId);
@@ -10860,6 +10919,7 @@ function render() {
   else if (state.view === "settings") html = viewSettings();
   else html = viewHome();
   el("app").innerHTML = html;
+  animarBarras();
 
   /* Guarda quais blocos de Ajustes ficaram abertos, sem re-renderizar */
   if (state.view === "settings") {
