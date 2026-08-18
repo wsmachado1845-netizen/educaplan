@@ -372,6 +372,23 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
   .lg-art-tx { display: none; }
 }
 
+/* ── Tela de bloqueio (v3.8) ──
+   Aparece antes de qualquer tela do app quando o professor ativa o PIN
+   ou a digital. Deliberadamente simples: cabe inteira na tela do celular
+   sem rolagem, com o teclado numérico aberto. */
+.bl-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 26px 18px; box-sizing: border-box; }
+/* Com o app bloqueado, some tudo que não é a tela de bloqueio: barra
+   superior, botão de menu e rodapé — assim a tela cabe inteira no celular. */
+body.travado .topbar, body.travado footer, body.travado .side-ovl { display: none !important; }
+.bl-card { width: 100%; max-width: 350px; text-align: center; }
+.bl-ring { width: 86px; height: 86px; margin: 0 auto 16px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border); display: flex;
+  align-items: center; justify-content: center; }
+.bl-pin { font-size: 26px; letter-spacing: 10px; text-align: center; font-weight: 700;
+  padding: 13px 10px; }
+.bl-msg { font-size: 12px; color: var(--t4); min-height: 17px; margin: 10px 0 2px; line-height: 1.5; }
+
 /* ── Painel principal: barras horizontais ──
    As barras verticais precisavam de 150px de altura fixa; com poucos planos
    sobrava um vazio enorme no topo de cada gráfico. Na horizontal a altura
@@ -2035,12 +2052,216 @@ var K_DIARY = "educaplan_diary_v2";
 var K_USER = "educaplan_user_v2";
 var K_SNAPSHOTS = "educaplan_snapshots_v1";
 var K_SYNCMETA = "educaplan_syncmeta_v1";
+var K_LOCK = "educaplan_lock_v1";
 
 function lsGet(k, fb) {
   try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : fb; } catch(e) { return fb; }
 }
 function lsSet(k, v) {
   try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {}
+}
+
+/* =========================================================
+   v3.8 — BLOQUEIO DO APLICATIVO (PIN + DIGITAL)
+   ---------------------------------------------------------
+   O bloqueio é local: o PIN nunca é guardado em texto, apenas o
+   resultado embaralhado dele. A digital usa a WebAuthn — quem confere
+   o dedo é o próprio aparelho (o app só recebe "conferiu" ou "não
+   conferiu"); nenhuma imagem de digital passa pelo app nem sai daqui.
+   A configuração fica só neste aparelho e NÃO vai para o backup nem
+   para o Google Drive, pra não bloquear os outros aparelhos sem querer.
+   ========================================================= */
+function lockCfg() {
+  var c = lsGet(K_LOCK, null);
+  if (!c || typeof c !== "object") c = {};
+  if (typeof c.ativo !== "boolean") c.ativo = false;
+  if (typeof c.quando !== "string") c.quando = "abrir";   /* abrir | m5 | m15 */
+  return c;
+}
+function lockSalvar(c) { lsSet(K_LOCK, c || {}); }
+function lockAtivo() { var c = lockCfg(); return !!(c.ativo && c.hash); }
+
+/* Embaralha o PIN com um sal aleatório, repetidas vezes, para que o valor
+   guardado não permita voltar ao número original. */
+function _lockHash(pin, sal) {
+  var s = String(sal || "") + "|" + String(pin || "") + "|educaplan";
+  var h1 = 0x811c9dc5, h2 = 0x1000193;
+  for (var r = 0; r < 3000; r++) {
+    for (var i = 0; i < s.length; i++) {
+      var ch = s.charCodeAt(i);
+      h1 = ((h1 ^ ch) * 16777619) >>> 0;
+      h2 = ((h2 << 5) + h2 + ch + r) >>> 0;
+    }
+  }
+  return ("00000000" + h1.toString(16)).slice(-8) + ("00000000" + h2.toString(16)).slice(-8);
+}
+function _lockSal() {
+  var a = "", cs = "abcdef0123456789";
+  for (var i = 0; i < 16; i++) a += cs.charAt(Math.floor(Math.random() * cs.length));
+  return a;
+}
+function lockConfere(pin) {
+  var c = lockCfg();
+  if (!c.hash) return false;
+  return _lockHash(pin, c.sal) === c.hash;
+}
+
+/* ---- Digital / biometria (WebAuthn) ---- */
+function bioDisponivel() {
+  return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create);
+}
+function _bufB64(buf) {
+  var b = new Uint8Array(buf), s = "";
+  for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+  return btoa(s);
+}
+function _b64Buf(str) {
+  var s = atob(String(str || "")), b = new Uint8Array(s.length);
+  for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+  return b;
+}
+function _desafio() {
+  var a = new Uint8Array(32);
+  try { window.crypto.getRandomValues(a); }
+  catch (e) { for (var i = 0; i < 32; i++) a[i] = Math.floor(Math.random() * 256); }
+  return a;
+}
+function bioCadastrar() {
+  var c = lockCfg();
+  if (!c.hash) { toast("Crie o PIN antes de ativar a digital."); return; }
+  if (!bioDisponivel()) { toast("Este aparelho não oferece desbloqueio por digital."); return; }
+  var nome = state.cfg.teacherName || (state.user && state.user.name) || "Professor(a)";
+  navigator.credentials.create({ publicKey: {
+    challenge: _desafio(),
+    rp: { name: "EducaPlan" },
+    user: { id: _b64Buf(btoa("educaplan-local")), name: nome, displayName: nome },
+    pubKeyCredParams: [ { type:"public-key", alg:-7 }, { type:"public-key", alg:-257 } ],
+    authenticatorSelection: { authenticatorAttachment:"platform", userVerification:"required" },
+    timeout: 60000, attestation: "none"
+  } }).then(function(cred) {
+    var c2 = lockCfg();
+    c2.bio = true; c2.credId = _bufB64(cred.rawId);
+    lockSalvar(c2);
+    toast("Digital ativada neste aparelho.");
+    render();
+  }).catch(function(e) {
+    toast("Não deu para ativar a digital (" + ((e && e.name) || "erro") + ").");
+  });
+}
+function bioRemover() {
+  var c = lockCfg();
+  c.bio = false; c.credId = "";
+  lockSalvar(c);
+  toast("Digital desativada. O PIN continua valendo.");
+  render();
+}
+function bioEntrar() {
+  var c = lockCfg();
+  if (!c.bio || !c.credId) return;
+  var m = el("bl_msg");
+  if (m) { m.textContent = "Toque o sensor de digital do aparelho…"; m.style.color = "var(--t4)"; }
+  navigator.credentials.get({ publicKey: {
+    challenge: _desafio(),
+    allowCredentials: [ { id: _b64Buf(c.credId), type: "public-key", transports: ["internal"] } ],
+    userVerification: "required", timeout: 60000
+  } }).then(function() {
+    lockDesbloquear();
+  }).catch(function() {
+    var m2 = el("bl_msg");
+    if (m2) { m2.textContent = "Digital não reconhecida. Use o PIN abaixo."; m2.style.color = "var(--red)"; }
+  });
+}
+
+/* ---- Travar / destravar ---- */
+function lockDesbloquear() {
+  state.travado = false;
+  _bioJaPediu = false;
+  render();
+}
+function lockTravarAgora() {
+  if (!lockAtivo()) { toast("Ative o bloqueio em Ajustes primeiro."); return; }
+  state.travado = true;
+  _bioJaPediu = false;
+  closeSide();
+  render();
+}
+function lockTentarPin() {
+  var i = el("bl_pin");
+  var m = el("bl_msg");
+  var v = i ? String(i.value || "").trim() : "";
+  if (!v) return;
+  if (lockConfere(v)) { lockDesbloquear(); return; }
+  if (i) { i.value = ""; i.focus(); }
+  if (m) { m.textContent = "PIN incorreto. Tente de novo."; m.style.color = "var(--red)"; }
+}
+function lockTeclaPin(ev) { if (ev && ev.key === "Enter") lockTentarPin(); }
+
+/* Saída de emergência: o professor confirma o próprio nome como está
+   cadastrado no app. Evita ficar trancado para fora dos próprios planos
+   por causa de um PIN esquecido. */
+function _soLetras(t) {
+  var t2 = String(t || "");
+  try { t2 = t2.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); } catch (e) {}
+  return t2.toLowerCase().replace(/[^a-z ]/g, "").replace(/\s+/g, " ").trim();
+}
+function lockEsqueciPin() {
+  var nome = (state.cfg.teacherName || (state.user && state.user.name) || "").trim();
+  if (!nome) { alert("Não há nome de professor cadastrado neste aparelho para conferir."); return; }
+  var r = prompt("Para remover o bloqueio, digite o nome do professor(a) exatamente como está cadastrado no app:");
+  if (r === null) return;
+  if (_soLetras(r) && _soLetras(r) === _soLetras(nome)) {
+    lockSalvar({ ativo:false, quando:"abrir" });
+    state.travado = false;
+    render();
+    alert("Bloqueio removido. Cadastre um novo PIN em Ajustes › Bloqueio do aplicativo.");
+  } else {
+    alert("O nome não confere. O bloqueio continua ativo.");
+  }
+}
+
+/* ---- Configuração em Ajustes ---- */
+function lockAtivarPin() {
+  var a = el("sg_pin"), b = el("sg_pin2");
+  var p1 = a ? String(a.value || "").trim() : "";
+  var p2 = b ? String(b.value || "").trim() : "";
+  if (!/^\d{4,8}$/.test(p1)) { toast("O PIN deve ter de 4 a 8 números."); return; }
+  if (p1 !== p2) { toast("Os dois PINs digitados não são iguais."); return; }
+  var c = lockCfg();
+  c.sal = _lockSal();
+  c.hash = _lockHash(p1, c.sal);
+  c.ativo = true;
+  lockSalvar(c);
+  toast("Bloqueio ativado. Da próxima vez que abrir, o app vai pedir o PIN.");
+  render();
+}
+function lockTrocarPin() {
+  var atual = prompt("Digite o PIN atual:");
+  if (atual === null) return;
+  if (!lockConfere(String(atual).trim())) { alert("PIN atual incorreto."); return; }
+  var novo = prompt("Novo PIN (4 a 8 números):");
+  if (novo === null) return;
+  novo = String(novo).trim();
+  if (!/^\d{4,8}$/.test(novo)) { alert("O PIN deve ter de 4 a 8 números."); return; }
+  var c = lockCfg();
+  c.sal = _lockSal();
+  c.hash = _lockHash(novo, c.sal);
+  lockSalvar(c);
+  toast("PIN alterado.");
+}
+function lockDesativar() {
+  var atual = prompt("Digite o PIN para desativar o bloqueio:");
+  if (atual === null) return;
+  if (!lockConfere(String(atual).trim())) { alert("PIN incorreto. O bloqueio continua ativo."); return; }
+  lockSalvar({ ativo:false, quando:"abrir" });
+  state.travado = false;
+  toast("Bloqueio desativado.");
+  render();
+}
+function lockQuando(v) {
+  var c = lockCfg();
+  c.quando = v || "abrir";
+  lockSalvar(c);
+  toast("Preferência salva.");
 }
 
 /* =========================================================
@@ -4945,6 +5166,13 @@ if (!Array.isArray(state.plans)) state.plans = [];
   } catch (e) {}
 })();
 
+/* v3.8 — se o professor ativou o bloqueio, o app já nasce travado.
+   _bioJaPediu evita que o pedido da digital dispare de novo a cada
+   re-render da tela de bloqueio. */
+var _bioJaPediu = false;
+var _ocultoDesde = 0;
+state.travado = lockAtivo();
+
 function saveCfg() { lsSet(K_CFG, state.cfg); markChanged(); }
 function savePlans() { lsSet(K_PLANS, state.plans); markChanged(); }
 function saveDiary() { lsSet(K_DIARY, state.diary); markChanged(); }
@@ -7841,6 +8069,38 @@ function ilustracaoEntrada() {
   "</svg>";
 }
 
+/* ---------------- TELA DE BLOQUEIO (v3.8) ---------------- */
+function viewBloqueio() {
+  var c = lockCfg();
+  var nome = (state.cfg.teacherName || (state.user && state.user.name) || "").split(" ")[0];
+  var temBio = !!(c.bio && c.credId && bioDisponivel());
+
+  return '<div class="bl-wrap fade"><div class="bl-card">' +
+    '<div class="bl-ring">' + marcaImg(52) + "</div>" +
+    "<h1 style='font-size:21px;margin:0 0 4px'>" + marcaNome(21) + "</h1>" +
+    "<div style='font-size:12.5px;color:var(--t3);margin-bottom:20px'>" +
+      (nome ? "Bem-vindo de volta, " + esc(nome) + "." : "Aplicativo bloqueado.") + "</div>" +
+
+    '<div class="card" style="padding:20px">' +
+      (temBio
+        ? '<button class="btn btn-primary btn-block btn-lg" onclick="bioEntrar()" style="margin-bottom:14px">' +
+            "&#128075;&nbsp; Entrar com a digital</button>" +
+          "<div style='font-size:11px;color:var(--t4);margin-bottom:12px'>ou digite seu PIN</div>"
+        : "") +
+      '<input class="inp bl-pin" id="bl_pin" type="password" inputmode="numeric" ' +
+        'autocomplete="off" maxlength="8" placeholder="••••" onkeydown="lockTeclaPin(event)" />' +
+      '<div class="bl-msg" id="bl_msg"></div>' +
+      '<button class="btn btn-primary btn-block" onclick="lockTentarPin()" style="margin-top:6px">Desbloquear</button>' +
+      '<div style="text-align:center;margin-top:10px">' +
+        '<button class="btn btn-ghost btn-sm" onclick="lockEsqueciPin()">Esqueci meu PIN</button>' +
+      "</div>" +
+    "</div>" +
+    '<p style="font-size:10.5px;color:var(--t4);margin-top:14px;line-height:1.6">' +
+      "Seus planos continuam salvos neste aparelho.<br/>O bloqueio vale apenas para este aparelho." +
+    "</p>" +
+  "</div></div>";
+}
+
 function viewLogin() {
   var sel = (typeof state.loginAtalho === "number") ? state.loginAtalho : null;
   var chips = ATALHOS_ENTRADA.map(function(a, i) {
@@ -9186,6 +9446,65 @@ function viewSettings() {
       })() +
     "</div></details>" +
 
+    /* Bloqueio do aplicativo (v3.8) */
+    '<details class="aj-sec" data-sec="Bloqueiodoapli"' + (ajusteAberto('Bloqueiodoapli') ? ' open' : '') + '>' +
+      '<summary class="aj-sum">Bloqueio do Aplicativo</summary>' +
+      '<div class="aj-body">' +
+      (function() {
+        var lc = lockCfg();
+        var ativo = lockAtivo();
+        var podeBio = bioDisponivel();
+        var h = '<p style="font-size:11.5px;color:var(--t4);margin:0 0 13px;line-height:1.6">' +
+          "Pede um <strong>PIN</strong> (e a <strong>digital</strong>, se o aparelho tiver) toda vez que o app abrir. " +
+          "Quem confere o dedo &eacute; o pr&oacute;prio celular &mdash; o app s&oacute; recebe a confirma&ccedil;&atilde;o, " +
+          "nenhuma digital &eacute; guardada aqui. A configura&ccedil;&atilde;o vale <strong>s&oacute; neste aparelho</strong> e " +
+          "n&atilde;o vai junto no backup nem no Google Drive." + "</p>";
+
+        if (!ativo) {
+          h += '<div class="g2" style="max-width:520px">' +
+            '<div><label class="lbl">Criar PIN (4 a 8 n&uacute;meros)</label>' +
+              '<input class="inp" id="sg_pin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" /></div>' +
+            '<div><label class="lbl">Repetir o PIN</label>' +
+              '<input class="inp" id="sg_pin2" type="password" inputmode="numeric" maxlength="8" autocomplete="off" /></div>' +
+          "</div>" +
+          '<button class="btn btn-primary" style="margin-top:14px" onclick="lockAtivarPin()">Ativar bloqueio</button>' +
+          '<div style="font-size:10.5px;color:var(--t4);margin-top:10px;line-height:1.55">' +
+            "A digital pode ser ligada depois de criar o PIN &mdash; ela funciona como atalho, e o PIN fica sempre " +
+            "como reserva. Se esquecer o PIN, d&aacute; para remover o bloqueio confirmando o nome do professor(a) " +
+            "cadastrado em Identidade Institucional." + "</div>";
+          return h;
+        }
+
+        h += '<div class="card-soft" style="padding:13px 15px;margin-bottom:14px;font-size:12px">' +
+          "&#128274; <strong>Bloqueio ativo.</strong> " +
+          (lc.bio && lc.credId ? "Digital ligada neste aparelho." : "Somente PIN por enquanto.") + "</div>";
+
+        h += '<label class="lbl">Quando pedir o PIN</label>' +
+          '<select class="inp" style="max-width:340px" onchange="lockQuando(this.value)">' +
+            '<option value="abrir"' + (lc.quando === "abrir" ? " selected" : "") + '>Ao abrir o aplicativo</option>' +
+            '<option value="m5"' + (lc.quando === "m5" ? " selected" : "") + '>Ao abrir e depois de 5 min fora do app</option>' +
+            '<option value="m15"' + (lc.quando === "m15" ? " selected" : "") + '>Ao abrir e depois de 15 min fora do app</option>' +
+          "</select>";
+
+        h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:15px">' +
+          (podeBio
+            ? (lc.bio && lc.credId
+                ? '<button class="btn btn-outline btn-sm" onclick="bioRemover()">Desativar digital</button>'
+                : '<button class="btn btn-primary btn-sm" onclick="bioCadastrar()">Ativar digital neste aparelho</button>')
+            : '<span style="font-size:11px;color:var(--t4);align-self:center">Este navegador n&atilde;o oferece digital.</span>') +
+          '<button class="btn btn-outline btn-sm" onclick="lockTrocarPin()">Trocar PIN</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="lockTravarAgora()">Bloquear agora</button>' +
+          '<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="lockDesativar()">Desativar bloqueio</button>' +
+        "</div>";
+
+        h += '<div style="font-size:10.5px;color:var(--t4);margin-top:12px;line-height:1.55">' +
+          "Cada aparelho tem seu pr&oacute;prio bloqueio: ativar aqui n&atilde;o bloqueia o app no computador, e vice-versa. " +
+          "&Eacute; uma prote&ccedil;&atilde;o contra olhares curiosos quando o celular fica na mesa &mdash; " +
+          "n&atilde;o substitui a senha de tela do pr&oacute;prio aparelho." + "</div>";
+        return h;
+      })() +
+    "</div></details>" +
+
     /* Dados */
     '<details class="aj-sec" data-sec="DadoseBackup"' + (ajusteAberto('DadoseBackup') ? ' open' : '') + '>' +
       '<summary class="aj-sum">Dados e Backup</summary>' +
@@ -10212,7 +10531,11 @@ function wipeAll() {
      tudo" feito sem querer. */
   pushSnapshot("Antes de apagar todos os dados", true);
   try { localStorage.removeItem(K_PLANS); localStorage.removeItem(K_CFG);
-    localStorage.removeItem(K_DIARY); localStorage.removeItem(K_USER); } catch(e) {}
+    localStorage.removeItem(K_DIARY); localStorage.removeItem(K_USER);
+    /* Sem dados, o bloqueio não protege mais nada — e ficaria pedindo PIN
+       na tela de cadastro. */
+    localStorage.removeItem(K_LOCK); } catch(e) {}
+  state.travado = false;
   state.plans = []; state.diary = {}; state.user = null;
   state.cfg = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
   applyTheme();
@@ -10302,6 +10625,7 @@ function renderSide() {
         (hasKey ? "Conectado à API do Claude" : "Sem chave — gerador local") + '">' +
         (hasKey ? "Claude" : "Local") + "</span>" +
       '<button class="icon-btn" onclick="toggleTheme()" title="Trocar tema (' + esc(th.name) + ')">&#9681; ' + esc(th.name) + "</button>" +
+      (lockAtivo() ? '<button class="icon-btn" onclick="lockTravarAgora()" title="Bloquear o aplicativo agora">&#128274;</button>' : "") +
       '<button class="icon-btn" onclick="logout()" title="Sair">&#9099;</button>' +
     "</div></div>";
 
@@ -10315,6 +10639,24 @@ function renderKeep(focusId) {
 }
 
 function render() {
+  /* v3.8 — nada do app aparece enquanto o bloqueio não for liberado. */
+  if (state.user && state.travado && lockAtivo()) {
+    var sd = el("side");
+    if (sd) { sd.innerHTML = ""; sd.style.display = "none"; }
+    document.body.classList.add("travado");
+    document.body.classList.remove("side-open");
+    el("app").innerHTML = viewBloqueio();
+    var lc = lockCfg();
+    if (lc.bio && lc.credId && bioDisponivel() && !_bioJaPediu) {
+      _bioJaPediu = true;
+      setTimeout(bioEntrar, 350);
+    } else {
+      setTimeout(function() { var i = el("bl_pin"); if (i) { try { i.focus(); } catch (e) {} } }, 120);
+    }
+    return;
+  }
+
+  document.body.classList.remove("travado");
   renderSide();
   var html;
   if (!state.user) html = viewLogin();
@@ -10399,6 +10741,20 @@ render();
    permissão ainda vale e renova se precisar — assim a sincronização não
    falha silenciosamente depois de horas com o app aberto em segundo plano. */
 document.addEventListener("visibilitychange", function() {
+  /* v3.8 — bloqueio por tempo fora do app, quando o professor escolhe
+     essa opção em Ajustes. */
+  if (document.visibilityState === "hidden") { _ocultoDesde = Date.now(); }
+  else if (lockAtivo() && !state.travado && _ocultoDesde) {
+    var lc = lockCfg();
+    var limite = lc.quando === "m5" ? 5 * 60000 : (lc.quando === "m15" ? 15 * 60000 : 0);
+    if (limite && (Date.now() - _ocultoDesde) >= limite) {
+      state.travado = true;
+      _bioJaPediu = false;
+      render();
+    }
+    _ocultoDesde = 0;
+  }
+
   if (document.visibilityState !== "visible") return;
   var g = driveState();
   if (!driveJaAutorizado()) return;
