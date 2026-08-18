@@ -372,6 +372,43 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
   .lg-art-tx { display: none; }
 }
 
+/* ── Barra inferior de navegação (v3.9) ──
+   No celular, tudo passava pelo ☰ no canto de cima — o ponto mais difícil
+   de alcançar com o polegar e dois toques a mais em cada troca de tela.
+   A barra fica fixa embaixo, com as quatro telas do dia a dia e o botão
+   Criar em destaque. No computador ela some: lá o menu lateral já é melhor. */
+.tabbar { display: none; }
+@media (max-width: 900px) {
+  .tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 44;
+    background: var(--bg2); border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 12px rgba(20,40,70,.07);
+    padding: 7px 4px calc(9px + env(safe-area-inset-bottom, 0px));
+  }
+  .tab { flex: 1; min-width: 0; background: none; border: none; font-family: inherit;
+    color: var(--t4); font-size: 9.5px; font-weight: 700; letter-spacing: .2px;
+    padding: 3px 1px; min-height: 46px; cursor: pointer; text-align: center; line-height: 1.2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+  .tab .tab-ic { font-size: 17px; line-height: 1; }
+  .tab.on { color: var(--acc); }
+  /* Traço fino no topo da aba ativa: com ícones coloridos, só mudar a cor do
+     texto ficava discreto demais para dizer "você está aqui". */
+  .tab { position: relative; }
+  .tab.on::after { content: ""; position: absolute; top: -7px; width: 20px; height: 3px;
+    border-radius: 0 0 99px 99px; background: var(--acc); }
+  .tab-mid.on::after { display: none; }
+  .tab-mid .tab-ic { width: 38px; height: 38px; border-radius: 13px; background: var(--acc);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    margin-top: -13px; box-shadow: var(--sh2); font-size: 19px; }
+  .tab-mid.on .tab-ic { background: var(--acc2); }
+  /* Espaço para a barra não cobrir o fim do conteúdo nem o rodapé. */
+  body.tem-tab .content { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  /* Com a barra embaixo, o ☰ vira repetição: o botão "Mais" abre o mesmo menu. */
+  body.tem-tab .topbar .burger { display: none; }
+  body.tem-tab .topbar { justify-content: center; }
+}
+body.travado .tabbar { display: none !important; }
+
 /* ── Tela de bloqueio (v3.8) ──
    Aparece antes de qualquer tela do app quando o professor ativa o PIN
    ou a digital. Deliberadamente simples: cabe inteira na tela do celular
@@ -615,6 +652,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     </footer>
   </div>
 </div>
+<nav class="tabbar noprint" id="tabbar"></nav>
 <div id="modal"></div>
 <div id="toast" style="display: none;">Tema: Escuro</div>
 <script>
@@ -10562,6 +10600,49 @@ function setTheme(id) {
 }
 
 /* ---------- Render ---------- */
+/* Barra inferior (v3.9) — só no celular. "Mais" abre o mesmo menu lateral,
+   então nada do app deixa de ser alcançável. */
+var TABBAR = [
+  { id:"home",   label:"Painel",   icon:"🏠" },
+  { id:"diario", label:"Registro", icon:"📋" },
+  { id:"gen",    label:"Criar",    icon:"＋", meio:true },
+  { id:"agenda", label:"Agenda",   icon:"📅" },
+  { id:"mais",   label:"Mais",     icon:"☰" }
+];
+/* Qual botão fica aceso em cada tela. As telas que não estão na barra
+   (Ajustes, AEE, Arquivo, Cobertura) acendem "Mais", que é por onde se chega
+   até elas — assim o professor nunca fica sem saber onde está. */
+function tabAtiva() {
+  var v = state.view;
+  if (v === "home") return "home";
+  if (v === "diario") return "diario";
+  if (v === "gen" || v === "plan" || v === "plans") return "gen";
+  if (v === "agenda") return "agenda";
+  return "mais";
+}
+function tabIr(id) {
+  if (id === "mais") { openSide(); return; }
+  closeSide();
+  go(id);
+}
+function renderTabbar() {
+  var t = el("tabbar");
+  if (!t) return;
+  if (!state.user || (state.travado && lockAtivo())) {
+    t.innerHTML = "";
+    document.body.classList.remove("tem-tab");
+    return;
+  }
+  document.body.classList.add("tem-tab");
+  var atual = tabAtiva();
+  t.innerHTML = TABBAR.map(function(b) {
+    var on = atual === b.id;
+    return '<button class="tab' + (b.meio ? " tab-mid" : "") + (on ? " on" : "") +
+      '" onclick="tabIr(\'' + b.id + '\')" aria-label="' + b.label + '">' +
+      '<span class="tab-ic">' + b.icon + "</span><span>" + b.label + "</span></button>";
+  }).join("");
+}
+
 function openSide() { document.body.classList.add("side-open"); }
 function closeSide() { document.body.classList.remove("side-open"); }
 
@@ -10645,6 +10726,7 @@ function render() {
     if (sd) { sd.innerHTML = ""; sd.style.display = "none"; }
     document.body.classList.add("travado");
     document.body.classList.remove("side-open");
+    renderTabbar();
     el("app").innerHTML = viewBloqueio();
     var lc = lockCfg();
     if (lc.bio && lc.credId && bioDisponivel() && !_bioJaPediu) {
@@ -10658,6 +10740,7 @@ function render() {
 
   document.body.classList.remove("travado");
   renderSide();
+  renderTabbar();
   var html;
   if (!state.user) html = viewLogin();
   else if (state.loading) html = viewLoading();
