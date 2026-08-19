@@ -719,6 +719,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 4.5 · 19/08/2026 · Matrizes de Santa Luzia por período</div>
     </footer>
   </div>
 </div>
@@ -2463,6 +2464,18 @@ function normGrade(g) {
 /* =========================================================
    ARMAZENAMENTO
    ========================================================= */
+/* =========================================================
+   VERSÃO DO APLICATIVO (v4.5)
+   ---------------------------------------------------------
+   Fica visível no rodapé de todas as telas e em Ajustes › Dados.
+   Serve para conferir, em dois segundos e sem abrir nada, se o
+   celular/computador já está com a atualização publicada — antes
+   era preciso caçar alguma novidade na tela para ter certeza.
+   ========================================================= */
+var APP_VERSAO = "4.5";
+var APP_VERSAO_DATA = "19/08/2026";
+var APP_VERSAO_NOTA = "Matrizes de Santa Luzia por período";
+
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
 var K_DIARY = "educaplan_diary_v2";
@@ -10083,6 +10096,13 @@ function viewSettings() {
     '<details class="aj-sec" data-sec="DadoseBackup"' + (ajusteAberto('DadoseBackup') ? ' open' : '') + '>' +
       '<summary class="aj-sum">Dados e Backup</summary>' +
       '<div class="aj-body">' +
+      '<div class="card-soft" style="padding:9px 12px;margin:0 0 12px;font-size:11.5px">' +
+        "&#9989; Vers&atilde;o instalada neste aparelho: <strong>" + APP_VERSAO + "</strong> (" +
+        APP_VERSAO_DATA + ") &mdash; " + esc(APP_VERSAO_NOTA) + "." +
+        '<div style="font-size:10px;color:var(--t4);margin-top:3px">' +
+          "Depois de publicar uma atualiza&ccedil;&atilde;o, confira este n&uacute;mero aqui ou no rodap&eacute; da tela. " +
+          "Se ele n&atilde;o mudou, feche e abra o app de novo." +
+        "</div></div>" +
       '<p style="font-size:11.5px;color:var(--t4);margin:0 0 13px">' +
         state.plans.length + " plano(s) salvos neste navegador. " +
         (c.lastBackupAt
@@ -11338,6 +11358,13 @@ function render() {
     }
   }
 }
+
+/* Carimbo de versão no rodapé (v4.5). */
+(function() {
+  var r = el("rodapeVersao");
+  if (r) r.innerHTML = "Vers&atilde;o <strong>" + APP_VERSAO + "</strong> &middot; " +
+    APP_VERSAO_DATA + " &middot; " + esc(APP_VERSAO_NOTA);
+})();
 
 applyTheme();
 if (!state.agendaMonth || !CALENDAR.meses[state.agendaMonth]) {
