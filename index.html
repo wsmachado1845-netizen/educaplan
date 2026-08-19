@@ -719,7 +719,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 4.5 · 19/08/2026 · Matrizes de Santa Luzia por período</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 4.6 · 19/08/2026 · Campos com marcadores e habilidades compactas</div>
     </footer>
   </div>
 </div>
@@ -2472,9 +2472,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "4.5";
+var APP_VERSAO = "4.6";
 var APP_VERSAO_DATA = "19/08/2026";
-var APP_VERSAO_NOTA = "Matrizes de Santa Luzia por período";
+var APP_VERSAO_NOTA = "Campos com marcadores e habilidades compactas";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -7813,6 +7813,51 @@ function praticasLinguagem(subject) {
    selecionada (c.bnccSkills[].axis) como sinal de relevância. Sem essa
    habilidade correspondente, o eixo continua listado (é fixo por
    componente), só que em tom neutro em vez de destacado. */
+/* Campos de atuação com marcador e destaque (v4.6).
+   Antes era uma linha corrida separada por pontos — quatro campos colados
+   viravam um borrão e o professor não enxergava qual deles o plano do mês
+   realmente trabalha. Agora cada campo tem marcador próprio e o que tem
+   nexo com as habilidades/conteúdos do plano fica destacado, na mesma
+   lógica já usada nos eixos. */
+var CAMPOS_PISTAS = [
+  [/jornal[íi]stic|midi[áa]tic/i,
+    /not[íi]cia|reportagem|jornal|m[íi]dia|publicit|propaganda|an[úu]ncio|campanha|charge|tirinha|meme|fake|checagem|entrevista|manchete|lide/i],
+  [/art[íi]stic|liter[áa]ri/i,
+    /poema|poesia|conto|cr[ôo]nica|liter[áa]ri|narrativ|f[áa]bula|lenda|cordel|romance|teatro|dram[áa]tic|sarau|slam|verso/i],
+  [/estudo e pesquisa|pr[áa]ticas de estudo/i,
+    /pesquisa|relat[óo]rio|verbete|cient[íi]fic|divulga[çc][ãa]o|infogr[áa]fico|resumo|s[íi]ntese|semin[áa]rio|esquema|fichamento|tomada de nota|anota/i],
+  [/vida p[úu]blica|atua[çc][ãa]o na vida p[úu]blica/i,
+    /\blei\b|leis|regimento|estatuto|normativ|peti[çc][ãa]o|abaixo-assinado|direitos|reivindicat|propositiv|cidadania|deliberat|carta aberta|requerimento|jur[íi]dic/i],
+  [/vida cotidiana/i,
+    /cotidian|receita|bilhete|convite|rotina|pessoal|fam[íi]lia|amigos|escola|di[áa]rio|agenda|lista/i]
+];
+function ofCamposHighlight(camposStr, skills, extras) {
+  var texto = A(skills).map(function(s) {
+    return String((s && s.description) || "") + " " + String((s && s.objeto) || "");
+  }).concat(A(extras)).join(" ");
+
+  var partes = String(camposStr || "").split(" · ").filter(Boolean);
+  var itens = partes.map(function(p) {
+    var rel = false;
+    for (var i = 0; i < CAMPOS_PISTAS.length; i++) {
+      if (CAMPOS_PISTAS[i][0].test(p) && CAMPOS_PISTAS[i][1].test(texto)) { rel = true; break; }
+    }
+    return '<table style="width:100%;border-collapse:collapse;margin-bottom:3px"><tr>' +
+      "<td style='width:14px;vertical-align:top;padding-top:1px;color:" + (rel ? OF_GRAFITE : OF_ATEN) +
+        ";font-weight:900;font-size:11px'>&#9632;</td>" +
+      /* O negrito vai também no <td>: é dele que o gerador do Word lê o
+         estilo, então o destaque sobrevive ao "Baixar Word" — o fundo
+         escuro do selo, não. */
+      "<td style='vertical-align:top" + (rel ? ";font-weight:700" : "") + "'>" +
+        (rel
+          ? '<span style="background:' + OF_GRAFITE + ';color:#fff;padding:1px 7px;border-radius:3px;' +
+            'font-weight:700;font-size:11.5px">' + esc(p) + "</span>"
+          : '<span style="color:' + OF_TXT2 + ';font-size:11.5px">' + esc(p) + "</span>") +
+      "</td></tr></table>";
+  });
+  return ofTwoColTable(itens, 2);
+}
+
 function ofEixosHighlight(eixosStr, skills) {
   var relevantes = {};
   A(skills).forEach(function(s) {
@@ -8371,18 +8416,61 @@ function viewPlanOficial(pl, c, pc, cfg) {
      informação numa linha própria, para nenhum selo/percentual "comer"
      o texto ao lado em colunas estreitas, e para o professor conseguir
      copiar código/descrição limpos ao colar no diário digital oficial. */
-  var habilidadesItens = A(c.bnccSkills).map(function(s) {
-    return '<table style="width:100%;border-collapse:collapse;border:1px solid ' + OF_BRD + ';margin-bottom:3px;page-break-inside:avoid;break-inside:avoid"><tr><td style="padding:8px 10px">' +
-      '<div style="margin-bottom:5px">' + ofFonteBadge(s) + ofBadge(s.pct) + "</div>" +
-      '<div style="font-weight:700;font-size:12px;color:' + OF_TXT + ';margin-bottom:2px">' + esc(s.code) + "</div>" +
-      '<div style="font-size:12px;color:' + OF_TXT + ';line-height:1.5;margin-bottom:3px">' + esc(s.description) + "</div>" +
-      '<div style="font-size:10px;color:' + OF_TXT2 + ';font-style:italic;margin-bottom:5px">' + esc(s.axis) +
-        (s.periodo ? " · " + esc(s.periodo) + (periodoToBimestre(s.periodo) ? " · " + esc(periodoToBimestre(s.periodo)) : "") : "") + "</div>" +
-      ofBar(s.pct) +
-    "</td></tr></table>";
-  });
-  var habilidadesHtml = habilidadesItens.length
-    ? ofTwoColTable(habilidadesItens, 2)
+  /* v4.6 — habilidades em tabela compacta.
+     Cada habilidade ocupava um cartão de cinco linhas (selo, código,
+     descrição, eixo e barra), e doze habilidades tomavam quase uma página
+     inteira. Agora é uma linha por habilidade: código numa célula própria
+     (para copiar limpo no diário eletrônico), a descrição ao lado, e eixo e
+     nível encostados à direita. No celular a mesma informação vira um cartão
+     enxuto, porque a tabela de quatro colunas não cabe em tela estreita. */
+  var thHab = function(t, w) {
+    return "<td style='padding:4px 8px;border:1px solid " + OF_BRD + ";background:" + OF_GRAFITE +
+      ";color:#fff;font-weight:800;font-size:9px;letter-spacing:.06em" + (w ? ";width:" + w : "") + "'>" + t + "</td>";
+  };
+  /* A coluna de nível só existe quando há diagnóstico: sem dado, quatro
+     travessões numa coluna inteira só roubariam largura da descrição. */
+  var temNivel = A(c.bnccSkills).some(function(s){ return typeof s.pct === "number"; });
+  var linhasHab = A(c.bnccSkills).map(function(s) {
+    var nv = ofNivel(s.pct);
+    return "<tr>" +
+      "<td style='padding:5px 8px;border:1px solid " + OF_BRD + ";vertical-align:top'>" +
+        "<div style='font-weight:700;font-size:11px;color:" + OF_TXT + ";white-space:nowrap'>" + esc(s.code) + "</div>" +
+        (s.saeb ? "<div style='font-size:8.5px;font-weight:800;color:" + OF_TXT2 + ";margin-top:1px'>" + esc(s.saeb) + "</div>" : "") +
+        (s.axis ? "<div style='font-size:9.5px;color:" + OF_TXT2 + ";font-style:italic;margin-top:2px;line-height:1.3'>" + esc(s.axis) + "</div>" : "") +
+      "</td>" +
+      "<td style='padding:5px 8px;border:1px solid " + OF_BRD + ";vertical-align:top;font-size:11px;" +
+        "color:" + OF_TXT + ";line-height:1.45'>" + esc(s.description) + "</td>" +
+      (temNivel
+        ? "<td style='padding:5px 6px;border:1px solid " + OF_BRD + ";vertical-align:top;text-align:center;white-space:nowrap'>" +
+          (nv ? "<span style='display:inline-block;font-size:8.5px;font-weight:800;padding:2px 6px;border-radius:3px;" +
+                "background:" + nv.fill + ";color:" + nv.color + "'>" + nv.label.toUpperCase() + "</span>" +
+                "<div style='font-size:10px;font-weight:800;color:" + OF_TXT + ";margin-top:2px'>" + s.pct + "%</div>"
+              : "<span style='font-size:9.5px;color:" + OF_TXT2 + "'>&mdash;</span>") + "</td>"
+        : "") +
+    "</tr>";
+  }).join("");
+
+  /* Versão para tela estreita: cartão enxuto de duas linhas por habilidade. */
+  var cartoesHab = A(c.bnccSkills).map(function(s) {
+    var nv = ofNivel(s.pct);
+    return "<div style='border:1px solid " + OF_BRD + ";padding:7px 9px;margin-bottom:4px'>" +
+      "<div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline'>" +
+        "<span style='font-weight:800;font-size:11.5px;color:" + OF_TXT + "'>" + esc(s.code) +
+          (s.saeb ? " <span style='font-size:9px;color:" + OF_TXT2 + "'>" + esc(s.saeb) + "</span>" : "") + "</span>" +
+        (nv ? "<span style='font-size:8.5px;font-weight:800;padding:2px 6px;border-radius:3px;background:" +
+              nv.fill + ";color:" + nv.color + "'>" + nv.label.toUpperCase() + " · " + s.pct + "%</span>" : "") +
+      "</div>" +
+      "<div style='font-size:11.5px;color:" + OF_TXT + ";line-height:1.5;margin-top:3px'>" + esc(s.description) + "</div>" +
+      (s.axis ? "<div style='font-size:9.5px;color:" + OF_TXT2 + ";font-style:italic;margin-top:3px'>" + esc(s.axis) + "</div>" : "") +
+    "</div>";
+  }).join("");
+
+  var habilidadesHtml = A(c.bnccSkills).length
+    ? '<div class="of-wide-only"><table style="width:100%;border-collapse:collapse"><tr>' +
+        thHab("C&Oacute;DIGO / EIXO", "112px") + thHab("HABILIDADE") +
+        (temNivel ? thHab("N&Iacute;VEL", "76px") : "") +
+      "</tr>" + linhasHab + "</table></div>" +
+      '<div class="of-narrow-only">' + cartoesHab + "</div>"
     : '<div style="color:' + OF_TXT2 + ';font-style:italic">Nenhuma habilidade registrada.</div>';
 
   var kpiStripHtml = ofKpiStrip(A(c.bnccSkills));
@@ -8555,7 +8643,10 @@ function viewPlanOficial(pl, c, pc, cfg) {
         '<div style="font-size:11px;color:' + OF_TXT2 + ';margin-top:2px">' + esc(pl.fallbackWarning) + "</div></div>"
       : "") +
 
-    ofSec("1", "Práticas de Linguagem – Campos", pl3.campos) +
+    ofSec("1", "Práticas de Linguagem – Campos",
+      ofCamposHighlight(pl3.campos, c.bnccSkills,
+        A(c.knowledgeObjects).map(function(k){ return (k.content || "") + " " + (k.note || ""); })),
+      "Em destaque, os campos de atua&ccedil;&atilde;o que os conte&uacute;dos deste m&ecirc;s de fato percorrem.") +
     ofSec("2", "Práticas de Linguagem – Eixos",
       ofEixosHighlight(pl3.eixos, c.bnccSkills) +
       '<div style="margin-top:10px;font-size:10.5px;font-weight:800;letter-spacing:.03em;color:' + OF_TXT2 + '">EIXOS BNCC COMPUTAÇÃO</div>' +
