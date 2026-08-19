@@ -5662,68 +5662,108 @@ var CONTEUDOS_META_MENSAL = {
   "Língua Inglesa / Inglês": 4,
   "Produção de Texto": 4
 };
-function habilidadesTermometro(subject, encounters, count) {
-  var meta = CONTEUDOS_META_MENSAL[subject] || CONTEUDOS_META_MENSAL[normSubj(subject)];
-  var idealMin, idealMax;
-  if (meta) {
-    idealMin = meta;
-    idealMax = meta + Math.max(1, Math.ceil(meta * 0.25));
-    if (encounters > 0) idealMax = Math.max(idealMin, Math.min(idealMax, encounters));
-  } else if (encounters > 0) {
-    idealMin = Math.max(1, Math.ceil(encounters / 3));
-    idealMax = Math.max(idealMin, Math.floor(encounters / 2));
-  } else {
-    return { configured: false, count: count };
-  }
-  var perItem = (encounters > 0 && count > 0) ? (encounters / count) : null;
-  var perItemTxt = perItem ? (" (~" + perItem.toFixed(1) + " aulas por conteúdo nos " + encounters + " encontros do mês)") : "";
-  var faixaTxt = "faixa recomendada: " + idealMin + " a " + idealMax;
+function habilidadesTermometro(subject, encounters, count, lessons) {
+  if (!(encounters > 0)) return { configured: false, count: count };
+
+  /* A conta parte do ENCONTRO, não da aula. Um dia em que o professor entra
+     na turma vale 1, tendo ele 2 ou 3 horários seguidos naquele dia — porque
+     é assim que o diário registra e é assim que o conteúdo anda: dois
+     horários no mesmo dia são a mesma aula esticada, não dois conteúdos. */
+  var teto = encounters;                                /* conforto: um conteúdo novo por dia */
+  var piso = Math.max(1, Math.ceil(encounters * 0.6));  /* folga para o que precisa de 2 dias */
+  /* Limite físico: mais de um conteúdo por dia só é possível quando o dia tem
+     mais de um horário. Por isso o teto absoluto respeita as AULAS do mês —
+     nunca mais de um conteúdo por horário — e ainda assim não passa de ~1,75
+     conteúdo por dia, que já é o máximo aproveitável numa aula só. */
+  var aulasMes = (lessons > 0) ? lessons : encounters;
+  var apertado = Math.max(teto, Math.min(aulasMes, Math.round(teto * 1.75)));
+
+  /* A média mensal do componente (LP ~12, Inglês ~4, Produção ~4) entra só
+     como referência: ela é presa dentro do que os encontros do mês permitem.
+     Antes ela mandava sozinha — e em agosto o app pedia 12 conteúdos ao 9º
+     ano de Português, que só tem 9 encontros no mês. */
+  var meta = CONTEUDOS_META_MENSAL[subject] || CONTEUDOS_META_MENSAL[normSubj(subject)] || null;
+  var alvo = meta ? Math.max(piso, Math.min(teto, meta)) : teto;
+
+  var diasPorConteudo = count > 0 ? (encounters / count) : null;
+  var porDia = count > 0 ? (count / encounters) : null;
+  var enc = encounters + (encounters === 1 ? " encontro" : " encontros");
+
   var status, label, colorVar, bgVar;
   if (count === 0) {
     status = "vazio"; colorVar = "var(--t4)"; bgVar = "var(--bg3)";
-    label = "Selecione habilidades — " + (meta ? "média mensal para " + subject + ": " : "") + faixaTxt + " conteúdos.";
-  } else if (count < idealMin) {
+    label = "Neste mês você entra " + enc + " nesta turma. O equilíbrio fica entre " +
+      piso + " e " + teto + " conteúdos — até um por dia de aula.";
+  } else if (count < piso) {
     status = "baixo"; colorVar = "var(--amb)"; bgVar = "var(--ambBg)";
-    label = "Poucos conteúdos para o mês" + perItemTxt + ". Considere adicionar mais (" + faixaTxt + ").";
-  } else if (count <= idealMax) {
+    label = count + " conteúdo(s) para " + enc + " — cerca de " + diasPorConteudo.toFixed(1) +
+      " dias em cada um. Sobra espaço: dá para incluir mais " + (piso - count) + ".";
+  } else if (count <= teto) {
     status = "bom"; colorVar = "var(--grn)"; bgVar = "var(--grnBg)";
-    label = "Bom equilíbrio para o mês" + perItemTxt + ".";
+    label = count + " conteúdo(s) para " + enc + " — cerca de " + diasPorConteudo.toFixed(1) +
+      " dia(s) em cada um. Cabe no mês.";
+  } else if (count <= apertado) {
+    status = "apertado"; colorVar = "var(--amb)"; bgVar = "var(--ambBg)";
+    label = count + " conteúdo(s) para " + enc + " — daria " + porDia.toFixed(1) +
+      " por dia de aula. Cabe (os dias com mais de um horário absorvem), mas fica corrido.";
   } else {
     status = "alto"; colorVar = "var(--red)"; bgVar = "var(--redBg)";
-    label = "Conteúdos demais para o mês" + perItemTxt + ". Considere reduzir ou dividir em outro mês (" + faixaTxt + ").";
+    label = count + " conteúdo(s) para " + enc + " e " + aulasMes + " aula(s) no mês — " +
+      (count - apertado) + " não teria(m) onde entrar. Reduza ou deixe parte para o mês seguinte.";
   }
-  return { configured: true, count: count, encounters: encounters, idealMin: idealMin, idealMax: idealMax,
-    perItem: perItem, meta: meta, status: status, colorVar: colorVar, bgVar: bgVar, label: label };
+
+  return { configured: true, count: count, encounters: encounters, lessons: aulasMes,
+    idealMin: piso, idealMax: teto, apertado: apertado, alvo: alvo, meta: meta,
+    diasPorConteudo: diasPorConteudo, porDia: porDia,
+    status: status, colorVar: colorVar, bgVar: bgVar, label: label };
 }
+
+/* Termômetro em quatro faixas: folgado · equilibrado · corrido · não cabe.
+   A régua tem o número de encontros como referência visual, porque é ele que
+   manda — não uma média fixa por disciplina. */
 function habilidadesGaugeHtml(carga, count, subject) {
   var encounters = (carga && carga.configured) ? carga.encounters : 0;
-  var t = habilidadesTermometro(subject, encounters, count);
+  var t = habilidadesTermometro(subject, encounters, count,
+    (carga && carga.configured) ? carga.monthlyLessons : 0);
   if (!t.configured) {
     return '<div class="card-soft" style="padding:10px 12px;margin-top:11px;font-size:11px;color:var(--t4)">' +
-      "Configure o Hor&aacute;rio Semanal desta turma em Ajustes &rarr; Hor&aacute;rios para o term&ocirc;metro de habilidades calcular a faixa ideal do m&ecirc;s.</div>";
+      "Configure o Hor&aacute;rio Semanal desta turma em Ajustes &rarr; Hor&aacute;rios para o app calcular quantos " +
+      "conte&uacute;dos cabem nos encontros reais do m&ecirc;s.</div>";
   }
-  var scaleMax = Math.max(t.idealMax * 1.7, count, t.idealMin + 2, 3);
+  var scaleMax = Math.max(t.apertado * 1.15, count * 1.05, 4);
   var pct = function(n){ return Math.max(0, Math.min(100, (n / scaleMax) * 100)); };
-  var zoneBaixo = pct(t.idealMin);
-  var zoneBom = pct(t.idealMax) - zoneBaixo;
-  var zoneAlto = 100 - zoneBaixo - zoneBom;
+  var zBaixo = pct(t.idealMin);
+  var zBom = pct(t.idealMax) - zBaixo;
+  var zCorrido = pct(t.apertado) - zBaixo - zBom;
+  var zAlto = 100 - zBaixo - zBom - zCorrido;
   var markerPct = pct(count);
+  var tetoPct = pct(t.idealMax);
+
   return '<div class="card-soft" style="padding:11px 13px;margin-top:11px;background:' + t.bgVar + '">' +
-    '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;flex-wrap:wrap;gap:6px">' +
-      '<div style="font-size:10.5px;font-weight:700;color:var(--t3)">TERM&Ocirc;METRO DE CONTE&Uacute;DOS DO M&Ecirc;S</div>' +
-      '<div style="font-size:10.5px;font-weight:800;color:' + t.colorVar + '">' + count + " conte&uacute;do" + (count === 1 ? "" : "s") + "</div>" +
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;flex-wrap:wrap;gap:6px">' +
+      '<div style="font-size:10.5px;font-weight:700;color:var(--t3)">CONTE&Uacute;DOS &times; ENCONTROS DO M&Ecirc;S</div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:' + t.colorVar + '">' + count + " conte&uacute;do" + (count === 1 ? "" : "s") +
+        " / " + t.encounters + " encontro" + (t.encounters === 1 ? "" : "s") + "</div>" +
     "</div>" +
-    '<div style="position:relative;height:8px;border-radius:4px;background:var(--border)">' +
-      '<div style="position:absolute;left:0;top:0;height:100%;width:' + zoneBaixo + '%;background:var(--ambBg);border-radius:4px 0 0 4px"></div>' +
-      '<div style="position:absolute;left:' + zoneBaixo + '%;top:0;height:100%;width:' + zoneBom + '%;background:var(--grnBg)"></div>' +
-      '<div style="position:absolute;left:' + (zoneBaixo + zoneBom) + '%;top:0;height:100%;width:' + zoneAlto + '%;background:var(--redBg);border-radius:0 4px 4px 0"></div>' +
-      '<div style="position:absolute;left:' + markerPct + '%;top:-3px;width:3px;height:14px;background:' + t.colorVar + ';border-radius:1.5px;transform:translateX(-1.5px)"></div>' +
+    '<div style="position:relative;height:7px;border-radius:99px;background:var(--border);overflow:hidden">' +
+      '<div style="position:absolute;left:0;top:0;height:100%;width:' + zBaixo + '%;background:var(--ambBg)"></div>' +
+      '<div style="position:absolute;left:' + zBaixo + '%;top:0;height:100%;width:' + zBom + '%;background:var(--grnBg)"></div>' +
+      '<div style="position:absolute;left:' + (zBaixo + zBom) + '%;top:0;height:100%;width:' + zCorrido + '%;background:var(--ambBg)"></div>' +
+      '<div style="position:absolute;left:' + (zBaixo + zBom + zCorrido) + '%;top:0;height:100%;width:' + zAlto + '%;background:var(--redBg)"></div>' +
     "</div>" +
-    '<div style="font-size:10.5px;color:' + t.colorVar + ';font-weight:600;margin-top:7px;line-height:1.4">' + esc(t.label) + "</div>" +
-    '<div style="font-size:9.5px;color:var(--t4);margin-top:3px">' +
-      (t.meta
-        ? "M&eacute;dia mensal recomendada para " + esc(subject) + ": " + t.idealMin + " a " + t.idealMax + " conte&uacute;dos."
-        : "Faixa ideal para este m&ecirc;s: " + t.idealMin + " a " + t.idealMax + " habilidades (2 a 3 aulas por conte&uacute;do).") +
+    '<div style="position:relative;height:15px;margin-top:-11px">' +
+      '<div title="Um conte&uacute;do por dia de aula" style="position:absolute;left:' + tetoPct +
+        '%;top:0;width:1px;height:13px;background:var(--t4);opacity:.55"></div>' +
+      '<div style="position:absolute;left:' + markerPct + '%;top:-2px;width:3px;height:15px;background:' +
+        t.colorVar + ';border-radius:1.5px;transform:translateX(-1.5px)"></div>' +
+    "</div>" +
+    '<div style="font-size:10.5px;color:' + t.colorVar + ';font-weight:600;margin-top:4px;line-height:1.45">' + esc(t.label) + "</div>" +
+    '<div style="font-size:9.5px;color:var(--t4);margin-top:4px;line-height:1.5" title="' +
+      "A faixa amarela depois do traço existe porque os dias com mais de um horário absorvem um pouco mais: " +
+      t.lessons + " aulas no mês." + '">' +
+      "Conta por <strong>dias de aula</strong>, n&atilde;o por hor&aacute;rios: dois ou tr&ecirc;s hor&aacute;rios " +
+      "seguidos s&atilde;o um encontro s&oacute;, como no di&aacute;rio. O tra&ccedil;o cinza &eacute; o limite de " +
+      "um conte&uacute;do por dia." + (t.meta ? " Refer&ecirc;ncia do componente: ~" + t.meta + "/m&ecirc;s." : "") +
     "</div>" +
   "</div>";
 }
@@ -7695,6 +7735,24 @@ function ofPainelAcompanhamento(knowledgeObjects, contents) {
 /* Cronograma mensal (gráfico de distribuição real dos ~12 conteúdos pelos
    encontros do mês). Tabelas (não flex/grid) pelo mesmo motivo dos demais
    gráficos do plano oficial: precisa sobreviver à exportação para Word. */
+/* Linha de proporção (v4.2) exibida no próprio plano, sob os objetos de
+   conhecimento: quantos dias de aula existem no mês para cada conteúdo. É a
+   conferência que o professor faz antes de fechar o plano — e o número que a
+   coordenação cobra quando um plano traz conteúdo demais para o mês. A conta
+   é por ENCONTRO: um dia com dois ou três horários seguidos vale um, porque
+   é assim que o diário registra a aula. */
+function proporcaoSub(pc, content) {
+  var cron;
+  try { cron = buildCronogramaMensal(pc, content); } catch (e) { return ""; }
+  if (!cron || !cron.configured || !cron.itemCount || !cron.encounters) return "";
+  var prop = cron.encounters / cron.itemCount;
+  return "S&atilde;o <strong>" + cron.itemCount + "</strong> objeto(s) de conhecimento para <strong>" +
+    cron.encounters + "</strong> encontro(s) em sala neste m&ecirc;s (" + cron.monthlyLessons +
+    " aulas) &mdash; cerca de <strong>" + prop.toFixed(1).replace(".", ",") + " dia(s) de aula para cada um</strong>" +
+    (prop < 1 ? ", com dias recebendo mais de um objeto" : "") +
+    ". Um dia com dois ou tr&ecirc;s hor&aacute;rios seguidos conta como um encontro.";
+}
+
 function ofCronograma(cron) {
   if (!cron) return "";
   if (!cron.configured) {
@@ -7715,6 +7773,23 @@ function ofCronograma(cron) {
       '<div style="font-size:8.5px;font-weight:700;letter-spacing:.04em;color:' + OF_TXT2 + '">OBJETOS DISTRIBU&Iacute;DOS</div></td>' +
   "</tr></table>";
 
+  /* Proporção explícita (v4.2): quantos dias de aula sobram para cada objeto
+     de conhecimento. É a informação que o professor confere antes de fechar o
+     plano — e que a coordenação cobra quando um plano traz conteúdo demais
+     para o mês. Conta por ENCONTRO: um dia com dois ou três horários seguidos
+     é um encontro só, como o diário registra. */
+  var prop = (cron.itemCount > 0 && cron.encounters > 0)
+    ? (cron.encounters / cron.itemCount) : null;
+  var propHtml = prop
+    ? '<div style="font-size:10.5px;color:' + OF_TXT2 + ';margin:-4px 0 10px;line-height:1.5">' +
+        "<strong>Propor&ccedil;&atilde;o:</strong> " + cron.itemCount + " objeto(s) de conhecimento em " +
+        cron.encounters + " encontro(s) &mdash; cerca de <strong>" + prop.toFixed(1) +
+        " dia(s) de aula para cada um</strong>" +
+        (prop < 1 ? " (alguns dias recebem mais de um objeto)" : "") + ". " +
+        "Um dia com dois ou tr&ecirc;s hor&aacute;rios seguidos conta como um encontro." +
+      "</div>"
+    : "";
+
   var weeksHtml = cron.weeks.map(function(wk) {
     var rows = wk.rows.map(function(r) {
       var squares = "";
@@ -7730,7 +7805,7 @@ function ofCronograma(cron) {
       '<table style="width:100%;border-collapse:collapse;font-size:11px">' + rows + "</table>";
   }).join("");
 
-  return kpis + weeksHtml;
+  return kpis + propHtml + weeksHtml;
 }
 
 /* Metodologia ampliada: cada etapa vira um passo numerado, com organização
@@ -7941,7 +8016,7 @@ function viewPlanAnosIniciais(pl, c, pc, cfg) {
       "<td style='border:1px solid " + OF_BRD + ";padding:6px 9px;color:" + OF_TXT + "'>" + ap.aulas + " aula(s) &middot; " + esc(ap.total) + "</td></tr>" +
     "</table>" +
 
-    ofSec("1", "Unidades Temáticas, Objeto de Conhecimento e Habilidades", unidadesHtml) +
+    ofSec("1", "Unidades Temáticas, Objeto de Conhecimento e Habilidades", unidadesHtml, proporcaoSub(pc, c)) +
     ofSec("2", "Habilidades (descrição completa)", habilidadesHtml) +
     ofSec("3", "Competências Gerais", OF_COMP_GERAIS) +
     ofSec("4", "Competências Específicas", ofBullets(c.specificCompetencies)) +
@@ -8169,7 +8244,7 @@ function viewPlanOficial(pl, c, pc, cfg) {
       : "") +
     ofSec("4", "Competências Gerais", OF_COMP_GERAIS) +
     ofSec("5", "Competências Específicas", competenciasEspHtml) +
-    ofSec("6", "Objetos de Conhecimento e Temas das Aulas", objetosHtml) +
+    ofSec("6", "Objetos de Conhecimento e Temas das Aulas", objetosHtml, proporcaoSub(pc, c)) +
     ofSec("7", "Metodologias", metodologiaHtml,
       "Sequ&ecirc;ncia did&aacute;tica passo a passo, com o tempo de cada etapa &mdash; pronta para ser seguida durante a aula.") +
     ofSec("8", "Materiais e Recursos Didáticos", recursosHtml) +
