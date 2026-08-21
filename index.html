@@ -388,6 +388,50 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
 .mtz-pct { font-size: 9.5px; font-weight: 800; color: var(--t4); font-variant-numeric: tabular-nums; }
 @media (max-width: 620px) { .mtz-obj { max-width: 110px; } .mtz-chips { max-height: 150px; } }
 
+/* ── Calendário letivo com quadrados uniformes (v4.7) ──
+   Cada dia ocupa exatamente o mesmo quadrado, em qualquer largura de tela:
+   o número fica centralizado e um pontinho marca que aquele dia tem evento.
+   O nome do feriado/recesso não entra na célula — vai na lista de descrição
+   acima da grade, que é onde ele cabe por extenso sem deformar nada. */
+/* No computador a grade não estica sem limite: quadrado de dia com 100px de
+   lado vira mancha vazia. A grade centraliza com largura máxima e os dias
+   ficam do tamanho de um dia de calendário mesmo. */
+.cal-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;
+  max-width: 560px; margin-left: auto; margin-right: auto; }
+.cal-cab { margin-bottom: 6px; }
+.cal-cab > div { text-align: center; font-size: 9.5px; font-weight: 700; color: var(--t4);
+  text-transform: uppercase; letter-spacing: .04em; }
+.cal-cel { position: relative; aspect-ratio: 1 / 1; border: 1px solid var(--border);
+  border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  background: var(--bg2); }
+.cal-num { font-size: 13px; font-weight: 700; line-height: 1; }
+.cal-ponto { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.cal-vazio { border-color: transparent; background: transparent; }
+.cal-letivo { background: var(--grnBg); border-color: var(--grn); color: var(--grn); }
+.cal-feriado { background: var(--redBg); border-color: var(--red); color: var(--red); }
+.cal-recesso { background: var(--ambBg); border-color: var(--amb); color: var(--amb); }
+.cal-fds { background: var(--bg3); border-color: var(--border2); color: var(--t4); }
+.cal-eventos { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.cal-ev { display: flex; gap: 9px; align-items: baseline; font-size: 11.5px;
+  padding: 5px 10px; border-radius: 8px; background: var(--bg3); }
+.cal-ev-data { font-weight: 800; font-size: 10.5px; white-space: nowrap; min-width: 76px;
+  font-variant-numeric: tabular-nums; }
+.cal-ev-nome { color: var(--t2); line-height: 1.4; }
+.cal-ev-feriado { background: var(--redBg); }
+.cal-ev-feriado .cal-ev-data { color: var(--red); }
+.cal-ev-recesso { background: var(--ambBg); }
+.cal-ev-recesso .cal-ev-data { color: var(--amb); }
+.cal-ev-nenhum { background: var(--bg3); }
+.cal-ev-nenhum .cal-ev-nome { color: var(--t4); font-style: italic; }
+@media (max-width: 520px) {
+  .cal-grade { gap: 4px; }
+  .cal-num { font-size: 12px; }
+  .cal-cel { border-radius: 7px; }
+  .cal-ev { font-size: 11px; padding: 4px 8px; gap: 7px; }
+  .cal-ev-data { min-width: 68px; }
+}
+
 /* ── Grade semanal no celular (v4.0) ──
    No computador continua a grade dias × tempos, que dá a visão de conjunto.
    Abaixo de 700px ela é trocada por um bloco por dia — nenhuma rolagem
@@ -719,7 +763,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 4.6 · 19/08/2026 · Campos com marcadores e habilidades compactas</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 4.7 · 19/08/2026 · Campos, habilidades e calendário uniforme</div>
     </footer>
   </div>
 </div>
@@ -2472,9 +2516,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "4.6";
+var APP_VERSAO = "4.7";
 var APP_VERSAO_DATA = "19/08/2026";
-var APP_VERSAO_NOTA = "Campos com marcadores e habilidades compactas";
+var APP_VERSAO_NOTA = "Campos, habilidades e calendário uniforme";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -9392,28 +9436,62 @@ function viewAgenda() {
   var m = state.agendaMonth;
   var mi = CALENDAR.meses[m];
   var year = 2026;
-  var cells = "";
+
+  /* v4.7 — Calendário com quadrados iguais.
+     Antes, o nome do feriado era escrito dentro da célula do dia: os dias com
+     evento ficavam altos e os demais baixos, e a grade saía torta. Agora todo
+     dia é um quadrado do mesmo tamanho, com o número no centro e um pontinho
+     embaixo quando há evento; o nome de cada feriado/recesso passou para uma
+     lista de descrição LOGO ACIMA da grade, onde cabe inteiro e se lê de uma
+     vez só. */
+  var cells = "", eventos = [];
   if (mi && mi.num) {
     var monthIdx = mi.num - 1;
     var first = new Date(year, monthIdx, 1).getDay();
     var days = new Date(year, monthIdx + 1, 0).getDate();
-    for (var b = 0; b < first; b++) cells += "<div></div>";
+    for (var b = 0; b < first; b++) cells += '<div class="cal-cel cal-vazio"></div>';
+    var recessoVisto = {};
     for (var d = 1; d <= days; d++) {
       var ds = iso(year, mi.num, d);
       var dow = new Date(year, monthIdx, d).getDay();
       var hol = isHoliday(ds), rec = isRecess(ds);
       var wknd = (dow === 0 || dow === 6);
-      var bg = "transparent", col = "var(--t1)", tag = "";
-      if (hol) { bg = "var(--redBg)"; col = "var(--red)"; tag = hol.label; }
-      else if (rec) { bg = "var(--ambBg)"; col = "var(--amb)"; tag = rec.label; }
-      else if (wknd) { bg = "var(--bg3)"; col = "var(--t4)"; }
-      else { bg = "var(--grnBg)"; col = "var(--grn)"; tag = "Dia letivo"; }
-      cells += '<div style="border:1px solid var(--border);border-radius:8px;padding:6px;min-height:52px;background:' + bg + '" title="' + esc(tag) + '">' +
-        '<div style="font-size:12px;font-weight:700;color:' + col + '">' + d + "</div>" +
-        (tag && !wknd ? '<div style="font-size:8px;color:' + col + ';line-height:1.2;margin-top:2px">' +
-          esc(tag.length > 22 ? tag.substring(0,22) + "…" : tag) + "</div>" : "") + "</div>";
+      var classe = "cal-cel", titulo = "", ponto = "";
+      if (hol) {
+        classe += " cal-feriado"; titulo = hol.label; ponto = '<span class="cal-ponto"></span>';
+        eventos.push({ dia:d, tipo:"feriado", label:hol.label });
+      } else if (rec) {
+        classe += " cal-recesso"; titulo = rec.label; ponto = '<span class="cal-ponto"></span>';
+        if (!recessoVisto[rec.label]) {
+          recessoVisto[rec.label] = 1;
+          eventos.push({ dia:d, tipo:"recesso", label:rec.label, ate:rec.fim });
+        }
+      } else if (wknd) {
+        classe += " cal-fds";
+      } else {
+        classe += " cal-letivo"; titulo = "Dia letivo";
+      }
+      cells += '<div class="' + classe + '" title="' + esc(titulo) + '">' +
+        '<span class="cal-num">' + d + "</span>" + ponto + "</div>";
     }
   }
+
+  /* Descrição dos eventos do mês, acima da grade. */
+  var dd = function(n){ return String(n).padStart(2, "0"); };
+  var eventosHtml = eventos.length
+    ? '<div class="cal-eventos">' + eventos.map(function(ev) {
+        var quando = dd(ev.dia) + "/" + dd(mi.num);
+        if (ev.tipo === "recesso" && ev.ate) {
+          var fimDia = Number(String(ev.ate).slice(8, 10));
+          var fimMes = Number(String(ev.ate).slice(5, 7));
+          if (fimDia !== ev.dia || fimMes !== mi.num) quando += " a " + dd(fimDia) + "/" + dd(fimMes);
+        }
+        return '<div class="cal-ev cal-ev-' + ev.tipo + '">' +
+          '<span class="cal-ev-data">' + quando + "</span>" +
+          '<span class="cal-ev-nome">' + esc(ev.label) + "</span></div>";
+      }).join("") + "</div>"
+    : '<div class="cal-eventos"><div class="cal-ev cal-ev-nenhum">' +
+        "<span class='cal-ev-nome'>Sem feriado ou recesso neste m&ecirc;s.</span></div></div>";
 
   /* Aulas da semana a partir do horário configurado */
   var weekRows = flatSchedule();
@@ -9434,10 +9512,11 @@ function viewAgenda() {
         "<div><span style='color:var(--t4)'>Dias letivos:</span> <strong>" + mi.diasLetivos + "</strong></div>" +
         "<div><span style='color:var(--t4)'>Semanas &uacute;teis:</span> <strong>" + mi.semanas + "</strong></div>" +
         (mi.recessoLabel ? "<div style='color:var(--amb)'><strong>&#9888; " + esc(mi.recessoLabel) + "</strong></div>" : "") + "</div>" : "") +
-      '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px">' +
-        DAYS_SHORT.map(function(d){ return '<div style="text-align:center;font-size:9.5px;font-weight:700;color:var(--t4);text-transform:uppercase">' + d + "</div>"; }).join("") +
+      eventosHtml +
+      '<div class="cal-grade cal-cab">' +
+        DAYS_SHORT.map(function(d){ return "<div>" + d + "</div>"; }).join("") +
       "</div>" +
-      '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">' + cells + "</div>" +
+      '<div class="cal-grade">' + cells + "</div>" +
     "</div>" +
     '<div class="card" style="padding:20px;margin-bottom:20px">' +
       '<div style="font-size:12.5px;font-weight:700;margin-bottom:4px">Grade Semanal de Aulas</div>' +
