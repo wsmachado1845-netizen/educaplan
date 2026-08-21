@@ -763,7 +763,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 4.7 · 19/08/2026 · Campos, habilidades e calendário uniforme</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 4.8 · 21/08/2026 · Conexão com a IA testável</div>
     </footer>
   </div>
 </div>
@@ -2516,9 +2516,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "4.7";
-var APP_VERSAO_DATA = "19/08/2026";
-var APP_VERSAO_NOTA = "Campos, habilidades e calendário uniforme";
+var APP_VERSAO = "4.8";
+var APP_VERSAO_DATA = "21/08/2026";
+var APP_VERSAO_NOTA = "Conexão com a IA testável";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -10149,13 +10149,49 @@ function viewSettings() {
         "A chave fica salva apenas neste navegador." +
       "</p>" +
       '<div class="g2">' +
-        '<div><label class="lbl">ANTHROPIC_API_KEY</label><input class="inp" id="s_key" type="password" value="' + esc(c.apiKey || "") + '" placeholder="sk-ant-..." /></div>' +
-        '<div><label class="lbl">Modelo</label><input class="inp" id="s_model" value="' + esc(c.model || "claude-sonnet-5") + '" /></div>' +
+        '<div><label class="lbl">ANTHROPIC_API_KEY</label><input class="inp" id="s_key" type="password" value="' + esc(c.apiKey || "") + '" placeholder="sk-ant-..." autocomplete="off" /></div>' +
+        '<div><label class="lbl">Modelo</label>' +
+          (A(c.modelosIA).length
+            ? '<select class="inp" id="s_model" onchange="escolherModeloIA(this.value)">' +
+                A(c.modelosIA).map(function(id) {
+                  return '<option value="' + esc(id) + '"' + (id === c.model ? " selected" : "") + ">" + esc(id) + "</option>";
+                }).join("") + "</select>"
+            : '<input class="inp" id="s_model" value="' + esc(c.model || "claude-sonnet-5") + '" />') +
+        "</div>" +
       "</div>" +
-      '<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-top:13px">' +
-        "<span style='width:8px;height:8px;border-radius:50%;background:" + ((c.apiKey||"").trim() ? "var(--grn)" : "var(--t4)") + "'></span>" +
-        ((c.apiKey||"").trim() ? "Chave configurada" : "Sem chave &mdash; usando gerador local") + "</div>" +
-      '<button class="btn btn-primary" style="margin-top:14px" onclick="saveKey()">Salvar Chave</button>' +
+
+      /* Estado real da conexão: o que o último teste devolveu. */
+      (function() {
+        var t = c.aiTeste;
+        if (!t) {
+          return '<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-top:13px">' +
+            "<span style='width:8px;height:8px;border-radius:50%;background:" +
+              ((c.apiKey||"").trim() ? "var(--amb)" : "var(--t4)") + "'></span>" +
+            ((c.apiKey||"").trim()
+              ? "Chave salva, mas ainda n&atilde;o testada."
+              : "Sem chave &mdash; usando gerador local.") + "</div>";
+        }
+        return '<div class="card-soft" style="padding:10px 12px;margin-top:13px;font-size:11.5px;background:' +
+          (t.ok ? "var(--grnBg)" : "var(--redBg)") + '">' +
+          "<div style='font-weight:700;color:" + (t.ok ? "var(--grn)" : "var(--red)") + "'>" +
+            (t.ok ? "&#10003; IA conectada" : "&#9888; A IA n&atilde;o respondeu") + "</div>" +
+          "<div style='margin-top:3px;line-height:1.5;color:var(--t2)'>" + esc(t.msg || "") + "</div>" +
+          "<div style='margin-top:3px;font-size:10px;color:var(--t4)'>Testado em " +
+            esc(new Date(t.quando).toLocaleString("pt-BR")) + "</div>" +
+        "</div>";
+      })() +
+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
+        '<button class="btn btn-primary btn-sm" onclick="saveKey()">Salvar chave</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="testarIA()">Testar conex&atilde;o</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="buscarModelosIA()">Buscar modelos da conta</button>' +
+      "</div>" +
+      '<div style="font-size:10.5px;color:var(--t4);margin-top:10px;line-height:1.55">' +
+        "<strong>Testar conex&atilde;o</strong> faz uma chamada real de poucas palavras &mdash; &eacute; o &uacute;nico jeito " +
+        "de saber se est&aacute; tudo certo antes de gastar um plano inteiro. <strong>Buscar modelos</strong> traz a lista " +
+        "que a sua conta pode usar, para n&atilde;o precisar acertar o nome do modelo na m&atilde;o. " +
+        "Se algo falhar durante a gera&ccedil;&atilde;o, o plano sai pelo gerador local e o motivo aparece no topo do plano." +
+      "</div>" +
     "</div></details>" +
 
     /* Sincronização com Google Drive */
@@ -10759,12 +10795,116 @@ function savePrefs() {
   render();
   toast("Preferências salvas.");
 }
-function saveKey() {
-  state.cfg.apiKey = el("s_key").value.trim();
-  state.cfg.model = el("s_model").value.trim() || "claude-sonnet-5";
+/* =========================================================
+   v4.8 — DIAGNÓSTICO DA CONEXÃO COM A IA
+   ---------------------------------------------------------
+   Antes, a chave era digitada e só se descobria que algo estava errado na
+   hora de gerar um plano — e mesmo aí o app caía no gerador local sem dizer
+   o motivo. Agora dá para testar a conexão na hora, com o erro traduzido
+   ("chave inválida", "sem crédito", "modelo não existe nesta conta",
+   "rede bloqueou"), e a lista de modelos vem da própria conta, em vez de o
+   professor ter que adivinhar o nome certo digitando à mão.
+   ========================================================= */
+var _CAB_IA = function(chave) {
+  return {
+    "content-type": "application/json",
+    "x-api-key": chave,
+    "anthropic-version": "2023-06-01",
+    "anthropic-dangerous-direct-browser-access": "true"
+  };
+};
+
+/* Traduz o que a API respondeu para uma frase que diz o que fazer. */
+function _erroIA(status, dados, erroRede) {
+  var msg = (dados && dados.error && dados.error.message) || "";
+  if (erroRede) {
+    return "Não foi possível falar com a API. Isso acontece quando o app é aberto " +
+      "por duplo clique no arquivo (em vez do endereço https) ou quando a rede da escola bloqueia. " +
+      "Tente pelo endereço do site e, se possível, por outra rede.";
+  }
+  if (status === 401) return "Chave inválida ou revogada. Gere outra em console.anthropic.com/settings/keys.";
+  if (status === 403) return "A chave não tem permissão para este recurso." + (msg ? " (" + msg + ")" : "");
+  if (status === 404) return "Este modelo não existe nesta conta. Use o botão \"Buscar modelos da conta\" e escolha um da lista.";
+  if (status === 429) return "Limite de uso atingido agora. Espere alguns minutos e tente de novo.";
+  if (/credit balance|insufficient|billing/i.test(msg)) {
+    return "A conta está sem crédito para a API. É preciso adicionar crédito em console.anthropic.com/settings/billing.";
+  }
+  if (status >= 500) return "A API está instável neste momento. Tente novamente em alguns minutos.";
+  return msg || ("Erro HTTP " + status + ".");
+}
+
+function _guardaTesteIA(ok, texto) {
+  state.cfg.aiTeste = { ok: !!ok, msg: texto, quando: new Date().toISOString() };
   saveCfg();
   render();
-  toast(state.cfg.apiKey ? "Chave salva. O Claude será usado nas próximas gerações." : "Chave removida. Usando gerador local.");
+}
+
+/* Chamada mínima de verdade (poucos tokens): é o único jeito honesto de
+   dizer "está funcionando" — validar o formato da chave não prova nada. */
+function testarIA() {
+  var chave = (el("s_key") ? el("s_key").value : state.cfg.apiKey || "").trim();
+  var modelo = (el("s_model") ? el("s_model").value : state.cfg.model || "").trim() || "claude-sonnet-5";
+  if (!chave) { toast("Digite a chave antes de testar."); return; }
+  _guardaTesteIA(false, "Testando…");
+  fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: _CAB_IA(chave),
+    body: JSON.stringify({ model: modelo, max_tokens: 16,
+      messages: [{ role: "user", content: "Responda apenas: ok" }] })
+  }).then(function(res) {
+    return res.json().catch(function(){ return {}; }).then(function(d) {
+      if (res.ok) {
+        state.cfg.apiKey = chave; state.cfg.model = modelo;
+        _guardaTesteIA(true, "Conexão funcionando com o modelo " + modelo + ".");
+        toast("Conexão com a IA funcionando.");
+      } else {
+        _guardaTesteIA(false, _erroIA(res.status, d, false));
+      }
+    });
+  }).catch(function() {
+    _guardaTesteIA(false, _erroIA(0, null, true));
+  });
+}
+
+/* Lista os modelos que ESTA conta pode usar, para virar um seletor. */
+function buscarModelosIA() {
+  var chave = (el("s_key") ? el("s_key").value : state.cfg.apiKey || "").trim();
+  if (!chave) { toast("Digite a chave antes de buscar os modelos."); return; }
+  toast("Buscando modelos da conta…");
+  fetch("https://api.anthropic.com/v1/models?limit=40", { headers: _CAB_IA(chave) })
+    .then(function(res) {
+      return res.json().catch(function(){ return {}; }).then(function(d) {
+        if (!res.ok) { _guardaTesteIA(false, _erroIA(res.status, d, false)); return; }
+        var ids = A(d.data).map(function(m){ return m.id; }).filter(Boolean);
+        if (!ids.length) { _guardaTesteIA(false, "A conta não retornou nenhum modelo."); return; }
+        state.cfg.apiKey = chave;
+        state.cfg.modelosIA = ids;
+        if (ids.indexOf(state.cfg.model) < 0) state.cfg.model = ids[0];
+        saveCfg();
+        render();
+        toast(ids.length + " modelo(s) encontrado(s).");
+      });
+    })
+    .catch(function(){ _guardaTesteIA(false, _erroIA(0, null, true)); });
+}
+
+function escolherModeloIA(v) {
+  state.cfg.model = v || "claude-sonnet-5";
+  saveCfg();
+}
+
+function saveKey() {
+  var chave = el("s_key").value.trim();
+  var campoModelo = el("s_model");
+  state.cfg.apiKey = chave;
+  state.cfg.model = (campoModelo ? campoModelo.value.trim() : state.cfg.model) || "claude-sonnet-5";
+  saveCfg();
+  render();
+  if (chave && chave.indexOf("sk-ant-") !== 0) {
+    toast("Chave salva, mas ela não começa com \"sk-ant-\" — confira se copiou inteira.");
+    return;
+  }
+  toast(chave ? "Chave salva. Use \"Testar conexão\" para confirmar." : "Chave removida. Usando gerador local.");
 }
 function ensureSchedCopy() {
   if (!state.cfg.horarioSemanal || Object.keys(state.cfg.horarioSemanal).length === 0) {
