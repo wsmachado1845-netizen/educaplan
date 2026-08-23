@@ -481,6 +481,23 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
   .pn-tools { grid-template-columns: 1fr; }
   .pn-ola { font-size: 20px; }
 }
+/* Notebook: duas colunas, aproveitando a largura da tela. A coluna da
+   esquerda leva o que se lê em sequência (métricas, matriz, retomada);
+   a da direita fica com os atalhos, que são consulta rápida. */
+@media (min-width: 900px) {
+  .pn-wrap { max-width: 1040px; }
+  .pn-grid { display: grid; gap: 12px; align-items: start;
+    grid-template-columns: 1.45fr 1fr;
+    grid-template-areas: "pil too" "cob too" "rec too"; }
+  .pn-a-pil { grid-area: pil; }
+  .pn-a-cob { grid-area: cob; }
+  .pn-a-too { grid-area: too; }
+  .pn-a-rec { grid-area: rec; }
+  .pn-a-pil > .pn-pills, .pn-a-cob > .pn-card,
+  .pn-a-too > .pn-tools, .pn-a-rec > .pn-card { margin-bottom: 0; }
+  .pn-banner { padding: 20px 22px; }
+  .pn-ola { font-size: 25px; }
+}
 
 /* ── Calendário letivo com quadrados uniformes (v4.7) ──
    Cada dia ocupa exatamente o mesmo quadrado, em qualquer largura de tela:
@@ -857,7 +874,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.0 · 22/08/2026 · Painel redesenhado</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.1 · 23/08/2026 · Painel em duas colunas no computador</div>
     </footer>
   </div>
 </div>
@@ -2610,9 +2627,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "5.0";
-var APP_VERSAO_DATA = "22/08/2026";
-var APP_VERSAO_NOTA = "Painel redesenhado";
+var APP_VERSAO = "5.1";
+var APP_VERSAO_DATA = "23/08/2026";
+var APP_VERSAO_NOTA = "Painel em duas colunas no computador";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -9152,8 +9169,17 @@ function viewHome() {
         "</div>") +
   "</div>";
 
+  /* No celular os blocos ficam um embaixo do outro, na ordem natural de
+     leitura. No notebook eles se distribuem em duas colunas — antes o painel
+     virava uma tira estreita no meio da tela, com metade do monitor vazia. */
   return '<div class="wrap fade pn-wrap">' +
-    banner + backupReminderHtml() + pilulas + coberturaHtml + ferramentas + recentes +
+    banner + backupReminderHtml() +
+    '<div class="pn-grid">' +
+      '<div class="pn-a-pil">' + pilulas + "</div>" +
+      '<div class="pn-a-cob">' + coberturaHtml + "</div>" +
+      '<div class="pn-a-too">' + ferramentas + "</div>" +
+      '<div class="pn-a-rec">' + recentes + "</div>" +
+    "</div>" +
   "</div>";
 }
 
