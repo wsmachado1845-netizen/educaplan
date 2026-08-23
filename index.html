@@ -23,7 +23,7 @@
       azul e branco, com vermelho nos detalhes, como nos documentos oficiais
       Títulos: Georgia · Corpo: Segoe UI ── */
 :root, body.t-terracota {
-  --bg: #F5F8FC;
+  --bg: #F8FAFC;
   --bg2: #FFFFFF;
   --bg3: #EAF1F8;
   --border: #D7E3EE;
@@ -45,6 +45,9 @@
   --blu: #4E89C4;
   --bluBg: #E4EEF8;
   --pnk: #A05070;
+  /* v5.0 — roxo suave para categorizar o que vem da IA */
+  --rox: #6D5BA6;
+  --roxBg: #E9E5F5;
   --pnkBg: #F3E3EA;
   --sh1: 0 1px 2px rgba(20,40,70,.08);
   --sh2: 0 6px 20px rgba(20,40,70,.10);
@@ -81,6 +84,8 @@ body.t-grafite {
   --blu: #7FA3C4;
   --bluBg: rgba(127,163,196,.14);
   --pnk: #C08AA8;
+  --rox: #A99BD9;
+  --roxBg: rgba(169,155,217,.16);
   --pnkBg: rgba(192,138,168,.14);
   --sh1: 0 1px 2px rgba(0,0,0,.35);
   --sh2: 0 6px 20px rgba(0,0,0,.4);
@@ -387,6 +392,95 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
   max-width: 150px; }
 .mtz-pct { font-size: 9.5px; font-weight: 800; color: var(--t4); font-variant-numeric: tabular-nums; }
 @media (max-width: 620px) { .mtz-obj { max-width: 110px; } .mtz-chips { max-height: 150px; } }
+
+/* ── Painel redesenhado (v5.0) ──
+   Fundo off-white, cartões brancos de canto 16px e sombra suave: a
+   profundidade vem da luz, não de bordas grossas. Tipografia sem serifa
+   também nos títulos — em tela pequena a serifada cansa mais do que
+   enfeita (o plano impresso continua serifado, lá ela tem função). */
+.pn-wrap { padding: 20px 16px 40px; max-width: 720px; }
+.pn-card { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(20,40,70,.06); padding: 15px 17px; margin-bottom: 12px; }
+
+/* 1. Banner */
+.pn-banner { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(20,40,70,.06); padding: 16px 18px; margin-bottom: 12px; }
+.pn-b-topo { display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; }
+.pn-ola { font-family: inherit; font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+  margin: 0 0 3px; line-height: 1.15; }
+.pn-escola { font-size: 11.5px; color: var(--t3); line-height: 1.45; }
+.pn-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--acc3);
+  color: var(--accInk); border-radius: 999px; padding: 5px 11px; font-size: 10.5px;
+  font-weight: 700; white-space: nowrap; }
+.pn-tag-pt { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); flex: none; }
+.pn-b-rodape { margin-top: 11px; padding-top: 10px; border-top: 1px solid var(--border2);
+  font-size: 11.5px; color: var(--t3); }
+.pn-b-rodape strong { color: var(--t1); }
+.pn-recesso { color: var(--amb); font-weight: 700; margin-left: 4px; }
+
+/* 2. Pílulas de métrica */
+.pn-pills { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto;
+  padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.pn-pill { display: flex; align-items: baseline; gap: 5px; background: var(--bg2);
+  border: 1px solid var(--border2); border-radius: 999px; padding: 7px 14px;
+  box-shadow: 0 1px 2px rgba(20,40,70,.05); white-space: nowrap; flex: none; }
+.pn-pill-n { font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
+.pn-pill-l { font-size: 11px; color: var(--t3); font-weight: 600; }
+.pn-pill-zero .pn-pill-n { color: var(--t4) !important; }
+
+/* 3. Cobertura */
+.pn-cob { cursor: pointer; }
+.pn-cob-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pn-cob-tt { font-size: 13px; font-weight: 700; letter-spacing: -.01em; }
+.pn-cob-sub { font-size: 10.5px; color: var(--t4); margin-top: 2px; }
+.pn-cob-pct { font-size: 21px; font-weight: 800; color: var(--acc); letter-spacing: -.03em;
+  line-height: 1; }
+.pn-barra { height: 6px; border-radius: 99px; background: var(--acc3); overflow: hidden;
+  margin: 11px 0 7px; }
+.pn-barra i { display: block; height: 100%; border-radius: 99px; background: var(--acc);
+  transition: width .6s cubic-bezier(.22,1,.36,1); }
+.pn-cob-p { font-size: 11px; color: var(--t3); line-height: 1.45; }
+
+/* 4. Atalhos exclusivos, 2×2 */
+.pn-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.pn-tool { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(20,40,70,.06); padding: 13px 14px; cursor: pointer;
+  transition: transform .14s ease, box-shadow .14s ease; }
+.pn-tool:active { transform: scale(.98); }
+.pn-tool:hover { box-shadow: 0 3px 10px rgba(20,40,70,.10); }
+.pn-tool-ic { width: 34px; height: 34px; border-radius: 11px; display: flex; align-items: center;
+  justify-content: center; font-size: 16px; margin-bottom: 9px; }
+.ic-azul { background: var(--acc3); }
+.ic-verde { background: var(--grnBg); }
+.ic-ambar { background: var(--ambBg); }
+.ic-roxo { background: var(--roxBg); }
+.pn-tool-tt { font-size: 12.5px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
+.pn-tool-ds { font-size: 10.5px; color: var(--t4); margin-top: 3px; line-height: 1.4; }
+
+/* 5. Retomar o trabalho */
+.pn-abas { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+.pn-aba { border: 1px solid var(--border2); background: var(--bg2); color: var(--t3);
+  border-radius: 999px; padding: 5px 12px; font-size: 11.5px; font-weight: 700;
+  font-family: inherit; cursor: pointer; }
+.pn-aba.on { background: var(--acc); border-color: var(--acc); color: #fff; }
+.pn-aba-n { opacity: .7; font-weight: 600; }
+.pn-item { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 0; border-top: 1px solid var(--border2); cursor: pointer; }
+.pn-item:first-of-type { border-top: none; padding-top: 2px; }
+.pn-item-tag { font-size: 9.5px; font-weight: 800; color: var(--acc); text-transform: uppercase;
+  letter-spacing: .05em; margin-bottom: 3px; }
+.pn-item-tt { font-size: 13px; font-weight: 600; line-height: 1.35; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.pn-item-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 10.5px; color: var(--t4); margin-top: 4px; }
+.pn-item-ar { color: var(--t4); font-size: 19px; flex: none; }
+.pn-vazio { font-size: 12px; color: var(--t3); text-align: center; padding: 20px 10px;
+  line-height: 1.6; }
+@media (max-width: 380px) {
+  .pn-tools { grid-template-columns: 1fr; }
+  .pn-ola { font-size: 20px; }
+}
 
 /* ── Calendário letivo com quadrados uniformes (v4.7) ──
    Cada dia ocupa exatamente o mesmo quadrado, em qualquer largura de tela:
@@ -763,7 +857,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 4.9 · 22/08/2026 · Plano de teste × definitivo</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.0 · 22/08/2026 · Painel redesenhado</div>
     </footer>
   </div>
 </div>
@@ -2516,9 +2610,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "4.9";
+var APP_VERSAO = "5.0";
 var APP_VERSAO_DATA = "22/08/2026";
-var APP_VERSAO_NOTA = "Plano de teste × definitivo";
+var APP_VERSAO_NOTA = "Painel redesenhado";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -8872,143 +8966,194 @@ function viewLogin() {
 }
 
 /* ---------------- PAINEL ---------------- */
+/* =========================================================
+   v5.0 — PAINEL REDESENHADO
+   ---------------------------------------------------------
+   Três problemas resolvidos, na ordem em que pesavam:
+
+   1. Redundância. "Criar Planejamento" aparecia em três lugares (topo,
+      grade de ferramentas e barra inferior). Ficou só o botão ✚ da barra,
+      que é o alcance natural do polegar. Registro e Agenda saíram da grade
+      de atalhos pelo mesmo motivo: já têm aba própria embaixo.
+   2. Espaço gasto com vazio. Os quatro cartões de contagem ocupavam quase
+      um terço da tela para dizer "0". Viraram uma faixa de pílulas.
+   3. Falta de informação pedagógica. No lugar dos números soltos entrou o
+      que o professor precisa saber ao abrir: quanto da matriz do período
+      já está planejado.
+   ========================================================= */
+
+/* Componente + turma com mais aulas na semana — a "turma principal". */
+function turmaPrincipal() {
+  var conta = {};
+  flatSchedule().forEach(function(r) {
+    var k = r.subject + "||" + r.grade;
+    conta[k] = (conta[k] || 0) + 1;
+  });
+  var melhor = null, max = 0;
+  Object.keys(conta).forEach(function(k) {
+    if (conta[k] > max) { max = conta[k]; melhor = k; }
+  });
+  if (!melhor) return null;
+  var partes = melhor.split("||");
+  /* O horário guarda "9º Ano U"; o resto do app usa o rótulo completo. */
+  var gradeCompleto = partes[1];
+  var m = String(partes[1]).match(/([1-9])\s*º/);
+  if (m) {
+    for (var i = 0; i < GRADES.length; i++) {
+      if (GRADES[i].indexOf(m[1] + "º") >= 0 && GRADES[i].indexOf("Fundamental") >= 0) {
+        gradeCompleto = GRADES[i]; break;
+      }
+    }
+  }
+  return { subject: partes[0], grade: gradeCompleto };
+}
+
+/* Quanto da matriz municipal do período já foi coberto por planos
+   DEFINITIVOS daquele mesmo período. É a conta que responde "estou em dia?". */
+function coberturaDoPeriodo(subject, grade, month) {
+  var m = matrizDoPeriodo(subject, grade, month);
+  var total = A(m.itens).length;
+  if (!total) return null;
+  var meses = mesesDoPeriodo(m.periodo);
+  var feitas = {};
+  planosDefinitivos().forEach(function(p) {
+    if (normSubj(p.config.subject) !== normSubj(subject)) return;
+    if (normGrade(p.config.gradeLevel) !== normGrade(grade)) return;
+    if (meses.length && meses.indexOf(p.config.month) < 0) return;
+    A(p.content && p.content.bnccSkills).forEach(function(k){ feitas[k.code] = 1; });
+  });
+  var n = A(m.itens).filter(function(a){ return feitas[a.code]; }).length;
+  return { total: total, feitas: n, pct: Math.round((n / total) * 100),
+    periodo: m.periodo, faixa: m.faixa, subject: subject, grade: grade };
+}
+
 function viewHome() {
   var cfg = state.cfg;
   var plans = state.plans;
-  var subjCount = {};
-  plans.forEach(function(p){ subjCount[p.config.subject] = (subjCount[p.config.subject] || 0) + 1; });
-  var bimCount = BIMESTRES.map(function(b) {
-    return { b:b, n:plans.filter(function(p){ return b.meses.indexOf(p.config.month) >= 0; }).length };
-  });
-  var maxBim = Math.max(1, Math.max.apply(null, bimCount.map(function(x){ return x.n; })));
-  var bimAtual = bimestreCorrente();
-  var aeeCount = plans.filter(function(p){ return p.config.aee && p.config.aee.active; }).length;
-  var aiCount = plans.filter(function(p){ return p.generatedByAi; }).length;
-  var recent = plans.slice(0, 3);
+  var definitivos = planosDefinitivos();
+  var nTestes = contarTestes();
   var firstName = (cfg.teacherName || "").split(" ")[0];
 
-  var subjBars = Object.keys(subjCount).sort(function(a,b){ return subjCount[b] - subjCount[a]; }).slice(0, 6);
-  var maxSubj = Math.max(1, Math.max.apply(null, subjBars.map(function(s){ return subjCount[s]; })));
+  var mesAtual = MONTHS_FULL[new Date().getMonth()] || "Março";
+  if (!CALENDAR.meses[mesAtual]) mesAtual = "Março";
+  var mi = CALENDAR.meses[mesAtual];
+  var bimAtual = BIMESTRES.filter(function(b){ return b.meses.indexOf(mesAtual) >= 0; })[0];
 
-  /* Cartão de indicador: número, rótulo e ícone ilustrativo. */
-  function statCard(valor, rotulo, icone, cor) {
-    return '<div class="stat-card">' +
-        "<div><div class='stat-card-n'" + (cor ? " style='color:" + cor + "'" : "") + ">" + valor + "</div>" +
-        "<div class='stat-card-l'>" + rotulo + "</div></div>" +
-        "<div class='stat-card-ic'>" + icone + "</div>" +
-      "</div>";
-  }
+  var aeeCount = definitivos.filter(function(p){ return p.config.aee && p.config.aee.active; }).length;
+  var aiCount = definitivos.filter(function(p){ return p.generatedByAi; }).length;
 
-  /* Uma linha de barra horizontal: rótulo, trilho proporcional e valor. */
-  /* A largura final vai em data-w e só é aplicada depois que a tela aparece
-     (ver animarBarras) — é isso que produz o crescimento suave ao abrir o
-     app, sem biblioteca de animação e sem atrasar a primeira pintura. */
-  function hbar(rotulo, valor, maximo, agora, reservarSelo) {
-    var pct = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
-    return '<div class="hbar' + (valor ? "" : " hbar-zero") + (agora ? " hbar-agora" : "") +
-      '" title="' + esc(rotulo) + ": " + valor + (agora ? " (bimestre atual)" : "") + '">' +
-      '<div class="hbar-lb">' + esc(rotulo) + "</div>" +
-      '<div class="hbar-track"><div class="hbar-fill" style="width:0" data-w="' +
-        (valor ? Math.max(pct, 6) : 0) + '"></div></div>' +
-      '<div class="hbar-n">' + valor + "</div>" +
-      (reservarSelo ? '<div class="hbar-fim">' +
-        (agora ? '<span class="hbar-tag">agora</span>' : "") + "</div>" : "") +
-    "</div>";
-  }
-
-  return '<div class="wrap fade" style="padding:26px 18px 46px">' +
-    '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;margin-bottom:18px">' +
+  /* ---- 1. Banner: quem, onde e em que ponto do ano ---- */
+  var banner = '<div class="pn-banner">' +
+    '<div class="pn-b-topo">' +
       "<div style='min-width:0'>" +
-        '<h1 style="font-size:27px;line-height:1.15;margin:0 0 5px">' +
-          (firstName ? "Ol&aacute;, " + esc(firstName) + "." : "Painel Principal") + "</h1>" +
-        '<p style="font-size:12.5px;color:var(--t3);margin:0;max-width:540px">' +
-          esc(cfg.schoolName) + (cfg.city ? " &middot; " + esc(cfg.city) : "") +
-          " &middot; Turno " + esc(cfg.defaultShift) + "</p>" +
+        '<h1 class="pn-ola">' + (firstName ? "Ol&aacute;, " + esc(firstName) + "." : "Painel") + "</h1>" +
+        '<div class="pn-escola">' + esc(cfg.schoolName || "") +
+          (cfg.city ? " &middot; " + esc(cfg.city) : "") +
+          " &middot; " + esc(cfg.defaultShift || "") + "</div>" +
       "</div>" +
-      '<button class="btn btn-primary" onclick="go(\'gen\')">📝&nbsp; Criar Planejamento</button>' +
+      (bimAtual
+        ? '<div class="pn-tag"><span class="pn-tag-pt"></span>' + esc(bimAtual.label) +
+          " &middot; em andamento</div>"
+        : "") +
     "</div>" +
+    (mi
+      ? '<div class="pn-b-rodape">' + esc(mesAtual) + " &middot; <strong>" + mi.diasLetivos +
+        "</strong> dias letivos &middot; <strong>" + mi.semanas + "</strong> semanas" +
+        (mi.recessoLabel ? ' <span class="pn-recesso">&#9888; ' + esc(mi.recessoLabel) + "</span>" : "") + "</div>"
+      : "") +
+  "</div>";
 
-    backupReminderHtml() +
+  /* ---- 2. Métricas em pílulas ---- */
+  var pilula = function(n, rotulo, cor) {
+    return '<div class="pn-pill' + (n ? "" : " pn-pill-zero") + '">' +
+      '<span class="pn-pill-n" style="color:' + cor + '">' + n + "</span>" +
+      '<span class="pn-pill-l">' + rotulo + "</span></div>";
+  };
+  var pilulas = '<div class="pn-pills">' +
+    pilula(definitivos.length, definitivos.length === 1 ? "Plano" : "Planos", "var(--acc)") +
+    pilula(aeeCount, "AEE", "var(--grn)") +
+    pilula(aiCount, "IA", "var(--rox)") +
+    (nTestes ? pilula(nTestes, nTestes === 1 ? "Teste" : "Testes", "var(--amb)") : "") +
+  "</div>";
 
-    /* Indicadores em faixa única */
-    /* Indicadores em cartÃµes prÃ³prios, com Ã­cone Ã  direita â leitura mais
-       rÃ¡pida no celular do que uma faixa de nÃºmeros iguais. */
-    '<div class="stat-cards">' +
-      statCard(plans.length, (plans.length === 1 ? "Planejamento" : "Planejamentos"), "📁", "") +
-      statCard(Object.keys(subjCount).length, (Object.keys(subjCount).length === 1 ? "Disciplina" : "Disciplinas"), "📚", "var(--grn)") +
-      statCard(aeeCount, "Com AEE", "♿", "var(--acc)") +
-      statCard(aiCount, "Gerados por IA", "🧠", "var(--blu)") +
+  /* ---- 3. Cobertura da matriz no período ---- */
+  /* Qual turma mostrar na barra de cobertura: a que o professor mais dá aula
+     na semana, tirada do horário configurado. Antes vinha a primeira da lista
+     de preferências, que podia ser uma turma secundária — o painel abria
+     falando de uma turma que não é a principal dele. */
+  var alvo = turmaPrincipal();
+  var covSubject = state.covSubject || (alvo && alvo.subject) || cfg.preferredSubjects[0] || SUBJECTS[0];
+  var covGrade = state.covGrade || (alvo && alvo.grade) || cfg.preferredGrades[0] || GRADES[7];
+  var cob = coberturaDoPeriodo(covSubject, covGrade, mesAtual);
+  var coberturaHtml = cob
+    ? '<div class="pn-card pn-cob" onclick="go(\'cobertura\')">' +
+        '<div class="pn-cob-topo">' +
+          "<div><div class='pn-cob-tt'>Matriz do " + esc(cob.periodo || "período") + "</div>" +
+          "<div class='pn-cob-sub'>" + esc(cob.subject) + " &middot; " + esc(cob.grade) + "</div></div>" +
+          '<div class="pn-cob-pct">' + cob.pct + "%</div>" +
+        "</div>" +
+        '<div class="pn-barra"><i style="width:' + Math.max(cob.pct, cob.feitas ? 3 : 0) + '%"></i></div>' +
+        '<div class="pn-cob-p">' + cob.feitas + " de " + cob.total +
+          " habilidades j&aacute; planejadas neste per&iacute;odo</div>" +
+      "</div>"
+    : '<div class="pn-card pn-cob" onclick="go(\'cobertura\')">' +
+        "<div class='pn-cob-tt'>Cobertura BNCC</div>" +
+        '<div class="pn-cob-p" style="margin-top:5px">A matriz municipal ainda n&atilde;o cobre ' +
+          esc(covSubject) + " &middot; " + esc(covGrade) + ". Toque para ver a cobertura completa.</div>" +
+      "</div>";
+
+  /* ---- 4. Atalhos exclusivos (o que não está na barra de baixo) ---- */
+  var atalho = function(id, icone, titulo, desc, classe) {
+    return '<div class="pn-tool" onclick="go(\'' + id + '\')">' +
+      '<div class="pn-tool-ic ' + classe + '">' + icone + "</div>" +
+      '<div class="pn-tool-tt">' + titulo + "</div>" +
+      '<div class="pn-tool-ds">' + desc + "</div></div>";
+  };
+  var ferramentas = '<div class="pn-tools">' +
+    atalho("cobertura", "🏅", "Cobertura BNCC", "Habilidades j&aacute; trabalhadas", "ic-azul") +
+    atalho("aee", "♿", "Hub AEE", "Estrat&eacute;gias de inclus&atilde;o", "ic-verde") +
+    atalho("archive", "🗃️", "Arquivo Bimestral", "Planos por bimestre", "ic-ambar") +
+    atalho("plans", "🗂️", "Hist&oacute;rico de Planos", "Tudo que voc&ecirc; salvou", "ic-roxo") +
+  "</div>";
+
+  /* ---- 5. Retomar o trabalho, com abas ---- */
+  var aba = state.homeAba || "recentes";
+  var lista = aba === "definitivos" ? definitivos
+    : (aba === "testes" ? A(plans).filter(ehTeste) : A(plans));
+  lista = lista.slice(0, 4);
+  var abaBtn = function(id, rotulo, n) {
+    return '<button class="pn-aba' + (aba === id ? " on" : "") +
+      '" onclick="state.homeAba=\'' + id + '\';render()">' + rotulo +
+      (typeof n === "number" ? ' <span class="pn-aba-n">' + n + "</span>" : "") + "</button>";
+  };
+  var recentes = '<div class="pn-card">' +
+    '<div class="pn-abas">' +
+      abaBtn("recentes", "Recentes") +
+      abaBtn("definitivos", "Definitivos", definitivos.length) +
+      (nTestes ? abaBtn("testes", "Testes", nTestes) : "") +
     "</div>" +
-
-    '<div class="g2" style="margin-bottom:14px">' +
-      '<div class="card" style="padding:15px 17px">' +
-        '<div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:9px">Distribui&ccedil;&atilde;o por Bimestre</div>' +
-        bimCount.map(function(x) {
-          return hbar(x.b.emoji + " " + x.b.label, x.n, maxBim, x.b.id === bimAtual, !!bimAtual);
+    (lista.length
+      ? lista.map(function(p) {
+          return '<div class="pn-item" onclick="openPlan(\'' + p.id + '\')">' +
+            '<div style="min-width:0">' +
+              '<div class="pn-item-tag">' + esc(p.config.subject) + " &middot; " + esc(p.config.gradeLevel) + "</div>" +
+              '<div class="pn-item-tt">' + esc(p.content.title) + "</div>" +
+              '<div class="pn-item-sub">' + seloTeste(p) + "<span>" + esc(p.config.month) +
+                " &middot; " + new Date(p.createdAt).toLocaleDateString("pt-BR") + "</span></div>" +
+            "</div><span class='pn-item-ar'>&rsaquo;</span></div>";
         }).join("") +
-      "</div>" +
-      '<div class="card" style="padding:15px 17px">' +
-        '<div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:9px">Planos por Componente</div>' +
-        (subjBars.length
-          ? subjBars.map(function(s) { return hbar(s, subjCount[s], maxSubj, false); }).join("")
-          : '<div style="color:var(--t4);font-size:12px;padding:6px 0">Nenhum plano salvo ainda.</div>') +
-      "</div>" +
-    "</div>" +
+        (plans.length > 4
+          ? '<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="go(\'plans\')">Ver todos &rarr;</button>'
+          : "")
+      : '<div class="pn-vazio">' +
+          (aba === "testes" ? "Nenhum plano de teste."
+            : (plans.length ? "Nada nesta aba ainda."
+              : "Nenhum plano ainda. Toque no <strong>&#10133; Criar</strong>, na barra de baixo, para come&ccedil;ar.")) +
+        "</div>") +
+  "</div>";
 
-    /* Calendário do mês atual */
-    (function() {
-      var mi = CALENDAR.meses[state.agendaMonth];
-      if (!mi) return "";
-      return '<div class="card" style="padding:14px 17px;margin-bottom:18px">' +
-        '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">' +
-          "<div><div style='font-size:12.5px;font-weight:700;color:var(--t2)'>Calend&aacute;rio Letivo 2026 &mdash; " +
-            esc(state.agendaMonth) + "</div>" +
-          "<div style='font-size:10.5px;color:var(--t4);margin-top:2px'>" + esc(mi.periodo || "Período não letivo") +
-            (mi.recessoLabel ? " &middot; " + esc(mi.recessoLabel) : "") + "</div></div>" +
-          '<div style="display:flex;gap:18px;font-size:12px">' +
-            "<div><strong style='font-size:17px;color:var(--acc)'>" + mi.diasLetivos + "</strong> <span style='color:var(--t4)'>dias letivos</span></div>" +
-            "<div><strong style='font-size:17px;color:var(--grn)'>" + mi.semanas + "</strong> <span style='color:var(--t4)'>semanas</span></div>" +
-          "</div>" +
-          '<button class="btn btn-outline btn-sm" onclick="go(\'agenda\')">Ver agenda completa</button>' +
-          '<div class="cal-ic">📆</div>' +
-        "</div></div>";
-    })() +
-
-    /* Ferramentas */
-    '<div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:10px;font-family:var(--serif)">Minhas Ferramentas</div>' +
-    '<div class="gtools" style="margin-bottom:22px">' +
-      [["gen","📝","Criar Planejamento","Gerar um plano de aula completo, alinhado &agrave;s habilidades da BNCC"],
-       ["diario","📋","Registro de Aulas","Di&aacute;rio de classe com as datas reais do calend&aacute;rio letivo"],
-       ["plans","🗂️","Hist&oacute;rico de Planos","Todos os planejamentos que voc&ecirc; j&aacute; salvou"],
-       ["cobertura","🏅","Cobertura BNCC","Veja quais habilidades j&aacute; foram trabalhadas e quais faltam no ano"],
-       ["archive","🗃️","Arquivo Bimestral","Seus planos organizados nas pastas de cada bimestre"],
-       ["agenda","📅","Agenda Letiva","Calend&aacute;rio do m&ecirc;s e a sua grade semanal de aulas"],
-       ["aee","♿","Hub AEE","Estrat&eacute;gias de inclus&atilde;o e recursos por diagn&oacute;stico"],
-       ["settings","⚙️","Ajustes &amp; Mais","Perfil, hor&aacute;rio semanal, temas e backup dos dados"]
-      ].map(function(t) {
-        return '<div class="card tool" onclick="go(\'' + t[0] + '\')">' +
-          '<div class="tool-ic">' + t[1] + "</div>" +
-          '<div class="tool-tx"><div class="tool-tt">' + t[2] + "</div>" +
-          '<div class="tool-ds">' + t[3] + "</div></div>" +
-          '<div class="tool-ar">&rsaquo;</div></div>';
-      }).join("") +
-    "</div>" +
-
-    /* Recentes */
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
-      '<div style="font-size:12.5px;font-weight:700;color:var(--t2)">Planejamentos Recentes</div>' +
-      (plans.length ? '<button class="btn btn-ghost btn-sm" onclick="go(\'plans\')">Ver todos &rarr;</button>' : "") +
-    "</div>" +
-    (recent.length
-      ? '<div class="gauto">' + recent.map(function(p) {
-          return '<div class="card" style="padding:16px;cursor:pointer" onclick="openPlan(\'' + p.id + '\')">' +
-            '<div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">' +
-              esc(p.config.subject) + "</div>" +
-            '<div class="clamp2" style="font-weight:600;font-size:14px;margin-bottom:5px;line-height:1.32">' + esc(p.content.title) + "</div>" +
-            '<div style="font-size:11px;color:var(--t4)">' + esc(p.config.gradeLevel) + " &middot; " + esc(p.config.month) + "</div></div>";
-        }).join("") + "</div>"
-      : '<div class="card-soft" style="padding:28px;text-align:center;color:var(--t3);font-size:13px">' +
-        "Nenhum plano de aula ativo. Comece criando seu primeiro planejamento.</div>") +
+  return '<div class="wrap fade pn-wrap">' +
+    banner + backupReminderHtml() + pilulas + coberturaHtml + ferramentas + recentes +
   "</div>";
 }
 
