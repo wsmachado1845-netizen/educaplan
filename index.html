@@ -763,7 +763,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 4.8 · 21/08/2026 · Conexão com a IA testável</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 4.9 · 22/08/2026 · Plano de teste × definitivo</div>
     </footer>
   </div>
 </div>
@@ -2516,9 +2516,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "4.8";
-var APP_VERSAO_DATA = "21/08/2026";
-var APP_VERSAO_NOTA = "Conexão com a IA testável";
+var APP_VERSAO = "4.9";
+var APP_VERSAO_DATA = "22/08/2026";
+var APP_VERSAO_NOTA = "Plano de teste × definitivo";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -8406,6 +8406,10 @@ function viewPlanAnosIniciais(pl, c, pc, cfg) {
       (state.activeSaved ? "" : '<button class="btn btn-primary btn-sm" onclick="savePlan()">Salvar no Hist&oacute;rico</button>') +
       '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / PDF</button>' +
       '<button class="btn btn-outline btn-sm" onclick="downloadDoc()">Baixar Word</button>' +
+      '<button class="btn btn-outline btn-sm" title="' +
+        (ehTeste(pl) ? "Passar este plano para definitivo" : "Marcar este plano como teste") + '" ' +
+        'onclick="alternarTeste(\'' + pl.id + '\')">' +
+        (ehTeste(pl) ? "&#10003; Tornar definitivo" : "Marcar como teste") + "</button>" +
       (state.activeSaved ? '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deletePlan(\'' + pl.id + '\')">Excluir</button>' : "") +
     "</div></div>";
 
@@ -8648,6 +8652,10 @@ function viewPlanOficial(pl, c, pc, cfg) {
       (state.activeSaved ? "" : '<button class="btn btn-primary btn-sm" onclick="savePlan()">Salvar no Hist&oacute;rico</button>') +
       '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / PDF</button>' +
       '<button class="btn btn-outline btn-sm" onclick="downloadDoc()">Baixar Word</button>' +
+      '<button class="btn btn-outline btn-sm" title="' +
+        (ehTeste(pl) ? "Passar este plano para definitivo" : "Marcar este plano como teste") + '" ' +
+        'onclick="alternarTeste(\'' + pl.id + '\')">' +
+        (ehTeste(pl) ? "&#10003; Tornar definitivo" : "Marcar como teste") + "</button>" +
       (state.activeSaved ? '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deletePlan(\'' + pl.id + '\')">Excluir</button>' : "") +
     "</div></div>";
 
@@ -9088,6 +9096,40 @@ function viewGen() {
       '<div style="margin-top:14px"><label class="lbl">Contextualiza&ccedil;&atilde;o Extra ou Recursos (opcional)</label>' +
         '<textarea class="inp" id="f_extra" rows="2" placeholder="Detalhes da turma, recursos dispon&iacute;veis, observa&ccedil;&otilde;es...">' + esc(f.extraDetails || "") + "</textarea></div>" +
 
+      /* v4.9 — teste ou definitivo. Fica logo antes do botão de gerar,
+         que é o último momento em que o professor decide o que está fazendo. */
+      (function() {
+        var ehT = (typeof f.teste === "boolean") ? f.teste : !!state.cfg.ultimoTipoTeste;
+        var opcao = function(valor, titulo, desc) {
+          var on = (ehT === valor);
+          return '<div onclick="escolherTipoPlano(' + valor + ')" style="flex:1;min-width:150px;cursor:pointer;' +
+            "border:1px solid " + (on ? (valor ? "var(--amb)" : "var(--acc)") : "var(--border)") + ";" +
+            "background:" + (on ? (valor ? "var(--ambBg)" : "var(--acc3)") : "var(--bg2)") + ";" +
+            'border-radius:12px;padding:10px 12px">' +
+            '<div style="display:flex;align-items:center;gap:7px">' +
+              "<span style='width:13px;height:13px;border-radius:50%;flex:none;border:2px solid " +
+                (on ? (valor ? "var(--amb)" : "var(--acc)") : "var(--border)") + ";background:" +
+                (on ? (valor ? "var(--amb)" : "var(--acc)") : "transparent") + "'></span>" +
+              "<span style='font-weight:700;font-size:12.5px;color:" +
+                (on ? (valor ? "var(--amb)" : "var(--acc)") : "var(--t2)") + "'>" + titulo + "</span>" +
+            "</div>" +
+            '<div style="font-size:10.5px;color:var(--t4);margin-top:4px;line-height:1.5">' + desc + "</div>" +
+          "</div>";
+        };
+        return '<div class="card-soft" style="padding:13px;margin-top:14px">' +
+          '<div class="lbl" style="margin-bottom:8px">O que voc&ecirc; est&aacute; criando</div>' +
+          '<div style="display:flex;gap:9px;flex-wrap:wrap">' +
+            opcao(false, "Plano definitivo",
+              "Entra na Cobertura BNCC e alimenta o Registro de Aulas. &Eacute; o plano que vai ficar.") +
+            opcao(true, "Plano de teste",
+              "S&oacute; para experimentar. Fica marcado no hist&oacute;rico e n&atilde;o conta em lugar nenhum.") +
+          "</div>" +
+          '<div style="font-size:10px;color:var(--t4);margin-top:8px">' +
+            "D&aacute; para mudar depois: no plano aberto ou no hist&oacute;rico, um toque troca a marca." +
+          "</div>" +
+        "</div>";
+      })() +
+
       /* AEE */
       '<div class="card-soft" style="padding:14px;margin-top:14px">' +
         '<label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:10px">' +
@@ -9281,10 +9323,15 @@ function viewPlan() {
       (state.activeSaved ? "" : '<button class="btn btn-primary btn-sm" onclick="savePlan()">Salvar no Hist&oacute;rico</button>') +
       '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / PDF</button>' +
       '<button class="btn btn-outline btn-sm" onclick="downloadDoc()">Baixar Word</button>' +
+      '<button class="btn btn-outline btn-sm" title="' +
+        (ehTeste(pl) ? "Passar este plano para definitivo" : "Marcar este plano como teste") + '" ' +
+        'onclick="alternarTeste(\'' + pl.id + '\')">' +
+        (ehTeste(pl) ? "&#10003; Tornar definitivo" : "Marcar como teste") + "</button>" +
       (state.activeSaved ? '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deletePlan(\'' + pl.id + '\')">Excluir</button>' : "") +
     "</div></div>";
 
-  var header = '<div style="display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap">' +
+  var header = '<div style="display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap;align-items:center">' +
+      seloTeste(pl, "g") +
       '<span class="badge">' + (pl.generatedByAi ? "Gerado com Claude" : "Gerador local") + "</span>" +
       (state.activeSaved ? '<span class="badge badge-ok">Salvo</span>' : "") +
       (A(c.contents).length > 1
@@ -9365,19 +9412,40 @@ function viewPlan() {
 /* ---------------- HISTÓRICO DE PLANOS ---------------- */
 function viewPlans() {
   var q = (state.planQuery || "").toLowerCase();
+  var filtro = state.planFiltro || "todos";   /* todos | definitivos | testes */
   var list = state.plans.filter(function(p) {
+    if (filtro === "definitivos" && ehTeste(p)) return false;
+    if (filtro === "testes" && !ehTeste(p)) return false;
     return p.content.title.toLowerCase().indexOf(q) >= 0 ||
       p.config.subject.toLowerCase().indexOf(q) >= 0 ||
       p.config.gradeLevel.toLowerCase().indexOf(q) >= 0 ||
       p.config.month.toLowerCase().indexOf(q) >= 0;
   });
+  var nTestes = contarTestes();
+  var nDef = state.plans.length - nTestes;
+  var chip = function(id, rotulo, n) {
+    var on = filtro === id;
+    return '<button class="btn btn-sm ' + (on ? "btn-primary" : "btn-outline") +
+      '" onclick="state.planFiltro=\'' + id + '\';render()">' + rotulo +
+      (typeof n === "number" ? " (" + n + ")" : "") + "</button>";
+  };
   return '<div class="wrap fade" style="padding:34px 18px 56px">' +
-    pageHead("Histórico de Planos", state.plans.length + " planejamento(s) salvos neste navegador", "home") +
-    '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">' +
+    pageHead("Histórico de Planos",
+      nDef + " definitivo(s)" + (nTestes ? " e " + nTestes + " de teste" : "") + " neste navegador", "home") +
+    '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px">' +
       '<input class="inp" id="pq" style="max-width:320px" placeholder="Buscar por tema, componente, turma ou m&ecirc;s..." ' +
         'value="' + esc(state.planQuery || "") + '" oninput="state.planQuery=this.value;renderKeep(\'pq\')" />' +
       (state.plans.length ? '<button class="btn btn-outline btn-sm" onclick="exportAll()">Baixar todos (.html)</button>' : "") +
     "</div>" +
+    (nTestes
+      ? '<div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:14px">' +
+          chip("todos", "Todos", state.plans.length) +
+          chip("definitivos", "Definitivos", nDef) +
+          chip("testes", "Testes", nTestes) +
+          '<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="limparTestes()">' +
+            (nTestes === 1 ? "Excluir o plano de teste" : "Excluir os " + nTestes + " planos de teste") + "</button>" +
+        "</div>"
+      : "") +
     (list.length
       ? list.map(function(p) {
           return '<div class="card row" onclick="openPlan(\'' + p.id + '\')">' +
@@ -9385,12 +9453,20 @@ function viewPlans() {
               '<div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">' +
                 esc(p.config.subject) + " &middot; " + esc(p.config.gradeLevel) + "</div>" +
               '<div class="clamp2" style="font-weight:600;font-size:14px">' + esc(p.content.title) + "</div>" +
-              '<div style="font-size:11px;color:var(--t4);margin-top:2px">' + esc(p.config.month) +
+              '<div style="font-size:11px;color:var(--t4);margin-top:2px;display:flex;align-items:center;gap:7px;flex-wrap:wrap">' +
+                seloTeste(p) +
+                "<span>" + esc(p.config.month) +
                 " &middot; criado em " + new Date(p.createdAt).toLocaleDateString("pt-BR") +
-                (p.config.aee && p.config.aee.active ? " &middot; <span style='color:var(--grn)'>AEE</span>" : "") + "</div>" +
+                (p.config.aee && p.config.aee.active ? " &middot; <span style='color:var(--grn)'>AEE</span>" : "") + "</span></div>" +
             "</div>" +
-            '<button class="btn btn-ghost btn-sm" style="color:var(--red);flex-shrink:0" ' +
-              'onclick="event.stopPropagation();deletePlan(\'' + p.id + '\')">Excluir</button></div>';
+            '<div style="display:flex;gap:2px;flex-shrink:0">' +
+              '<button class="btn btn-ghost btn-sm" title="' +
+                (ehTeste(p) ? "Passar para definitivo" : "Marcar como teste") + '" ' +
+                'onclick="event.stopPropagation();alternarTeste(\'' + p.id + '\')">' +
+                (ehTeste(p) ? "&#10003; Definitivo" : "Teste") + "</button>" +
+              '<button class="btn btn-ghost btn-sm" style="color:var(--red)" ' +
+                'onclick="event.stopPropagation();deletePlan(\'' + p.id + '\')">Excluir</button>' +
+            "</div></div>";
         }).join("")
       : '<div class="card-soft" style="padding:36px;text-align:center;color:var(--t3);font-size:13px">' +
         (state.plans.length ? "Nenhum plano corresponde &agrave; busca." : "Nenhum plano salvo ainda.") + "</div>") +
@@ -9579,11 +9655,16 @@ function viewDiario() {
      registro guarda de qual plano (planId) veio cada célula preenchida, para
      poder ser limpo automaticamente se esse plano for excluído depois. */
   var pool = [];
-  var sameMonth = state.plans.filter(function(p) {
+  /* v4.9 — o diário oficial se alimenta dos planos DEFINITIVOS. Um plano de
+     teste não deve lançar conteúdo no registro de aulas; só entra se não
+     houver nenhum definitivo para aquela turma/componente. */
+  var fonte = planosDefinitivos();
+  if (!fonte.length) fonte = A(state.plans);
+  var sameMonth = fonte.filter(function(p) {
     return normSubj(p.config.subject) === normSubj(d.subject) && normGrade(p.config.gradeLevel) === normGrade(d.grade) &&
       p.config.month === d.month;
   });
-  var match = sameMonth.length ? sameMonth : state.plans.filter(function(p) {
+  var match = sameMonth.length ? sameMonth : fonte.filter(function(p) {
     return normSubj(p.config.subject) === normSubj(d.subject) && normGrade(p.config.gradeLevel) === normGrade(d.grade);
   });
   /* Sincronização estrita com o Histórico de Planos: só existe conteúdo
@@ -9827,7 +9908,9 @@ function coberturaData(subject, grade) {
     if (!seen[s.code]) { seen[s.code] = 1; unique.push(s); }
   });
   var used = {};
-  state.plans.forEach(function(p) {
+  /* v4.9 — planos de teste ficam de fora: senão a Cobertura mostraria como
+     "trabalhada" uma habilidade que só entrou num plano de experiência. */
+  planosDefinitivos().forEach(function(p) {
     if (p.config.subject !== subject || p.config.gradeLevel !== grade) return;
     A(p.content && p.content.bnccSkills).forEach(function(s) {
       if (!used[s.code]) used[s.code] = [];
@@ -10422,6 +10505,10 @@ function readForm() {
     extraDetails: el("f_extra").value,
     coverImage: (state.form && state.form.coverImage) || "",
     forcedSkills: A(state.form && state.form.forcedSkills),
+    /* v4.9 — marca escolhida na tela de criação; a última escolha fica
+       lembrada em Ajustes para não precisar repetir a cada plano. */
+    teste: (state.form && typeof state.form.teste === "boolean")
+      ? state.form.teste : !!state.cfg.ultimoTipoTeste,
     aee: {
       active: aeeOn,
       diagnosis: aeeOn && el("f_aeeType") ? el("f_aeeType").value : "",
@@ -10431,8 +10518,10 @@ function readForm() {
 }
 function genRefresh() {
   var keep = A(state.form && state.form.forcedSkills);
+  var keepTeste = state.form && state.form.teste;
   state.form = readForm();
   state.form.forcedSkills = keep;
+  if (typeof keepTeste === "boolean") state.form.teste = keepTeste;
   render();
 }
 
@@ -10615,6 +10704,7 @@ function doGenerate() {
         config: cfg,
         content: content,
         generatedByAi: !!byAi,
+        teste: !!(cfg && cfg.teste),
         fallbackWarning: warn || null
       };
       state.activeSaved = false;
@@ -10654,13 +10744,73 @@ function doGenerate() {
 }
 
 /* ---------- Planos ---------- */
+/* =========================================================
+   v4.9 — PLANO DE TESTE × PLANO DEFINITIVO
+   ---------------------------------------------------------
+   Enquanto ajusta o app, o professor gera planos só para ver como fica.
+   Antes eles se misturavam aos planos de verdade: sujavam o histórico,
+   contavam na Cobertura BNCC e podiam alimentar o Registro de Aulas.
+   Agora cada plano nasce com uma marca, que pode ser trocada a qualquer
+   momento — um teste que ficou bom vira definitivo com um toque, sem
+   precisar gerar de novo.
+   ========================================================= */
+function ehTeste(pl) { return !!(pl && pl.teste); }
+function planosDefinitivos() {
+  return A(state.plans).filter(function(p){ return !ehTeste(p); });
+}
+function contarTestes() {
+  return A(state.plans).filter(ehTeste).length;
+}
+/* Selo reaproveitado no histórico, no arquivo bimestral e no próprio plano. */
+function seloTeste(pl, tamanho) {
+  if (!ehTeste(pl)) return "";
+  var f = tamanho === "g" ? "10.5px" : "9px";
+  return '<span style="display:inline-block;font-size:' + f + ';font-weight:800;letter-spacing:.06em;' +
+    'padding:2px 7px;border-radius:999px;background:var(--ambBg);color:var(--amb);white-space:nowrap">TESTE</span>';
+}
+/* Alterna a marca de um plano já salvo (ou do que está aberto na tela). */
+function alternarTeste(id) {
+  var pl = null;
+  for (var i = 0; i < state.plans.length; i++) if (state.plans[i].id === id) pl = state.plans[i];
+  if (!pl && state.activePlan && state.activePlan.id === id) pl = state.activePlan;
+  if (!pl) return;
+  pl.teste = !pl.teste;
+  if (state.activePlan && state.activePlan.id === id) state.activePlan.teste = pl.teste;
+  savePlans();
+  render();
+  toast(pl.teste
+    ? "Marcado como teste — fora da Cobertura BNCC e do Registro de Aulas."
+    : "Agora é um plano definitivo.");
+}
+/* Escolha feita na tela de criação; fica lembrada para a próxima vez. */
+function escolherTipoPlano(teste) {
+  if (!state.form) state.form = {};
+  state.form.teste = !!teste;
+  state.cfg.ultimoTipoTeste = !!teste;
+  saveCfg();
+  render();
+}
+function limparTestes() {
+  var n = contarTestes();
+  if (!n) { toast("Não há planos de teste."); return; }
+  if (!confirm("Excluir " + n + " plano(s) de teste? Os planos definitivos não são tocados.")) return;
+  pushSnapshot("Antes de excluir os planos de teste", true);
+  state.plans = planosDefinitivos();
+  savePlans();
+  syncDiaryWithPlans();
+  render();
+  toast(n + " plano(s) de teste excluído(s).");
+}
+
 function savePlan() {
   if (!state.activePlan) return;
   state.plans.unshift(state.activePlan);
   savePlans();
   state.activeSaved = true;
   render();
-  toast("Plano salvo no histórico.");
+  toast(ehTeste(state.activePlan)
+    ? "Plano de teste salvo — marcado como TESTE no histórico."
+    : "Plano salvo no histórico.");
 }
 function openPlan(id) {
   var p = null;
