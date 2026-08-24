@@ -381,6 +381,48 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
    Identificação curta: código, descritor SAEB, objeto e o percentual do
    diagnóstico. A descrição completa fica no toque/tooltip, para o painel
    caber na tela sem virar um paredão de texto. */
+/* ── Matriz do período, em lista agrupada (v5.3) ──
+   Antes era uma nuvem de 26 pastilhas com o texto cortado no meio da palavra
+   e barra de rolagem dentro do cartão. Só que a matriz tem 26 códigos e
+   apenas 12 objetos de conhecimento: "Morfossintaxe" aparecia 5 vezes,
+   "Produzir, revisar e editar textos…" 6 vezes. A repetição ocupava a tela
+   sem informar nada.
+   Agora cada objeto é uma linha e os códigos dele ficam embaixo, numa grade
+   de largura fixa. Como todo código da BNCC tem 8 caracteres, em fonte
+   monoespaçada eles formam colunas certinhas sozinhos. */
+.mtz-lista { margin-top: 2px; }
+.mtz-eixo { display: flex; align-items: center; gap: 9px; margin: 13px 0 2px; }
+.mtz-eixo:first-child { margin-top: 4px; }
+.mtz-eixo b { font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--t4); }
+.mtz-eixo i { font-style: normal; font-size: 9.5px; font-weight: 800; color: var(--acc);
+  background: var(--acc3); border-radius: 99px; padding: 1px 7px; font-variant-numeric: tabular-nums; }
+.mtz-eixo::after { content: ""; flex: 1; height: 1px; background: var(--border2); }
+.mtz-linha { padding: 8px 0 9px; border-top: 1px solid var(--border2); cursor: pointer; }
+.mtz-eixo + .mtz-linha { border-top: none; padding-top: 4px; }
+.mtz-lin-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.mtz-lin-obj { font-size: 11.5px; font-weight: 600; color: var(--t2); line-height: 1.35; }
+.mtz-lin-n { font-size: 9.5px; font-weight: 700; color: var(--t4); flex: none;
+  font-variant-numeric: tabular-nums; }
+.mtz-cods { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  gap: 4px; margin-top: 6px; }
+/* Todas as pastilhas com o mesmo tratamento visível — se só a âmbar tivesse
+   fundo, a coluna pareceria torta mesmo estando alinhada. */
+.mtz-cod { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px;
+  font-weight: 700; background: var(--bg2); border: 1px solid var(--border2);
+  color: var(--t2); border-radius: 6px; padding: 3px 4px; text-align: center;
+  letter-spacing: -.01em; white-space: nowrap; }
+.mtz-cod.pri { background: var(--ambBg); border-color: var(--amb); color: var(--amb); }
+.mtz-desc { background: var(--bg3); border-radius: 9px; padding: 9px 11px; margin: 7px 0 2px;
+  font-size: 10.5px; color: var(--t3); line-height: 1.55; }
+.mtz-desc div { margin-bottom: 7px; }
+.mtz-desc div:last-child { margin-bottom: 0; }
+.mtz-desc b { color: var(--t2); font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10px; }
+.mtz-mais { width: 100%; margin-top: 10px; border: 1px dashed var(--border); background: none;
+  color: var(--acc); font-family: inherit; font-size: 11px; font-weight: 700; border-radius: 9px;
+  padding: 8px; cursor: pointer; }
+.mtz-mais:active { background: var(--acc3); }
 .mtz-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 168px; overflow-y: auto; }
 .mtz-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border);
   border-left-width: 3px; background: var(--bg2); border-radius: 7px; padding: 4px 8px;
@@ -889,7 +931,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.2 · 24/08/2026 · Ícones maiores no celular e Google Drive sem pedir a conta</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.3 · 24/08/2026 · Matriz do período agrupada por objeto de conhecimento</div>
     </footer>
   </div>
 </div>
@@ -1278,6 +1320,62 @@ function matrizDoPeriodo(subject, grade, month) {
   return { periodo: calPeriodo, faixa: faixaDoPeriodo(calPeriodo), numero: per, itens: itens };
 }
 
+/* Resume o objeto de conhecimento para caber numa linha, SEM cortar no meio
+   da palavra — que era o que deixava "Estratégia e procedim…" na tela.
+   A ordem das tentativas importa:
+   1) se há dois-pontos ou ponto e vírgula, o que vem antes já é o assunto
+      ("Estratégias de produção: planejamento de textos…" → "Estratégias de produção");
+   2) senão, corta no último espaço que couber e joga fora a palavrinha de
+      ligação que ficou sobrando no fim ("…contexto de" → "…contexto").
+   O texto inteiro continua disponível ao tocar na linha. */
+var _LIGACAO = { de:1, do:1, da:1, dos:1, das:1, e:1, ou:1, em:1, no:1, na:1, nos:1, nas:1,
+  com:1, para:1, por:1, que:1, entre:1, a:1, o:1, ao:1, "à":1, um:1, uma:1, pela:1, pelo:1,
+  sobre:1, "e/ou":1 };
+function resumirObjeto(txt, limite) {
+  var s = String(txt || "").replace(/[\s…\.]+$/, "").trim();
+  limite = limite || 38;
+  if (!s) return "";
+  var corte = s.search(/[:;]/);
+  if (corte >= 12) s = s.slice(0, corte).trim();
+  if (s.length <= limite) return s;
+  var pedaco = s.slice(0, limite + 1);
+  var ultimo = pedaco.lastIndexOf(" ");
+  if (ultimo < 12) ultimo = limite;
+  s = pedaco.slice(0, ultimo);
+  var partes = s.split(/\s+/);
+  while (partes.length > 2 && _LIGACAO[partes[partes.length - 1].toLowerCase()]) partes.pop();
+  return partes.join(" ").replace(/[,;:]$/, "") + "…";
+}
+
+/* Junta os códigos que compartilham o mesmo objeto de conhecimento. A matriz
+   municipal repete muito o objeto (cinco códigos de "Morfossintaxe", por
+   exemplo) — agrupar mostra o desenho real do período em vez de uma fila de
+   repetições. */
+function agruparMatriz(itens) {
+  var grupos = [], porChave = {};
+  A(itens).forEach(function(a) {
+    var eixo = a.axis || "Outros";
+    var obj = String(a.objeto || a.code).trim();
+    var k = eixo + "||" + obj.toLowerCase();
+    if (!porChave[k]) {
+      porChave[k] = { eixo: eixo, objeto: obj, itens: [] };
+      grupos.push(porChave[k]);
+    }
+    porChave[k].itens.push(a);
+  });
+  return grupos;
+}
+
+function mtzAlternarGrupo(i) {
+  if (!state.mtzAberto) state.mtzAberto = {};
+  state.mtzAberto[i] = !state.mtzAberto[i];
+  render();
+}
+function mtzVerTodas() {
+  state.mtzTudo = !state.mtzTudo;
+  render();
+}
+
 /* Painel de identificação da matriz, no topo da tela de planejamento.
    A barrinha é uma composição: quanto do que a matriz pede para este período
    está crítico, em atenção ou consolidado, segundo o diagnóstico da turma.
@@ -1325,20 +1423,65 @@ function matrizPeriodoHtml(subject, grade, month) {
       "</div>"
     : "";
 
-  var chips = m.itens.map(function(a) {
-    var nv = amkNivel(a.pct);
-    var cor = nv ? nv.color : "var(--acc)";
-    var dica = (a.axis ? a.axis + " — " : "") + a.description +
-      (a.prioritaria ? "\n\n★ Priorizada pelo MEC na Matriz de Recomposição das Aprendizagens (2025)." : "");
-    return '<span class="mtz-chip" style="border-color:' + cor + '" title="' + esc(dica) + '">' +
-      '<span class="mtz-dot" style="background:' + cor + '"></span>' +
-      "<strong>" + esc(a.code) + "</strong>" +
-      (a.prioritaria ? '<span class="mtz-star" title="Priorizada pelo MEC para recomposição">&#9733;</span>' : "") +
-      (a.saeb ? '<span class="mtz-saeb">' + esc(a.saeb) + "</span>" : "") +
-      '<span class="mtz-obj">' + esc(a.objeto) + "</span>" +
-      (typeof a.pct === "number" ? '<span class="mtz-pct">' + a.pct + "%</span>" : "") +
-    "</span>";
+  /* Lista agrupada por eixo e por objeto de conhecimento. O cabeçalho de eixo
+     só aparece quando o eixo muda, então a leitura desce em blocos. */
+  var grupos = agruparMatriz(m.itens);
+  /* Os itens vêm ordenados por diagnóstico da turma, não por eixo — então os
+     grupos chegavam intercalados e o mesmo eixo aparecia duas vezes na tela.
+     Aqui eles são reagrupados por eixo, mantendo dentro de cada eixo a ordem
+     de prioridade que já vinha. */
+  var ordemDoEixo = {}, proxOrdem = 0;
+  grupos.forEach(function(g) {
+    if (!(g.eixo in ordemDoEixo)) ordemDoEixo[g.eixo] = proxOrdem++;
+  });
+  grupos = grupos.map(function(g, i){ return { g:g, i:i }; })
+    .sort(function(a, b) {
+      var ea = ordemDoEixo[a.g.eixo], eb = ordemDoEixo[b.g.eixo];
+      return ea !== eb ? ea - eb : a.i - b.i;
+    })
+    .map(function(x){ return x.g; });
+  var LIMITE = 6;
+  var mostrarTodos = !!state.mtzTudo || grupos.length <= LIMITE + 1;
+  var visiveis = mostrarTodos ? grupos : grupos.slice(0, LIMITE);
+  var eixoAtual = "";
+  var lista = visiveis.map(function(g, i) {
+    var cab = "";
+    if (g.eixo !== eixoAtual) {
+      eixoAtual = g.eixo;
+      var totalEixo = 0;
+      grupos.forEach(function(x){ if (x.eixo === g.eixo) totalEixo += x.itens.length; });
+      cab = '<div class="mtz-eixo"><b>' + esc(g.eixo) + "</b><i>" + totalEixo + "</i></div>";
+    }
+    var aberto = !!(state.mtzAberto && state.mtzAberto[i]);
+    var cods = g.itens.map(function(a) {
+      return '<span class="mtz-cod' + (a.prioritaria ? " pri" : "") + '">' + esc(a.code) +
+        (a.prioritaria ? "&#9733;" : "") + "</span>";
+    }).join("");
+    var descs = aberto
+      ? '<div class="mtz-desc">' + g.itens.map(function(a) {
+          return "<div><b>" + esc(a.code) + "</b> &mdash; " + esc(a.description) +
+            (typeof a.pct === "number" ? " <em>(" + a.pct + "% na turma)</em>" : "") + "</div>";
+        }).join("") + "</div>"
+      : "";
+    var pior = null;
+    g.itens.forEach(function(a){ if (typeof a.pct === "number" && (pior === null || a.pct < pior)) pior = a.pct; });
+    return cab +
+      '<div class="mtz-linha" onclick="mtzAlternarGrupo(' + i + ')" title="' + esc(g.objeto) + '">' +
+        '<div class="mtz-lin-topo">' +
+          '<div class="mtz-lin-obj">' + esc(resumirObjeto(g.objeto)) + "</div>" +
+          '<div class="mtz-lin-n">' + (pior !== null ? pior + "% &middot; " : "") +
+            g.itens.length + (aberto ? " &#9652;" : " &#9662;") + "</div>" +
+        "</div>" +
+        '<div class="mtz-cods">' + cods + "</div>" +
+        descs +
+      "</div>";
   }).join("");
+  var restam = grupos.length - visiveis.length;
+  var botaoMais = (restam > 0 || (state.mtzTudo && grupos.length > LIMITE + 1))
+    ? '<button class="mtz-mais" onclick="mtzVerTodas()">' +
+        (restam > 0 ? "Mostrar os outros " + restam + " objetos de conhecimento"
+                    : "Mostrar menos") + "</button>"
+    : "";
 
   /* Quantas em cada eixo — é como a matriz organiza e como a coordenação
      cobra o equilíbrio entre leitura, produção, oralidade e análise. */
@@ -1376,12 +1519,13 @@ function matrizPeriodoHtml(subject, grade, month) {
       '<div style="font-size:10.5px;color:var(--t4)">' + m.itens.length + " habilidade" + (m.itens.length === 1 ? "" : "s") +
         " &middot; " + esc(subject) + "</div>" +
     "</div>" +
-    barra + eixosHtml + priorHtml + avisoHtml +
-    '<div class="mtz-chips">' + chips + "</div>" +
-    '<div style="font-size:9.5px;color:var(--t4);margin-top:8px;line-height:1.5">' +
+    barra + priorHtml + avisoHtml +
+    '<div class="mtz-lista">' + lista + "</div>" + botaoMais +
+    '<div style="font-size:9.5px;color:var(--t4);margin-top:10px;line-height:1.5">' +
       "S&atilde;o as habilidades separadas pelos professores da rede para este per&iacute;odo &mdash; o que a escola " +
       "chama de bimestre e o calend&aacute;rio trata como trimestre (" + esc(m.faixa || "três meses") + "). " +
-      "Toque num c&oacute;digo para ler a descri&ccedil;&atilde;o completa; a sele&ccedil;&atilde;o &eacute; feita na busca abaixo. " +
+      "Agrupadas por <strong>objeto de conhecimento</strong>: toque numa linha para ler as descri&ccedil;&otilde;es " +
+      "completas. A sele&ccedil;&atilde;o &eacute; feita na busca abaixo. " +
       "Fonte: Matriz de Refer&ecirc;ncia de Santa Luzia" +
       (nPrior ? " &middot; &#9733; Matriz Priorizada para Recomposi&ccedil;&atilde;o (MEC, 2025)" : "") + "." +
     "</div>" +
@@ -2642,9 +2786,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "5.2";
+var APP_VERSAO = "5.3";
 var APP_VERSAO_DATA = "24/08/2026";
-var APP_VERSAO_NOTA = "Ícones maiores no celular e Google Drive sem pedir a conta";
+var APP_VERSAO_NOTA = "Matriz do período agrupada por objeto de conhecimento";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
