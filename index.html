@@ -423,10 +423,10 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
 .pn-pills { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto;
   padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
 .pn-pill { display: flex; align-items: baseline; gap: 5px; background: var(--bg2);
-  border: 1px solid var(--border2); border-radius: 999px; padding: 7px 14px;
+  border: 1px solid var(--border2); border-radius: 999px; padding: 8px 15px;
   box-shadow: 0 1px 2px rgba(20,40,70,.05); white-space: nowrap; flex: none; }
-.pn-pill-n { font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
-.pn-pill-l { font-size: 11px; color: var(--t3); font-weight: 600; }
+.pn-pill-n { font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+.pn-pill-l { font-size: 11.5px; color: var(--t3); font-weight: 600; }
 .pn-pill-zero .pn-pill-n { color: var(--t4) !important; }
 
 /* 3. Cobertura */
@@ -442,21 +442,25 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
   transition: width .6s cubic-bezier(.22,1,.36,1); }
 .pn-cob-p { font-size: 11px; color: var(--t3); line-height: 1.45; }
 
-/* 4. Atalhos exclusivos, 2×2 */
+/* 4. Atalhos exclusivos, 2×2
+   v5.2 — o ícone cresceu de 34 para 44px de lado (emoji de 16 para 21px).
+   O alvo de toque recomendado é de 44px; abaixo disso o dedo erra e o
+   cartão parece "vazio em cima". O texto acompanhou, senão o ícone
+   maior faz o título parecer menor do que é. */
 .pn-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 .pn-tool { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(20,40,70,.06); padding: 13px 14px; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(20,40,70,.06); padding: 14px 15px 15px; cursor: pointer;
   transition: transform .14s ease, box-shadow .14s ease; }
 .pn-tool:active { transform: scale(.98); }
 .pn-tool:hover { box-shadow: 0 3px 10px rgba(20,40,70,.10); }
-.pn-tool-ic { width: 34px; height: 34px; border-radius: 11px; display: flex; align-items: center;
-  justify-content: center; font-size: 16px; margin-bottom: 9px; }
+.pn-tool-ic { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center;
+  justify-content: center; font-size: 21px; line-height: 1; margin-bottom: 11px; }
 .ic-azul { background: var(--acc3); }
 .ic-verde { background: var(--grnBg); }
 .ic-ambar { background: var(--ambBg); }
 .ic-roxo { background: var(--roxBg); }
-.pn-tool-tt { font-size: 12.5px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
-.pn-tool-ds { font-size: 10.5px; color: var(--t4); margin-top: 3px; line-height: 1.4; }
+.pn-tool-tt { font-size: 13.5px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
+.pn-tool-ds { font-size: 11px; color: var(--t4); margin-top: 4px; line-height: 1.4; }
 
 /* 5. Retomar o trabalho */
 .pn-abas { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
@@ -477,9 +481,20 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
 .pn-item-ar { color: var(--t4); font-size: 19px; flex: none; }
 .pn-vazio { font-size: 12px; color: var(--t3); text-align: center; padding: 20px 10px;
   line-height: 1.6; }
-@media (max-width: 380px) {
-  .pn-tools { grid-template-columns: 1fr; }
+/* v5.2 — antes o 2×2 virava 1 coluna já em 380px, e o celular do professor
+   (390px) ficava na fronteira: bastava a barra do sistema mudar para os
+   atalhos virarem uma fila comprida. Agora só embaixo de 340px, largura de
+   aparelho pequeno de verdade, e o ícone diminui um pouco em vez de o
+   quadro inteiro se desfazer. */
+@media (max-width: 360px) {
+  .pn-tool { padding: 12px 12px 13px; }
+  .pn-tool-ic { width: 40px; height: 40px; border-radius: 13px; font-size: 19px; margin-bottom: 9px; }
+  .pn-tool-tt { font-size: 12.5px; }
+  .pn-tool-ds { font-size: 10.5px; }
   .pn-ola { font-size: 20px; }
+}
+@media (max-width: 340px) {
+  .pn-tools { grid-template-columns: 1fr; }
 }
 /* Notebook: duas colunas, aproveitando a largura da tela. A coluna da
    esquerda leva o que se lê em sequência (métricas, matriz, retomada);
@@ -591,10 +606,10 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
     padding: 7px 4px calc(9px + env(safe-area-inset-bottom, 0px));
   }
   .tab { flex: 1; min-width: 0; background: none; border: none; font-family: inherit;
-    color: var(--t4); font-size: 9.5px; font-weight: 700; letter-spacing: .2px;
-    padding: 3px 1px; min-height: 46px; cursor: pointer; text-align: center; line-height: 1.2;
+    color: var(--t4); font-size: 10px; font-weight: 700; letter-spacing: .2px;
+    padding: 3px 1px; min-height: 48px; cursor: pointer; text-align: center; line-height: 1.2;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
-  .tab .tab-ic { font-size: 17px; line-height: 1; }
+  .tab .tab-ic { font-size: 19px; line-height: 1; }
   .tab.on { color: var(--acc); }
   /* Traço fino no topo da aba ativa: com ícones coloridos, só mudar a cor do
      texto ficava discreto demais para dizer "você está aqui". */
@@ -602,12 +617,12 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
   .tab.on::after { content: ""; position: absolute; top: -7px; width: 20px; height: 3px;
     border-radius: 0 0 99px 99px; background: var(--acc); }
   .tab-mid.on::after { display: none; }
-  .tab-mid .tab-ic { width: 38px; height: 38px; border-radius: 13px; background: var(--acc);
+  .tab-mid .tab-ic { width: 44px; height: 44px; border-radius: 15px; background: var(--acc);
     color: #fff; display: flex; align-items: center; justify-content: center;
-    margin-top: -13px; box-shadow: var(--sh2); font-size: 19px; }
+    margin-top: -15px; box-shadow: var(--sh2); font-size: 22px; }
   .tab-mid.on .tab-ic { background: var(--acc2); }
   /* Espaço para a barra não cobrir o fim do conteúdo nem o rodapé. */
-  body.tem-tab .content { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  body.tem-tab .content { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
   /* Com a barra embaixo, o ☰ vira repetição: o botão "Mais" abre o mesmo menu. */
   body.tem-tab .topbar .burger { display: none; }
   body.tem-tab .topbar { justify-content: center; }
@@ -874,7 +889,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.1 · 23/08/2026 · Painel em duas colunas no computador</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.2 · 24/08/2026 · Ícones maiores no celular e Google Drive sem pedir a conta</div>
     </footer>
   </div>
 </div>
@@ -2627,9 +2642,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "5.1";
-var APP_VERSAO_DATA = "23/08/2026";
-var APP_VERSAO_NOTA = "Painel em duas colunas no computador";
+var APP_VERSAO = "5.2";
+var APP_VERSAO_DATA = "24/08/2026";
+var APP_VERSAO_NOTA = "Ícones maiores no celular e Google Drive sem pedir a conta";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -2882,8 +2897,68 @@ var _lastDriveSyncAt = 0;
 var _applyingRemoteData = false;
 var _renovandoSilencioso = false;
 var _googleState = { token:null, tokenClient:null, connected:false, syncing:false, lastError:"", renovando:false };
+/* v5.2 — três peças novas para o app não pedir a conta toda vez:
+   _driveTimerRenov: renova a permissão sozinho pouco antes de vencer,
+     enquanto o app estiver aberto;
+   _drivePedidoLeve: marca que o "Conectar" foi um pedido leve (sem tela de
+     consentimento), para poder cair no pedido completo se falhar;
+   _driveScriptRecarregado: garante uma segunda tentativa de carregar a
+     biblioteca do Google quando a internet estava ruim na abertura. */
+var _driveTimerRenov = null;
+var _drivePedidoLeve = false;
+var _driveScriptRecarregado = false;
 
 function driveState() { return _googleState; }
+
+/* Qual conta sugerir ao Google. Com essa dica o Google não abre a lista de
+   contas: ele já vai direto na conta certa e, quase sempre, devolve a
+   permissão sem mostrar tela nenhuma. Era esse o passo que obrigava a
+   escolher o e-mail em toda abertura do app. */
+function driveContaSugerida() {
+  var c = (state.cfg && state.cfg.googleConta) || "";
+  if (!c && state.user && state.user.email) c = state.user.email;
+  return (c || "").trim();
+}
+
+/* A biblioteca do Google (accounts.google.com/gsi/client) é carregada no topo
+   da página. Se a internet estiver lenta ou cair naquele instante, ela nunca
+   chega e o app fica sem conseguir renovar — para sempre, porque não havia
+   segunda tentativa. Aqui há. */
+function driveGarantirScript() {
+  if (typeof google !== "undefined" && google.accounts && google.accounts.oauth2) return true;
+  if (_driveScriptRecarregado) return false;
+  _driveScriptRecarregado = true;
+  try {
+    var s = document.createElement("script");
+    s.src = "https://accounts.google.com/gsi/client";
+    s.async = true;
+    s.defer = true;
+    s.onload = function() {
+      if (driveJaAutorizado() && !driveTokenGuardado()) {
+        driveRenovarSilencioso(function(){ driveSyncNow("retomada"); render(); });
+      }
+      render();
+    };
+    document.head.appendChild(s);
+  } catch (e) {}
+  return false;
+}
+
+/* Renovação programada: a permissão do Google vale cerca de 1 hora. Em vez de
+   esperar vencer e só então correr atrás, o app renova 5 minutos antes,
+   enquanto está aberto. Assim a conexão nunca chega a cair na frente do
+   professor. */
+function driveAgendarRenovacao() {
+  if (_driveTimerRenov) { clearTimeout(_driveTimerRenov); _driveTimerRenov = null; }
+  var g = driveState();
+  if (!g.tokenExp) return;
+  var faltam = g.tokenExp - Date.now() - 5 * 60000;
+  if (faltam < 5000) faltam = 5000;
+  if (faltam > 3600000) faltam = 3600000;
+  _driveTimerRenov = setTimeout(function() {
+    if (driveJaAutorizado()) driveRenovarSilencioso(function(){ render(); });
+  }, faltam);
+}
 
 /* ---- Permissão guardada entre sessões ---- */
 function driveGuardarToken(token, segundosValidade) {
@@ -2894,6 +2969,7 @@ function driveGuardarToken(token, segundosValidade) {
   } catch (e) {}
   _googleState.token = token;
   _googleState.tokenExp = expiraEm;
+  driveAgendarRenovacao();
 }
 function driveTokenGuardado() {
   try {
@@ -2912,6 +2988,7 @@ function driveEsquecerToken(esquecerAutorizacao) {
   } catch (e) {}
   _googleState.token = null;
   _googleState.tokenExp = 0;
+  if (_driveTimerRenov) { clearTimeout(_driveTimerRenov); _driveTimerRenov = null; }
 }
 
 /* Renova a permissão sem incomodar o professor: como o aparelho já foi
@@ -2924,7 +3001,7 @@ function driveRenovarSilencioso(aoTerminar) {
   if (!driveJaAutorizado()) return;
   if (!(location.protocol === "https:" || location.hostname === "localhost")) return;
   var tc = driveEnsureTokenClient();
-  if (!tc) return;
+  if (!tc) { driveGarantirScript(); return; }
   _renovandoSilencioso = true;
   g.renovando = true;
   g._aoRenovar = aoTerminar || null;
@@ -2988,13 +3065,19 @@ function driveResetClientId() {
 
 function driveEnsureTokenClient() {
   var g = driveState();
-  if (g.tokenClient) return g.tokenClient;
+  var dica = driveContaSugerida();
+  /* Se a conta sugerida mudou, o cliente é refeito — senão o Google
+     continuaria usando a dica antiga. */
+  if (g.tokenClient && g._dica === dica) return g.tokenClient;
   if (typeof google === "undefined" || !google.accounts || !google.accounts.oauth2) return null;
   if (!state.cfg.googleClientId) state.cfg.googleClientId = DEFAULT_GOOGLE_CLIENT_ID;
+  g._dica = dica;
   g.tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: state.cfg.googleClientId,
     scope: DRIVE_SCOPE,
+    hint: dica,
     callback: function(resp) {
+      _drivePedidoLeve = false;
       var eraSilencioso = _renovandoSilencioso;
       _renovandoSilencioso = false;
       g.renovando = false;
@@ -3022,6 +3105,13 @@ function driveEnsureTokenClient() {
          significa que o Google quer uma confirmação. O app fica em
          "Autorizado — toque em Sincronizar" e não mostra alarme nenhum. */
       if (eraSilencioso) { render(); return; }
+      /* Pedido leve que não deu certo: o Google quer confirmação. Em vez de
+         mostrar erro, o app já refaz o pedido completo — o professor vê uma
+         tela só, e não uma mensagem seguida de outro toque. */
+      if (_drivePedidoLeve) {
+        _drivePedidoLeve = false;
+        try { g.tokenClient.requestAccessToken({ prompt: "consent" }); return; } catch (e2) {}
+      }
       var tipo = (err && err.type) || "";
       if (tipo === "popup_closed") {
         g.lastError = "A janela do Google foi fechada antes de concluir a autorização.";
@@ -3037,17 +3127,46 @@ function driveEnsureTokenClient() {
   return g.tokenClient;
 }
 
-function driveConnect() {
+function driveConnect(forcarEscolhaDeConta) {
   var field = el("s_google_clientid");
   if (field) driveConfigure(field.value);
+  var campoConta = el("s_google_conta");
+  if (campoConta) {
+    var novaConta = (campoConta.value || "").trim();
+    if (novaConta !== (state.cfg.googleConta || "")) {
+      state.cfg.googleConta = novaConta;
+      driveState().tokenClient = null;
+      saveCfg();
+    }
+  }
   if (!state.cfg.googleClientId) { state.cfg.googleClientId = DEFAULT_GOOGLE_CLIENT_ID; saveCfg(); }
   if (!(location.protocol === "https:" || location.hostname === "localhost")) {
     toast("A sincronização com o Google só funciona quando o app está hospedado em um endereço https://.");
     return;
   }
+  if (forcarEscolhaDeConta) { driveState().tokenClient = null; driveState()._dica = null; }
   var tc = driveEnsureTokenClient();
-  if (!tc) { toast("Não foi possível iniciar a conexão com o Google. Confira o Client ID e tente de novo em alguns segundos."); return; }
-  tc.requestAccessToken({ prompt:"consent" });
+  if (!tc) {
+    driveGarantirScript();
+    toast("A biblioteca do Google ainda não carregou. Aguarde alguns segundos e toque de novo.");
+    return;
+  }
+  /* v5.2 — antes, todo "Conectar" pedia consentimento completo (prompt
+     "consent"): tela de escolha de conta e de permissões, sempre. Como este
+     aparelho já foi autorizado uma vez, o pedido agora é leve — na maioria
+     das vezes o Google devolve a permissão sem mostrar tela nenhuma. Se ele
+     exigir confirmação, o pedido completo vem sozinho logo em seguida. */
+  var leve = driveJaAutorizado() && !forcarEscolhaDeConta;
+  _drivePedidoLeve = leve;
+  tc.requestAccessToken(leve ? { prompt: "" } : { prompt: "consent" });
+}
+
+/* Trocar de conta do Google neste aparelho: aqui a lista de contas é mostrada
+   de propósito. */
+function driveTrocarConta() {
+  driveEsquecerToken(false);
+  driveState().connected = false;
+  driveConnect(true);
 }
 
 function driveDisconnect() {
@@ -10460,6 +10579,12 @@ function viewSettings() {
         "(n&atilde;o funciona abrindo o arquivo direto do computador), e cada aparelho autoriza o acesso separadamente." +
       "</p>" +
       '<div class="g2">' +
+        '<div><label class="lbl">Conta do Google usada aqui</label>' +
+          '<input class="inp" id="s_google_conta" type="email" autocomplete="email" value="' + esc(c.googleConta || ((state.user && state.user.email) || "")) + '" placeholder="seuemail@gmail.com" />' +
+          '<div style="font-size:10.5px;color:var(--t4);margin-top:5px;line-height:1.5">' +
+            "Com a conta preenchida, o Google <strong>n&atilde;o pergunta mais qual e-mail usar</strong> " +
+            "a cada abertura &mdash; ele j&aacute; vai direto nesta." +
+          "</div></div>" +
         '<div><label class="lbl">Google Client ID (avan&ccedil;ado)</label><input class="inp" id="s_google_clientid" value="' + esc(c.googleClientId || DEFAULT_GOOGLE_CLIENT_ID) + '" placeholder="xxxxx.apps.googleusercontent.com" /></div>' +
       "</div>" +
       '<div style="font-size:11px;color:var(--t4);margin-top:6px">' +
@@ -10487,8 +10612,17 @@ function viewSettings() {
           '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
             (gConnected || autorizado
               ? '<button class="btn btn-outline btn-sm" onclick="driveSyncNow(\'manual\')"' + (gSyncing ? " disabled" : "") + '>Sincronizar agora</button>' +
+                '<button class="btn btn-ghost btn-sm" onclick="driveTrocarConta()">Trocar de conta</button>' +
                 '<button class="btn btn-ghost btn-sm" onclick="driveDisconnect()">Desconectar</button>'
               : '<button class="btn btn-primary btn-sm" onclick="driveConnect()">Conectar ao Google Drive</button>') +
+          "</div>" +
+          '<div style="font-size:10.5px;color:var(--t4);margin-top:11px;line-height:1.55">' +
+            "<strong>Sobre a permiss&atilde;o vencer:</strong> o Google entrega permiss&otilde;es de cerca de " +
+            "1 hora e n&atilde;o deixa nenhum aplicativo de p&aacute;gina guardar uma permiss&atilde;o eterna &mdash; " +
+            "isso vale para qualquer app, n&atilde;o &eacute; falha do EducaPlan. O que o app faz " +
+            "(v5.2) &eacute; renovar sozinho <strong>5 minutos antes de vencer</strong> e, ao reabrir, " +
+            "pedir a renova&ccedil;&atilde;o j&aacute; apontando a sua conta. Na pr&aacute;tica, a tela do " +
+            "Google deixa de aparecer." +
           "</div>";
       })() +
     "</div></details>" +
@@ -12021,11 +12155,16 @@ render();
     g.tokenExp = salvo.exp;
     g.connected = true;
     g.lastError = "";
+    driveAgendarRenovacao();
     render();
     driveSyncNow("retomada");
     return;
   }
   if (!driveJaAutorizado()) return;
+  /* v5.2 — a espera pela biblioteca do Google agora vai até 20 segundos (era
+     10) e, se mesmo assim ela não chegar, o app carrega o script de novo por
+     conta própria. Sem isso, uma internet lenta na abertura deixava a
+     sincronização parada até o app ser fechado e aberto outra vez. */
   (function aguardarGoogle(tentativas) {
     tentativas = tentativas || 0;
     if (typeof google !== "undefined" && google.accounts && google.accounts.oauth2) {
@@ -12033,7 +12172,8 @@ render();
       render();
       return;
     }
-    if (tentativas < 25) setTimeout(function(){ aguardarGoogle(tentativas + 1); }, 400);
+    if (tentativas === 25) driveGarantirScript();
+    if (tentativas < 50) setTimeout(function(){ aguardarGoogle(tentativas + 1); }, 400);
   })();
 })();
 
