@@ -978,7 +978,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.6 · 25/08/2026 · Termômetro de conteúdos ao vivo e contagem corrigida</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.7 · 25/08/2026 · Aulas registradas × previstas e ajuste manual por turma</div>
     </footer>
   </div>
 </div>
@@ -1432,7 +1432,8 @@ function mtzContadorHtml(subject, grade, month) {
   var conteudos = estimateConteudoCount(escolhidas);
   var carga = cargaHoraria(subject, grade, month);
   var t = habilidadesTermometro(subject, (carga && carga.configured) ? carga.encounters : 0,
-    conteudos, (carga && carga.configured) ? carga.monthlyLessons : 0);
+    conteudos, (carga && carga.configured) ? carga.monthlyLessons : 0,
+    conteudosPrevistosDe(subject, grade));
 
   var cor = "var(--grn)", situacao = "";
   if (t.configured) {
@@ -2916,9 +2917,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "5.6";
+var APP_VERSAO = "5.7";
 var APP_VERSAO_DATA = "25/08/2026";
-var APP_VERSAO_NOTA = "Termômetro de conteúdos ao vivo e contagem corrigida";
+var APP_VERSAO_NOTA = "Aulas registradas × previstas e ajuste manual por turma";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -6524,6 +6525,56 @@ function cargaHoraria(subject, grade, monthName) {
   };
 }
 
+/* ---------- Ajuste manual de conteúdos por turma (v5.7) ----------
+   O professor tem a média que ele conhece ("no 8º ano são 12 por mês") e o
+   app tem a contagem das datas reais do calendário. Quase sempre coincidem;
+   quando não coincidem, é porque o mês tem cinco segundas, ou um feriado caiu
+   num dia de aula. Nesses casos quem decide é ele: o número digitado aqui
+   passa a mandar no termômetro daquela turma. */
+function chaveTurma(subject, grade) {
+  return normSubj(subject) + "||" + normGrade(grade);
+}
+function conteudosPrevistosDe(subject, grade) {
+  var mapa = state.cfg && state.cfg.conteudosPrevistos;
+  if (!mapa) return null;
+  var v = mapa[chaveTurma(subject, grade)];
+  return (typeof v === "number" && v > 0) ? v : null;
+}
+function definirConteudosPrevistos(subject, grade, valor) {
+  if (!state.cfg.conteudosPrevistos) state.cfg.conteudosPrevistos = {};
+  var n = parseInt(valor, 10);
+  var k = chaveTurma(subject, grade);
+  if (!(n > 0)) delete state.cfg.conteudosPrevistos[k];
+  else state.cfg.conteudosPrevistos[k] = Math.min(40, n);
+  saveCfg();
+  render();
+}
+function limparConteudosPrevistos(subject, grade) {
+  definirConteudosPrevistos(subject, grade, 0);
+  toast("Voltou a contar pelas datas reais do calendário.");
+}
+
+/* Quantas vezes por semana o professor entra nesta turma, pelo horário
+   cadastrado — é a base da média "×4 semanas" que ele usa de cabeça. */
+function entradasSemanais(subject, grade) {
+  var sched = activeSchedule();
+  var slots = ((sched[normSubj(subject)] || {})[normGrade(grade)]) || [];
+  return slots.length;
+}
+
+/* Por que este mês difere da média de quatro semanas: quase sempre porque
+   algum dia da semana aparece cinco vezes. Dizer qual dia evita o professor
+   achar que o app errou. */
+function motivoDoMes(subject, grade, month) {
+  var linhas = getLessonDates(subject, grade, month).filter(function(r){ return r.type === "aula"; });
+  var porDia = {};
+  linhas.forEach(function(r){ porDia[r.dow] = (porDia[r.dow] || 0) + 1; });
+  var cincos = Object.keys(porDia).filter(function(d){ return porDia[d] >= 5; })
+    .map(function(d){ return DAYS_FULL[Number(d)].replace("-feira", ""); });
+  if (!cincos.length) return "";
+  return esc(month) + " tem cinco " + cincos.join(" e ") + "s.";
+}
+
 /* ---------- Termômetro de Habilidades × Carga Horária ----------
    Cada habilidade selecionada vira um conteúdo/objeto de conhecimento que
    precisa ser trabalhado nos encontros REAIS da turma naquele mês (mesma
@@ -6539,8 +6590,12 @@ var CONTEUDOS_META_MENSAL = {
   "Língua Inglesa / Inglês": 4,
   "Produção de Texto": 4
 };
-function habilidadesTermometro(subject, encounters, count, lessons) {
+function habilidadesTermometro(subject, encounters, count, lessons, previstoManual) {
   if (!(encounters > 0)) return { configured: false, count: count };
+  /* v5.7 — quando o professor digita quantos conteudos aquela turma tem
+     no mes, o numero dele substitui a contagem do calendario. */
+  var manual = (previstoManual > 0) ? previstoManual : 0;
+  if (manual) encounters = manual;
 
   /* A conta parte do ENCONTRO, não da aula. Um dia em que o professor entra
      na turma vale 1, tendo ele 2 ou 3 horários seguidos naquele dia — porque
@@ -6564,33 +6619,34 @@ function habilidadesTermometro(subject, encounters, count, lessons) {
 
   var diasPorConteudo = count > 0 ? (encounters / count) : null;
   var porDia = count > 0 ? (count / encounters) : null;
-  var enc = encounters + (encounters === 1 ? " encontro" : " encontros");
+  var enc = encounters + (encounters === 1 ? " aula registrada" : " aulas registradas");
 
   var status, label, colorVar, bgVar;
   if (count === 0) {
     status = "vazio"; colorVar = "var(--t4)"; bgVar = "var(--bg3)";
-    label = "Neste mês você entra " + enc + " nesta turma. O equilíbrio fica entre " +
-      piso + " e " + teto + " conteúdos — até um por dia de aula.";
+    label = "Você entra " + encounters + (encounters === 1 ? " vez" : " vezes") +
+      " nesta turma no mês — " + enc + ". O equilíbrio fica entre " +
+      piso + " e " + teto + " conteúdos: um por entrada.";
   } else if (count < piso) {
     status = "baixo"; colorVar = "var(--amb)"; bgVar = "var(--ambBg)";
     label = count + " conteúdo(s) para " + enc + " — cerca de " + diasPorConteudo.toFixed(1) +
-      " dias em cada um. Sobra espaço: dá para incluir mais " + (piso - count) + ".";
+      " entradas em cada um. Sobra espaço: cabe mais " + (piso - count) + ".";
   } else if (count <= teto) {
     status = "bom"; colorVar = "var(--grn)"; bgVar = "var(--grnBg)";
-    label = count + " conteúdo(s) para " + enc + " — cerca de " + diasPorConteudo.toFixed(1) +
-      " dia(s) em cada um. Cabe no mês.";
+    label = count + " conteúdo(s) para " + enc + (count === teto ? " — fecha certinho." :
+      " — cerca de " + diasPorConteudo.toFixed(1) + " entrada(s) em cada um. Cabe no mês.");
   } else if (count <= apertado) {
     status = "apertado"; colorVar = "var(--amb)"; bgVar = "var(--ambBg)";
     label = count + " conteúdo(s) para " + enc + " — daria " + porDia.toFixed(1) +
-      " por dia de aula. Cabe (os dias com mais de um horário absorvem), mas fica corrido.";
+      " por entrada. Cabe (os dias de dois ou três horários absorvem), mas fica corrido.";
   } else {
     status = "alto"; colorVar = "var(--red)"; bgVar = "var(--redBg)";
-    label = count + " conteúdo(s) para " + enc + " e " + aulasMes + " aula(s) no mês — " +
+    label = count + " conteúdo(s) para " + enc + " e " + aulasMes + " aulas previstas — " +
       (count - apertado) + " não teria(m) onde entrar. Reduza ou deixe parte para o mês seguinte.";
   }
 
   return { configured: true, count: count, encounters: encounters, lessons: aulasMes,
-    idealMin: piso, idealMax: teto, apertado: apertado, alvo: alvo, meta: meta,
+    manual: manual, idealMin: piso, idealMax: teto, apertado: apertado, alvo: alvo, meta: meta,
     diasPorConteudo: diasPorConteudo, porDia: porDia,
     status: status, colorVar: colorVar, bgVar: bgVar, label: label };
 }
@@ -6668,10 +6724,11 @@ function gaugeReferenciaHtml(subject, count) {
 /* Termômetro em quatro faixas: folgado · equilibrado · corrido · não cabe.
    A régua tem o número de encontros como referência visual, porque é ele que
    manda — não uma média fixa por disciplina. */
-function habilidadesGaugeHtml(carga, count, subject) {
+function habilidadesGaugeHtml(carga, count, subject, grade, month) {
   var encounters = (carga && carga.configured) ? carga.encounters : 0;
+  var manual = grade ? conteudosPrevistosDe(subject, grade) : null;
   var t = habilidadesTermometro(subject, encounters, count,
-    (carga && carga.configured) ? carga.monthlyLessons : 0);
+    (carga && carga.configured) ? carga.monthlyLessons : 0, manual);
   /* v5.6 — sem horário cadastrado, o termômetro ficava mudo: uma frase cinza
      mandando configurar, e nenhuma orientação enquanto isso. Agora ele
      funciona assim mesmo, usando a média mensal do componente (Português ~12,
@@ -6690,9 +6747,9 @@ function habilidadesGaugeHtml(carga, count, subject) {
 
   return '<div class="card-soft" style="padding:11px 13px;margin-top:11px;background:' + t.bgVar + '">' +
     '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;flex-wrap:wrap;gap:6px">' +
-      '<div style="font-size:10.5px;font-weight:700;color:var(--t3)">CONTE&Uacute;DOS &times; ENCONTROS DO M&Ecirc;S</div>' +
-      '<div style="font-size:10.5px;font-weight:800;color:' + t.colorVar + '">' + count + " conte&uacute;do" + (count === 1 ? "" : "s") +
-        " / " + t.encounters + " encontro" + (t.encounters === 1 ? "" : "s") + "</div>" +
+      '<div style="font-size:10.5px;font-weight:700;color:var(--t3)">CONTE&Uacute;DOS &times; AULAS REGISTRADAS</div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:' + t.colorVar + '">' + count + " / " + t.encounters +
+        (t.manual ? " &#9998;" : "") + "</div>" +
     "</div>" +
     '<div style="position:relative;height:7px;border-radius:99px;background:var(--border);overflow:hidden">' +
       '<div style="position:absolute;left:0;top:0;height:100%;width:' + zBaixo + '%;background:var(--ambBg)"></div>' +
@@ -6707,13 +6764,40 @@ function habilidadesGaugeHtml(carga, count, subject) {
         t.colorVar + ';border-radius:1.5px;transform:translateX(-1.5px)"></div>' +
     "</div>" +
     '<div style="font-size:10.5px;color:' + t.colorVar + ';font-weight:600;margin-top:4px;line-height:1.45">' + esc(t.label) + "</div>" +
-    '<div style="font-size:9.5px;color:var(--t4);margin-top:4px;line-height:1.5" title="' +
-      "A faixa amarela depois do traço existe porque os dias com mais de um horário absorvem um pouco mais: " +
-      t.lessons + " aulas no mês." + '">' +
-      "Conta por <strong>dias de aula</strong>, n&atilde;o por hor&aacute;rios: dois ou tr&ecirc;s hor&aacute;rios " +
-      "seguidos s&atilde;o um encontro s&oacute;, como no di&aacute;rio. O tra&ccedil;o cinza &eacute; o limite de " +
-      "um conte&uacute;do por dia." + (t.meta ? " Refer&ecirc;ncia do componente: ~" + t.meta + "/m&ecirc;s." : "") +
+    '<div style="font-size:9.5px;color:var(--t4);margin-top:5px;line-height:1.5">' +
+      "Conta por <strong>aula registrada</strong> (uma por entrada na turma), n&atilde;o por hor&aacute;rio: " +
+      "dois ou tr&ecirc;s hor&aacute;rios seguidos s&atilde;o uma entrada s&oacute;, como no di&aacute;rio. " +
+      "Este m&ecirc;s: <strong>" + t.encounters + " aulas registradas</strong> e <strong>" + t.lessons +
+      " aulas previstas</strong>." +
     "</div>" +
+    (grade ? (function() {
+      /* Sua m&eacute;dia de cabe&ccedil;a (entradas x 4 semanas) contra o m&ecirc;s real. */
+      var porSemana = entradasSemanais(subject, grade);
+      var media = porSemana * 4;
+      var motivo = (!t.manual && media && media !== t.encounters) ? motivoDoMes(subject, grade, month) : "";
+      var linha = "";
+      if (t.manual) {
+        linha = '<div style="font-size:9.5px;color:var(--amb);margin-top:5px;line-height:1.5">' +
+          "&#9998; Voc&ecirc; ajustou esta turma para <strong>" + t.manual + " conte&uacute;dos/m&ecirc;s</strong>. " +
+          '<a href="javascript:void(0)" onclick="limparConteudosPrevistos(\'' + esc(subject) + "','" + esc(grade) +
+          '\')" style="color:var(--acc)">voltar ao calend&aacute;rio</a></div>';
+      } else if (media && media !== t.encounters) {
+        linha = '<div style="font-size:9.5px;color:var(--t4);margin-top:5px;line-height:1.5">' +
+          "Sua m&eacute;dia &eacute; <strong>" + media + "</strong> (" + porSemana +
+          (porSemana === 1 ? " entrada" : " entradas") + " &times; 4 semanas). " +
+          (motivo ? esc(motivo) + " " : "") + "Por isso d&aacute; <strong>" + t.encounters + "</strong> aqui." +
+          "</div>";
+      }
+      return linha +
+        '<div style="display:flex;align-items:center;gap:7px;margin-top:8px;flex-wrap:wrap">' +
+          '<span style="font-size:9.5px;color:var(--t4)">Conte&uacute;dos deste m&ecirc;s nesta turma:</span>' +
+          '<input type="number" min="1" max="40" inputmode="numeric" value="' + t.encounters +
+            '" style="width:60px;padding:4px 7px;border:1px solid var(--border);border-radius:7px;' +
+            'background:var(--bg2);color:var(--t1);font-family:inherit;font-size:11px;font-weight:700" ' +
+            'onchange="definirConteudosPrevistos(\'' + esc(subject) + "','" + esc(grade) + '\', this.value)" />' +
+          '<span style="font-size:9.5px;color:var(--t4)">altere se a sua turma fechar diferente</span>' +
+        "</div>";
+    })() : "") +
   "</div>";
 }
 
@@ -9724,7 +9808,7 @@ function viewGen() {
               }).join("") +
             "</div>"
           : "") +
-        habilidadesGaugeHtml(carga, estimateConteudoCount(f.forcedSkills), subject) +
+        habilidadesGaugeHtml(carga, estimateConteudoCount(f.forcedSkills), subject, grade, month) +
       "</div>" +
 
       '<div style="margin-top:14px"><label class="lbl">Tema Principal ou Unidade Did&aacute;tica' + (A(f.forcedSkills).length ? "" : " *") + "</label>" +
