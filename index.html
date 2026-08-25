@@ -410,9 +410,14 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
    fundo, a coluna pareceria torta mesmo estando alinhada. */
 .mtz-cod { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px;
   font-weight: 700; background: var(--bg2); border: 1px solid var(--border2);
-  color: var(--t2); border-radius: 6px; padding: 3px 4px; text-align: center;
-  letter-spacing: -.01em; white-space: nowrap; }
+  color: var(--t2); border-radius: 6px; padding: 4px 4px; text-align: center;
+  letter-spacing: -.01em; white-space: nowrap; cursor: pointer; }
 .mtz-cod.pri { background: var(--ambBg); border-color: var(--amb); color: var(--amb); }
+/* v5.5 — a pastilha deixou de ser enfeite: tocar nela poe a habilidade no
+   plano. Antes o quadro da matriz so informava, e o professor nao tinha como
+   saber que a escolha acontecia noutro lugar da tela. */
+.mtz-cod.sel { background: var(--grn); border-color: var(--grn); color: #fff; }
+.mtz-cod:active { transform: scale(.96); }
 .mtz-desc { background: var(--bg3); border-radius: 9px; padding: 9px 11px; margin: 7px 0 2px;
   font-size: 10.5px; color: var(--t3); line-height: 1.55; }
 .mtz-desc div { margin-bottom: 7px; }
@@ -973,7 +978,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.4 · 25/08/2026 · Escolha de habilidades reorganizada e correção na seleção</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.5 · 25/08/2026 · Habilidades da matriz agora são escolhidas ali mesmo</div>
     </footer>
   </div>
 </div>
@@ -1467,6 +1472,10 @@ function matrizPeriodoHtml(subject, grade, month) {
 
   /* Lista agrupada por eixo e por objeto de conhecimento. O cabeçalho de eixo
      só aparece quando o eixo muda, então a leitura desce em blocos. */
+  var selecionadas = {};
+  A(state.form && state.form.forcedSkills).forEach(function(k){ selecionadas[k.code] = 1; });
+  var nEscolhidas = m.itens.filter(function(a){ return selecionadas[a.code]; }).length;
+
   var grupos = agruparMatriz(m.itens);
   /* Os itens vêm ordenados por diagnóstico da turma, não por eixo — então os
      grupos chegavam intercalados e o mesmo eixo aparecia duas vezes na tela.
@@ -1496,8 +1505,13 @@ function matrizPeriodoHtml(subject, grade, month) {
     }
     var aberto = !!(state.mtzAberto && state.mtzAberto[i]);
     var cods = g.itens.map(function(a) {
-      return '<span class="mtz-cod' + (a.prioritaria ? " pri" : "") + '">' + esc(a.code) +
-        (a.prioritaria ? "&#9733;" : "") + "</span>";
+      var escolhida = !!selecionadas[a.code];
+      return '<button class="mtz-cod' + (escolhida ? " sel" : (a.prioritaria ? " pri" : "")) +
+        '" onclick="event.stopPropagation();alternarHabilidade(\'' +
+        String(a.code).replace(/'/g, "\\'") + '\')" title="' +
+        (escolhida ? "Tirar do plano" : "Usar esta habilidade no plano") + '">' +
+        (escolhida ? "&#10003; " : "") + esc(a.code) +
+        (!escolhida && a.prioritaria ? "&#9733;" : "") + "</button>";
     }).join("");
     var descs = aberto
       ? '<div class="mtz-desc">' + g.itens.map(function(a) {
@@ -1559,15 +1573,18 @@ function matrizPeriodoHtml(subject, grade, month) {
       '<div style="font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--acc)">MATRIZ SANTA LUZIA &middot; ' +
         esc(titulo.toUpperCase()) + "</div>" +
       '<div style="font-size:10.5px;color:var(--t4)">' + m.itens.length + " habilidade" + (m.itens.length === 1 ? "" : "s") +
-        " &middot; " + esc(subject) + "</div>" +
+        " &middot; " + esc(subject) +
+        (nEscolhidas ? ' &middot; <strong style="color:var(--grn)">' + nEscolhidas + " no plano</strong>" : "") +
+        "</div>" +
     "</div>" +
     barra + priorHtml + avisoHtml +
     '<div class="mtz-lista">' + lista + "</div>" + botaoMais +
     '<div style="font-size:9.5px;color:var(--t4);margin-top:10px;line-height:1.5">' +
       "S&atilde;o as habilidades separadas pelos professores da rede para este per&iacute;odo &mdash; o que a escola " +
       "chama de bimestre e o calend&aacute;rio trata como trimestre (" + esc(m.faixa || "três meses") + "). " +
-      "Agrupadas por <strong>objeto de conhecimento</strong>: toque numa linha para ler as descri&ccedil;&otilde;es " +
-      "completas. A sele&ccedil;&atilde;o &eacute; feita na busca abaixo. " +
+      "Agrupadas por <strong>objeto de conhecimento</strong>. " +
+      "<strong>Toque num c&oacute;digo para us&aacute;-lo no plano</strong> (fica verde com &#10003;); " +
+      "toque no <strong>texto da linha</strong> para ler as descri&ccedil;&otilde;es completas. " +
       "Fonte: Matriz de Refer&ecirc;ncia de Santa Luzia" +
       (nPrior ? " &middot; &#9733; Matriz Priorizada para Recomposi&ccedil;&atilde;o (MEC, 2025)" : "") + "." +
     "</div>" +
@@ -2490,12 +2507,18 @@ function searchSkillPool(subject, grade, query, nivel, month) {
   var pool = skillPool(subject, grade, month);
   if (nivel) pool = pool.filter(function(s){ return skillNivelKey(s.pct) === nivel; });
   var q = deaccent(String(query || "").trim());
-  if (!q) return pool.slice(0, 12);
+  /* v5.5 — antes havia um corte fixo de 12 aqui. Como a matriz de Santa Luzia
+     tem 19 habilidades no 3º período do 6º ano, sete delas simplesmente nunca
+     apareciam na lista de escolha: estavam no quadro de cima, mas não havia
+     como usá-las. O corte era invisível — nada na tela dizia que faltava algo.
+     Agora a lista vem inteira e quem controla quantas mostrar de cada vez é a
+     tela, com o botão "Mostrar mais". */
+  if (!q) return pool;
   var toks = q.split(/\s+/);
   return pool.filter(function(s) {
     var hay = deaccent(s.code + " " + s.description + " " + s.objeto + " " + (s.saeb || ""));
     return toks.every(function(t){ return hay.indexOf(t) >= 0; });
-  }).slice(0, 20);
+  });
 }
 
 /* Chave de etapa a partir do nome da série */
@@ -2846,9 +2869,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "5.4";
+var APP_VERSAO = "5.5";
 var APP_VERSAO_DATA = "25/08/2026";
-var APP_VERSAO_NOTA = "Escolha de habilidades reorganizada e correção na seleção";
+var APP_VERSAO_NOTA = "Habilidades da matriz agora são escolhidas ali mesmo";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
