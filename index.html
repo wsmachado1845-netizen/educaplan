@@ -978,7 +978,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.5 · 25/08/2026 · Habilidades da matriz agora são escolhidas ali mesmo</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.6 · 25/08/2026 · Termômetro de conteúdos ao vivo e contagem corrigida</div>
     </footer>
   </div>
 </div>
@@ -1423,6 +1423,44 @@ function mtzVerTodas() {
   render();
 }
 
+/* v5.6 — o termômetro ficava no fim da tela, e daqui de cima o professor
+   marcava habilidades sem ver o número subir. Esta é a mesma conta, resumida
+   numa linha, ao lado de onde ele toca. */
+function mtzContadorHtml(subject, grade, month) {
+  var escolhidas = A(state.form && state.form.forcedSkills);
+  if (!escolhidas.length) return "";
+  var conteudos = estimateConteudoCount(escolhidas);
+  var carga = cargaHoraria(subject, grade, month);
+  var t = habilidadesTermometro(subject, (carga && carga.configured) ? carga.encounters : 0,
+    conteudos, (carga && carga.configured) ? carga.monthlyLessons : 0);
+
+  var cor = "var(--grn)", situacao = "";
+  if (t.configured) {
+    cor = t.colorVar;
+    situacao = t.status === "bom" ? "cabe no mês"
+      : (t.status === "baixo" ? "cabe mais"
+      : (t.status === "apertado" ? "fica corrido" : "passou do mês"));
+  } else {
+    var meta = CONTEUDOS_META_MENSAL[subject] || CONTEUDOS_META_MENSAL[normSubj(subject)] || 0;
+    if (meta) {
+      var piso = Math.max(1, Math.round(meta * 0.6));
+      if (conteudos < piso) { cor = "var(--amb)"; situacao = "cabe mais"; }
+      else if (conteudos <= meta) { cor = "var(--grn)"; situacao = "na média do mês"; }
+      else if (conteudos <= Math.round(meta * 1.25)) { cor = "var(--amb)"; situacao = "acima da média"; }
+      else { cor = "var(--red)"; situacao = "passou da média"; }
+      situacao += " (~" + meta + ")";
+    }
+  }
+  return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--bg3);' +
+    'border-radius:9px;padding:7px 10px;margin:9px 0 3px;font-size:10.5px">' +
+    '<span style="font-weight:800;color:var(--grn)">&#10003; ' + escolhidas.length + " no plano</span>" +
+    '<span style="color:var(--t4)">&middot;</span>' +
+    '<span style="font-weight:800;color:' + cor + '">' + conteudos + " conte&uacute;do" +
+      (conteudos === 1 ? "" : "s") + "</span>" +
+    (situacao ? '<span style="color:' + cor + '">' + esc(situacao) + "</span>" : "") +
+    "</div>";
+}
+
 /* Painel de identificação da matriz, no topo da tela de planejamento.
    A barrinha é uma composição: quanto do que a matriz pede para este período
    está crítico, em atenção ou consolidado, segundo o diagnóstico da turma.
@@ -1574,10 +1612,9 @@ function matrizPeriodoHtml(subject, grade, month) {
         esc(titulo.toUpperCase()) + "</div>" +
       '<div style="font-size:10.5px;color:var(--t4)">' + m.itens.length + " habilidade" + (m.itens.length === 1 ? "" : "s") +
         " &middot; " + esc(subject) +
-        (nEscolhidas ? ' &middot; <strong style="color:var(--grn)">' + nEscolhidas + " no plano</strong>" : "") +
         "</div>" +
     "</div>" +
-    barra + priorHtml + avisoHtml +
+    barra + mtzContadorHtml(subject, grade, month) + priorHtml + avisoHtml +
     '<div class="mtz-lista">' + lista + "</div>" + botaoMais +
     '<div style="font-size:9.5px;color:var(--t4);margin-top:10px;line-height:1.5">' +
       "S&atilde;o as habilidades separadas pelos professores da rede para este per&iacute;odo &mdash; o que a escola " +
@@ -2416,12 +2453,22 @@ function prefixoObjetoCortado(objetoCompleto) {
    — usada pelo termômetro. Nem sempre é 1 habilidade = 1 conteúdo: uma
    habilidade que enumera vários gêneros conta como vários conteúdos. */
 function estimateConteudoCount(forcedSkills) {
-  var vistos = {}, total = 0;
+  /* v5.6 — a conta era feita com uma lista única de nomes, e nomes repetidos
+     eram descartados. Só que a matriz municipal rotula cinco habilidades
+     diferentes como "Morfossintaxe" e três como "Discussão oral": o termômetro
+     via 19 habilidades e contava 10 conteúdos, travando enquanto o professor
+     continuava marcando. Eram cinco assuntos de aula distintos, não um.
+     Agora cada habilidade vale pelo menos um conteúdo, e a que enumera vários
+     gêneros vale por todos eles — EF69LP05 (tirinhas, charges, memes, gifs)
+     conta 4. A repetição só é descartada dentro da MESMA habilidade. */
+  var total = 0;
   A(forcedSkills).forEach(function(k) {
+    var vistos = {}, n = 0;
     extractGenerosConteudo(k.description, k.objeto || k.description).forEach(function(nome) {
       var key = deaccent(nome);
-      if (!vistos[key]) { vistos[key] = 1; total++; }
+      if (!vistos[key]) { vistos[key] = 1; n++; }
     });
+    total += Math.max(1, n);
   });
   return total;
 }
@@ -2869,9 +2916,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "5.5";
+var APP_VERSAO = "5.6";
 var APP_VERSAO_DATA = "25/08/2026";
-var APP_VERSAO_NOTA = "Habilidades da matriz agora são escolhidas ali mesmo";
+var APP_VERSAO_NOTA = "Termômetro de conteúdos ao vivo e contagem corrigida";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -6548,6 +6595,76 @@ function habilidadesTermometro(subject, encounters, count, lessons) {
     status: status, colorVar: colorVar, bgVar: bgVar, label: label };
 }
 
+/* Atalho para cadastrar o horário da turma sem caçar o bloco em Ajustes. */
+function irParaHorarios() {
+  if (!state.ajustesAbertos) state.ajustesAbertos = {};
+  state.ajustesAbertos["HoraacuterioSe"] = true;
+  go("settings");
+}
+
+/* Termômetro em modo referência: vale enquanto a turma não tem horário. */
+function gaugeReferenciaHtml(subject, count) {
+  var meta = CONTEUDOS_META_MENSAL[subject] || CONTEUDOS_META_MENSAL[normSubj(subject)] || null;
+  if (!meta) {
+    return '<div class="card-soft" style="padding:11px 13px;margin-top:11px">' +
+      '<div style="font-size:11px;color:var(--t3);line-height:1.55;margin-bottom:9px">' +
+        "Cadastre o <strong>Hor&aacute;rio Semanal</strong> desta turma para o app calcular quantos " +
+        "conte&uacute;dos cabem nos encontros reais do m&ecirc;s.</div>" +
+      '<button class="btn btn-outline btn-sm" onclick="irParaHorarios()">Cadastrar hor&aacute;rio desta turma</button>' +
+    "</div>";
+  }
+  var piso = Math.max(1, Math.round(meta * 0.6));
+  var teto = meta;
+  var apertado = Math.round(meta * 1.25);
+  var cor, bg, texto;
+  if (count === 0) {
+    cor = "var(--t4)"; bg = "var(--bg3)";
+    texto = "Em " + subject + ", a m\u00e9dia do m\u00eas fica entre " + piso + " e " + teto +
+      " conte\u00fados. V\u00e1 marcando habilidades que o n\u00famero sobe aqui.";
+  } else if (count < piso) {
+    cor = "var(--amb)"; bg = "var(--ambBg)";
+    texto = count + " conte\u00fado(s) \u2014 abaixo da m\u00e9dia do m\u00eas. Cabe mais " + (piso - count) + ".";
+  } else if (count <= teto) {
+    cor = "var(--grn)"; bg = "var(--grnBg)";
+    texto = count + " conte\u00fado(s) \u2014 dentro da m\u00e9dia mensal de " + subject + ".";
+  } else if (count <= apertado) {
+    cor = "var(--amb)"; bg = "var(--ambBg)";
+    texto = count + " conte\u00fado(s) \u2014 acima da m\u00e9dia (" + teto + "). D\u00e1, mas fica corrido.";
+  } else {
+    cor = "var(--red)"; bg = "var(--redBg)";
+    texto = count + " conte\u00fado(s) para um m\u00eas de " + teto + ". S\u00e3o " + (count - teto) +
+      " a mais \u2014 vale deixar parte para o m\u00eas seguinte.";
+  }
+  var escalaMax = Math.max(apertado * 1.15, count * 1.05, 4);
+  var pct = function(n){ return Math.max(0, Math.min(100, (n / escalaMax) * 100)); };
+  var zB = pct(piso), zG = pct(teto) - zB, zC = pct(apertado) - zB - zG, zA = 100 - zB - zG - zC;
+
+  return '<div class="card-soft" style="padding:11px 13px;margin-top:11px;background:' + bg + '">' +
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;flex-wrap:wrap;gap:6px">' +
+      '<div style="font-size:10.5px;font-weight:700;color:var(--t3)">CONTE&Uacute;DOS DO M&Ecirc;S</div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:' + cor + '">' + count + " / ~" + meta + "</div>" +
+    "</div>" +
+    '<div style="position:relative;height:7px;border-radius:99px;background:var(--border);overflow:hidden">' +
+      '<div style="position:absolute;left:0;top:0;height:100%;width:' + zB + '%;background:var(--ambBg)"></div>' +
+      '<div style="position:absolute;left:' + zB + '%;top:0;height:100%;width:' + zG + '%;background:var(--grnBg)"></div>' +
+      '<div style="position:absolute;left:' + (zB+zG) + '%;top:0;height:100%;width:' + zC + '%;background:var(--ambBg)"></div>' +
+      '<div style="position:absolute;left:' + (zB+zG+zC) + '%;top:0;height:100%;width:' + zA + '%;background:var(--redBg)"></div>' +
+    "</div>" +
+    '<div style="position:relative;height:15px;margin-top:-11px">' +
+      '<div title="M&eacute;dia mensal do componente" style="position:absolute;left:' + pct(teto) +
+        '%;top:0;width:1px;height:13px;background:var(--t4);opacity:.55"></div>' +
+      '<div style="position:absolute;left:' + pct(count) + '%;top:-2px;width:3px;height:15px;background:' +
+        cor + ';border-radius:1.5px;transform:translateX(-1.5px)"></div>' +
+    "</div>" +
+    '<div style="font-size:10.5px;color:' + cor + ';font-weight:600;margin-top:4px;line-height:1.45">' + esc(texto) + "</div>" +
+    '<div style="font-size:9.5px;color:var(--t4);margin-top:6px;line-height:1.5">' +
+      "&#9888; Esta r&eacute;gua &eacute; a <strong>m&eacute;dia do componente</strong>, n&atilde;o a da sua turma. " +
+      "Cadastrando o hor&aacute;rio, a conta passa a ser pelos <strong>encontros reais</strong> deste m&ecirc;s." +
+    "</div>" +
+    '<button class="btn btn-outline btn-sm" style="margin-top:9px" onclick="irParaHorarios()">Cadastrar hor&aacute;rio desta turma</button>' +
+  "</div>";
+}
+
 /* Termômetro em quatro faixas: folgado · equilibrado · corrido · não cabe.
    A régua tem o número de encontros como referência visual, porque é ele que
    manda — não uma média fixa por disciplina. */
@@ -6555,11 +6672,13 @@ function habilidadesGaugeHtml(carga, count, subject) {
   var encounters = (carga && carga.configured) ? carga.encounters : 0;
   var t = habilidadesTermometro(subject, encounters, count,
     (carga && carga.configured) ? carga.monthlyLessons : 0);
-  if (!t.configured) {
-    return '<div class="card-soft" style="padding:10px 12px;margin-top:11px;font-size:11px;color:var(--t4)">' +
-      "Configure o Hor&aacute;rio Semanal desta turma em Ajustes &rarr; Hor&aacute;rios para o app calcular quantos " +
-      "conte&uacute;dos cabem nos encontros reais do m&ecirc;s.</div>";
-  }
+  /* v5.6 — sem horário cadastrado, o termômetro ficava mudo: uma frase cinza
+     mandando configurar, e nenhuma orientação enquanto isso. Agora ele
+     funciona assim mesmo, usando a média mensal do componente (Português ~12,
+     Inglês ~4, Produção ~4) como régua — dito com todas as letras que é
+     referência, não a conta da turma. Cadastrar o horário troca a régua pelos
+     encontros reais, que é sempre melhor. */
+  if (!t.configured) return gaugeReferenciaHtml(subject, count);
   var scaleMax = Math.max(t.apertado * 1.15, count * 1.05, 4);
   var pct = function(n){ return Math.max(0, Math.min(100, (n / scaleMax) * 100)); };
   var zBaixo = pct(t.idealMin);
