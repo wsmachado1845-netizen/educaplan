@@ -423,6 +423,48 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
   color: var(--acc); font-family: inherit; font-size: 11px; font-weight: 700; border-radius: 9px;
   padding: 8px; cursor: pointer; }
 .mtz-mais:active { background: var(--acc3); }
+/* ── Escolha de habilidades (v5.4) ──
+   O que o professor precisa decidir aqui é "uso esta ou não". Antes, cada
+   resultado despejava a descrição inteira da BNCC — parágrafos de norma —
+   e cabiam duas na tela. Agora a linha diz o assunto, o botão da esquerda
+   marca/desmarca e a descrição completa só aparece se ele pedir, no ⓘ. */
+.hb-lista { display: grid; grid-template-columns: 1fr; gap: 6px; }
+@media (min-width: 900px) { .hb-lista { grid-template-columns: 1fr 1fr; } }
+.hb-item { display: grid; grid-template-columns: auto 1fr auto; gap: 9px; align-items: start;
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px;
+  padding: 9px 10px; align-content: start; }
+.hb-item.on { border-color: var(--grn); background: var(--grnBg); }
+.hb-pick { width: 27px; height: 27px; border-radius: 8px; border: 1.5px solid var(--acc);
+  background: var(--bg2); color: var(--acc); font-size: 15px; font-weight: 800; line-height: 1;
+  cursor: pointer; font-family: inherit; flex: none; padding: 0;
+  display: flex; align-items: center; justify-content: center; }
+.hb-item.on .hb-pick { background: var(--grn); border-color: var(--grn); color: #fff; }
+.hb-tit { font-size: 12px; font-weight: 700; color: var(--t1); line-height: 1.3; text-align: left; }
+.hb-meta { display: flex; flex-wrap: wrap; gap: 4px 7px; align-items: center; margin-top: 4px;
+  font-size: 9.5px; color: var(--t4); }
+.hb-cod { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 9.5px;
+  font-weight: 700; color: var(--acc); }
+.hb-item.on .hb-cod { color: var(--grn); }
+.hb-mec { color: var(--amb); font-weight: 800; }
+.hb-info { width: 25px; height: 25px; border-radius: 50%; border: 1px solid var(--border);
+  background: none; color: var(--t4); font-size: 11px; font-weight: 700; cursor: pointer;
+  font-family: inherit; flex: none; padding: 0;
+  display: flex; align-items: center; justify-content: center; }
+.hb-info.on { background: var(--acc3); border-color: var(--acc); color: var(--acc); }
+.hb-desc { grid-column: 1 / -1; margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border2); font-size: 11px; color: var(--t3); line-height: 1.6;
+  text-align: justify; text-justify: inter-word; hyphens: auto; }
+.hb-desc b { color: var(--t2); }
+.hb-sel { margin-top: 11px; padding-top: 10px; border-top: 1px dashed var(--border2); }
+.hb-sel-tt { font-size: 10.5px; font-weight: 800; color: var(--grn); margin-bottom: 7px;
+  letter-spacing: .04em; }
+.hb-sel-item { display: flex; align-items: center; gap: 8px; background: var(--grnBg);
+  border-radius: 9px; padding: 7px 9px; margin-bottom: 5px; }
+.hb-sel-txt { flex: 1; min-width: 0; font-size: 11px; color: var(--t2); line-height: 1.35; }
+.hb-sel-txt b { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px;
+  color: var(--grn); }
+.hb-sel-x { width: 22px; height: 22px; border-radius: 50%; border: none; background: none;
+  color: var(--t4); font-size: 13px; cursor: pointer; font-family: inherit; flex: none; padding: 0; }
 .mtz-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 168px; overflow-y: auto; }
 .mtz-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border);
   border-left-width: 3px; background: var(--bg2); border-radius: 7px; padding: 4px 8px;
@@ -931,7 +973,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.3 · 24/08/2026 · Matriz do período agrupada por objeto de conhecimento</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.4 · 25/08/2026 · Escolha de habilidades reorganizada e correção na seleção</div>
     </footer>
   </div>
 </div>
@@ -2383,6 +2425,24 @@ function periodoMatch(skillPeriodo, calendarPeriodo) {
    habilidades previstas para o período letivo daquele mês (ex.: mês de
    Agosto cai no 3º Período, que cobre Ago–Out) — o banco geral da BNCC não
    tem período fixo, então continua disponível o ano todo. */
+/* Banco do ano inteiro: a união do que cada período traz.
+   v5.4 — correção de um defeito silencioso. skillPool() sem o mês devolve
+   apenas o banco geral da BNCC; as habilidades da Matriz de Santa Luzia
+   dependem do período e sumiam. Quem chamava sem o mês (a Cobertura BNCC e
+   a seleção de habilidades) simplesmente não enxergava as municipais — e,
+   na seleção, tocar numa delas não fazia nada, sem aviso nenhum. */
+function skillPoolAnual(subject, grade) {
+  var vistos = {}, todas = [];
+  ["Março", "Maio", "Agosto", "Novembro"].forEach(function(mes) {
+    skillPool(subject, grade, mes).forEach(function(s) {
+      if (vistos[s.code]) return;
+      vistos[s.code] = 1;
+      todas.push(s);
+    });
+  });
+  return todas;
+}
+
 function skillPool(subject, grade, month) {
   var bank = BNCC[subject] || BNCC["Língua Portuguesa"];
   var pool = (bank[gradeKey(grade)] || []).map(function(k) {
@@ -2786,9 +2846,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "5.3";
-var APP_VERSAO_DATA = "24/08/2026";
-var APP_VERSAO_NOTA = "Matriz do período agrupada por objeto de conhecimento";
+var APP_VERSAO = "5.4";
+var APP_VERSAO_DATA = "25/08/2026";
+var APP_VERSAO_NOTA = "Escolha de habilidades reorganizada e correção na seleção";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -9495,25 +9555,32 @@ function viewGen() {
       /* Habilidades primeiro: busca na matriz (BNCC + Acerta Brasil/SAEB) em vez de digitar o tema */
       '<div class="card-soft" style="padding:14px;border:1px solid var(--acc)">' +
         '<div style="font-size:12.5px;font-weight:700;color:var(--acc)">Habilidades Priorit&aacute;rias &mdash; o plano parte daqui</div>' +
-        '<div style="font-size:10.5px;color:var(--t4);margin:3px 0 10px">Busque e selecione as habilidades j&aacute; expostas na matriz da BNCC e, quando dispon&iacute;vel, do Acerta Brasil/SAEB. O conte&uacute;do do plano &eacute; derivado delas &mdash; voc&ecirc; n&atilde;o precisa digitar o t&oacute;pico.</div>' +
+        '<div style="font-size:10.5px;color:var(--t4);margin:3px 0 10px;line-height:1.55">' +
+          "Toque no <strong>+</strong> para usar a habilidade no plano; no <strong>i</strong> para ler a "+
+          "descri&ccedil;&atilde;o oficial. O conte&uacute;do do plano sai delas &mdash; voc&ecirc; n&atilde;o precisa digitar o tema." +
+        "</div>" +
         '<input class="inp" id="f_habq" placeholder="Buscar por c&oacute;digo, descritor SAEB (ex.: D037) ou palavra-chave..." ' +
           'value="' + esc(state.habBusca || "") + '" oninput="state.habBusca=this.value;renderKeep(\'f_habq\')" />' +
         '<div style="font-size:10px;color:var(--t4);margin-bottom:6px">Mostrando habilidades da matriz previstas para ' + esc(month) +
           " (" + esc((mi && mi.periodo) || "per&iacute;odo n&atilde;o letivo") +
           (bimestreOfMonth(month) ? " &middot; " + esc(bimestreOfMonth(month)) : "") +
           "); o banco geral da BNCC continua dispon&iacute;vel o ano todo.</div>" +
-        '<div id="habResults" style="margin-top:9px;max-height:360px;overflow:auto">' + skillSearchResults(f, month) + "</div>" +
+        '<div id="habResults" style="margin-top:9px">' + skillSearchResults(f, month) + "</div>" +
+        /* v5.4 — o que vai para o plano, escrito por extenso. A etiqueta só
+           com o código não dizia ao professor o que ele tinha escolhido. */
         (A(f.forcedSkills).length
-          ? '<div style="margin-top:11px;padding-top:10px;border-top:1px dashed var(--border2)">' +
-            '<div style="font-size:10.5px;font-weight:700;color:var(--t3);margin-bottom:6px">SELECIONADAS (' + f.forcedSkills.length + ')</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
+          ? '<div class="hb-sel">' +
+            '<div class="hb-sel-tt">&#10003; VOU USAR ESTAS ' + f.forcedSkills.length +
+              " NO PLANO" + "</div>" +
               f.forcedSkills.map(function(k, idx) {
-                var nv = amkNivel(k.pct);
-                return '<span class="badge" style="cursor:pointer;' + (nv ? "border-color:" + nv.color + ";color:" + nv.color : "") +
-                  '" onclick="removeFormSkill(' + idx + ')" title="Clique para remover">' + esc(k.code) +
-                  (nv ? " · " + nv.label : "") + " ✕</span>";
+                return '<div class="hb-sel-item">' +
+                  '<div class="hb-sel-txt"><b>' + esc(k.code) + "</b> &middot; " +
+                    esc(resumirObjeto(k.objeto || k.code, 46) || k.code) + "</div>" +
+                  '<button class="hb-sel-x" onclick="removeFormSkill(' + idx + ')" ' +
+                    'title="Tirar do plano">&#10005;</button>' +
+                "</div>";
               }).join("") +
-            "</div></div>"
+            "</div>"
           : "") +
         habilidadesGaugeHtml(carga, estimateConteudoCount(f.forcedSkills), subject) +
       "</div>" +
@@ -10336,7 +10403,7 @@ function setCoberturaSubject(v) { state.covSubject = v; render(); }
 function setCoberturaGrade(v) { state.covGrade = v; render(); }
 
 function coberturaData(subject, grade) {
-  var pool = skillPool(subject, grade);
+  var pool = skillPoolAnual(subject, grade);
   var seen = {}, unique = [];
   pool.forEach(function(s) {
     if (!seen[s.code]) { seen[s.code] = 1; unique.push(s); }
@@ -10357,7 +10424,7 @@ function coberturaData(subject, grade) {
 }
 
 function goGenWithSkill(subject, grade, code) {
-  var pool = skillPool(subject, grade);
+  var pool = skillPoolAnual(subject, grade);
   var sk = null;
   for (var i = 0; i < pool.length; i++) if (pool[i].code === code) { sk = pool[i]; break; }
   if (!sk) return;
@@ -10987,7 +11054,7 @@ var HAB_FILTROS = [
 ];
 
 function skillFilterChips(subj, grade) {
-  var pool = skillPool(subj, grade);
+  var pool = skillPoolAnual(subj, grade);
   var hasCriticidade = pool.some(function(s){ return typeof s.pct === "number"; });
   if (!hasCriticidade) return "";
   var chips = '<span class="badge" style="cursor:pointer' +
@@ -11015,26 +11082,76 @@ function skillSearchResults(f, month) {
   if (!results.length) return chips + '<div style="font-size:11.5px;color:var(--t4);padding:8px 2px">Nenhuma habilidade encontrada para esta busca / filtro / turma.</div>';
   /* Em três colunas no computador: a lista vertical obrigava a rolar muito
      para ver as habilidades do mês, enquanto sobrava espaço nas laterais. */
-  return chips + '<div class="hab-grid">' + results.map(function(s) {
+  /* Sem rolagem dentro do cartao: mostra os primeiros e o resto sob um
+     botao, igual ao bloco da matriz logo acima. Rolar dentro de um cartao
+     dentro da pagina e o tipo de coisa que faz o dedo travar no celular. */
+  var LIM_HAB = 8;
+  var todosHab = !!state.habTudo || results.length <= LIM_HAB + 1;
+  var visiveisHab = todosHab ? results : results.slice(0, LIM_HAB);
+  var sobramHab = results.length - visiveisHab.length;
+  var maisHab = (sobramHab > 0 || (state.habTudo && results.length > LIM_HAB + 1))
+    ? '<button class="mtz-mais" onclick="habVerTodas()">' +
+        (sobramHab > 0 ? "Mostrar mais " + sobramHab + " habilidade" + (sobramHab === 1 ? "" : "s")
+                       : "Mostrar menos") + "</button>"
+    : "";
+  return chips + '<div class="hb-lista">' + visiveisHab.map(function(s) {
     var nv = amkNivel(s.pct);
-    var already = !!selectedCodes[s.code];
-    return '<div class="card-soft" style="padding:8px 10px;cursor:' + (already ? "default" : "pointer") +
-      ';opacity:' + (already ? "0.5" : "1") + (nv ? ";border-left:3px solid " + nv.color : "") + '" ' +
-      (already ? "" : 'onclick="addFormSkill(\'' + s.code.replace(/'/g,"\\'") + '\')"') + '>' +
-      '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">' +
-        '<span style="font-weight:700;color:var(--acc);font-size:11.5px">' + esc(s.code) + "</span>" +
-        (s.saeb ? '<span class="badge badge-mute" style="font-size:9px">' + esc(s.saeb) + "</span>" : "") +
-        (nv ? '<span class="badge" style="font-size:9px;border-color:' + nv.color + ";color:" + nv.color + '">' + nv.label +
-          (typeof s.pct === "number" ? " " + s.pct + "%" : "") + "</span>" : "") +
-        '<span class="badge badge-mute" style="font-size:9px">' + (s.fonte === "Acerta Brasil / SAEB" ? "Matriz Santa Luzia" : esc(s.fonte)) + "</span>" +
-        (s.periodo ? '<span class="badge badge-mute" style="font-size:9px">' + esc(s.periodo) +
-          (periodoToBimestre(s.periodo) ? " · " + esc(periodoToBimestre(s.periodo)) : "") + "</span>" : "") +
-        (already ? '<span style="font-size:9px;color:var(--t4)">j&aacute; selecionada</span>' : "") +
+    var jaEsta = !!selectedCodes[s.code];
+    var cod = String(s.code).replace(/'/g, "\\'");
+    var aberta = !!(state.habDesc && state.habDesc[s.code]);
+    var ehPrior = MTZ_SL.prior.indexOf(s.code) >= 0;
+    /* O título da linha é o assunto (objeto de conhecimento), não a norma.
+       É por ele que o professor reconhece o que vai dar na aula. */
+    var assunto = resumirObjeto(s.objeto || s.code, 46) || s.code;
+    return '<div class="hb-item' + (jaEsta ? " on" : "") + '">' +
+      '<button class="hb-pick" onclick="alternarHabilidade(\'' + cod + '\')" title="' +
+        (jaEsta ? "Remover das selecionadas" : "Usar esta habilidade no plano") + '">' +
+        (jaEsta ? "&#10003;" : "+") + "</button>" +
+      "<div>" +
+        '<div class="hb-tit">' + esc(assunto) + "</div>" +
+        '<div class="hb-meta">' +
+          '<span class="hb-cod">' + esc(s.code) + "</span>" +
+          (ehPrior ? '<span class="hb-mec" title="Priorizada pelo MEC na recomposição das aprendizagens">&#9733; MEC</span>' : "") +
+          (s.saeb ? "<span>" + esc(s.saeb) + "</span>" : "") +
+          (nv ? '<span style="color:' + nv.color + ';font-weight:700">' + nv.label +
+            (typeof s.pct === "number" ? " " + s.pct + "%" : "") + "</span>" : "") +
+          (s.periodo ? "<span>" + esc(s.periodo) + "</span>" : "") +
+          "<span>" + (s.fonte === "Acerta Brasil / SAEB" ? "Matriz Santa Luzia" : esc(s.fonte)) + "</span>" +
+        "</div>" +
       "</div>" +
-      '<div style="font-size:12px;margin-top:3px">' + esc(s.description) + "</div>" +
-      '<div style="font-size:10px;color:var(--t4);margin-top:2px">' + esc(s.objeto) + "</div>" +
+      '<button class="hb-info' + (aberta ? " on" : "") + '" onclick="alternarDescricao(\'' + cod + '\')" ' +
+        /* Sempre o mesmo icone, so muda de cor quando aberto. Um "X" aqui
+           seria lido como "excluir", ao lado de um item ja selecionado. */
+        'title="' + (aberta ? "Ocultar a descrição" : "Ler a descrição completa") + '">i</button>' +
+      (aberta
+        ? '<div class="hb-desc"><b>' + esc(s.code) + "</b> &mdash; " + esc(s.description) +
+          (s.objeto && s.objeto !== assunto ? "<br/><br/><b>Objeto de conhecimento:</b> " + esc(s.objeto) : "") +
+          "</div>"
+        : "") +
     "</div>";
-  }).join("") + "</div>";
+  }).join("") + "</div>" + maisHab;
+}
+
+function habVerTodas() { state.habTudo = !state.habTudo; renderKeep("f_habq"); }
+
+/* Marcar/desmarcar no mesmo botão: antes, uma habilidade já escolhida ficava
+   apagada e sem ação, e para tirá-la era preciso procurar a etiqueta lá
+   embaixo. Agora o mesmo lugar serve para as duas coisas. */
+function alternarHabilidade(code) {
+  var atuais = A(state.form && state.form.forcedSkills);
+  for (var i = 0; i < atuais.length; i++) {
+    if (atuais[i].code === code) { removeFormSkill(i); return; }
+  }
+  addFormSkill(code);
+}
+
+/* A descrição da BNCC é texto de norma — útil na hora da dúvida, atrapalho
+   na hora de escolher. Fica guardada atrás do ⓘ, uma de cada vez visível
+   por escolha do professor. */
+function alternarDescricao(code) {
+  if (!state.habDesc) state.habDesc = {};
+  state.habDesc[code] = !state.habDesc[code];
+  renderKeep("f_habq");
 }
 
 function syncThemeFromSkills(forcedSkills, currentTheme) {
@@ -11047,9 +11164,16 @@ function syncThemeFromSkills(forcedSkills, currentTheme) {
 function addFormSkill(code) {
   var f = readForm();
   f.forcedSkills = A(state.form && state.form.forcedSkills).slice();
-  var pool = skillPool(f.subject, f.gradeLevel);
+  /* v5.4 — com o mes: sem ele, as habilidades da matriz municipal nao
+     entravam no banco e tocar numa delas nao fazia absolutamente nada.
+     O ano inteiro fica de reserva para busca fora do periodo. */
+  var pool = skillPool(f.subject, f.gradeLevel, f.month);
   var sk = null;
   for (var i = 0; i < pool.length; i++) if (pool[i].code === code) { sk = pool[i]; break; }
+  if (!sk) {
+    var anual = skillPoolAnual(f.subject, f.gradeLevel);
+    for (var j = 0; j < anual.length; j++) if (anual[j].code === code) { sk = anual[j]; break; }
+  }
   if (!sk || f.forcedSkills.some(function(x){ return x.code === sk.code; })) return;
   f.forcedSkills.push(sk);
   f.theme = syncThemeFromSkills(f.forcedSkills, f.theme);
