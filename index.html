@@ -428,6 +428,55 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
   color: var(--acc); font-family: inherit; font-size: 11px; font-weight: 700; border-radius: 9px;
   padding: 8px; cursor: pointer; }
 .mtz-mais:active { background: var(--acc3); }
+/* Linha de escola/cidade que só existe no papel e no Word — na tela ela
+   seria repetição do que o topo do app já diz. */
+.soprint { display: none !important; }
+@media print { .soprint { display: block !important; } }
+body.exporting .soprint { display: block !important; }
+/* v6.0 — o que nao vai para a impressao tambem nao vai para o Word. As
+   etiquetas de estado do app (Salvo, Gerador local, Aderencia) estavam
+   aparecendo no documento entregue a coordenacao. */
+body.exporting .noprint { display: none !important; }
+
+/* ── Plano no modelo oficial de Santa Luzia (v6.0) ──
+   O formato que a rede usa: cabeçalho de identificação e um corpo em faixas,
+   cada seção anunciada por uma tarja azul-escura com o nome em branco.
+   As cores são as do documento original (#1F3864 e #002060) — não inventei
+   paleta aqui, porque este documento é entregue à coordenação e precisa ser
+   reconhecido como o formulário da rede.
+   O que o EducaPlan acrescenta vem por dentro das seções, não por fora:
+   a metodologia com etapas e minutos, a rubrica com níveis observáveis, os
+   objetos de conhecimento amarrados às aulas reais do mês. */
+.msl { font-family: 'Times New Roman', Georgia, serif; font-size: 13.5px; line-height: 1.5; }
+.msl h1 { font-family: inherit; font-size: 17px; font-weight: 700; text-align: center;
+  margin: 0 0 14px; line-height: 1.3; letter-spacing: 0; }
+.msl table { width: 100%; border-collapse: collapse; }
+.msl .msl-id td { border: 1px solid #000; padding: 4px 7px; font-size: 13px; vertical-align: top; }
+.msl .msl-id td.rot { white-space: nowrap; width: 170px; font-weight: 600; }
+.msl .msl-id td.rot-curto { white-space: nowrap; width: 92px; font-weight: 600; }
+.msl-corpo { margin-top: 10px; }
+.msl-corpo td { border: 1px solid #000; padding: 6px 9px; vertical-align: top; }
+.msl-faixa td { background: #1F3864; color: #fff; text-align: center; font-weight: 700;
+  font-size: 13.5px; padding: 5px 9px; }
+.msl-faixa.alt td { background: #002060; }
+.msl-lista { margin: 0; padding-left: 17px; }
+.msl-lista li { margin-bottom: 3px; }
+.msl-cod { font-weight: 700; }
+.msl-nota { font-size: 12px; color: #444; }
+.msl-sub { font-weight: 700; margin: 7px 0 3px; font-size: 13px; }
+.msl-sub:first-child { margin-top: 0; }
+.msl-etapa { margin-bottom: 6px; }
+.msl-min { font-weight: 700; }
+.msl-rub { margin-top: 7px; }
+.msl-rub td, .msl-rub th { border: 1px solid #000; padding: 4px 6px; font-size: 12px;
+  vertical-align: top; }
+.msl-rub th { background: #E7EFF9; font-weight: 700; text-align: left; }
+@media (max-width: 620px) {
+  .msl { font-size: 12.5px; }
+  .msl .msl-id td, .msl-corpo td { padding: 5px 6px; }
+  .msl-rub td, .msl-rub th { font-size: 11px; padding: 3px 4px; }
+}
+
 /* ── Escolha de habilidades (v5.4) ──
    O que o professor precisa decidir aqui é "uso esta ou não". Antes, cada
    resultado despejava a descrição inteira da BNCC — parágrafos de norma —
@@ -978,7 +1027,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 5.7 · 25/08/2026 · Aulas registradas × previstas e ajuste manual por turma</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 6.0 · 26/08/2026 · Plano no modelo oficial de Santa Luzia e ícone novo</div>
     </footer>
   </div>
 </div>
@@ -2917,9 +2966,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "5.7";
-var APP_VERSAO_DATA = "25/08/2026";
-var APP_VERSAO_NOTA = "Aulas registradas × previstas e ajuste manual por turma";
+var APP_VERSAO = "6.0";
+var APP_VERSAO_DATA = "26/08/2026";
+var APP_VERSAO_NOTA = "Plano no modelo oficial de Santa Luzia e ícone novo";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -9942,8 +9991,11 @@ function viewPlan() {
      rotina/atividades permanentes, avaliação contínua) — ver o modelo de
      Ensino Religioso enviado pela SEMED. */
   if (ehAnosIniciais(pc.gradeLevel)) return viewPlanAnosIniciais(pl, c, pc, cfg);
-  if ((pc.layout || "").indexOf("Oficial") >= 0) return viewPlanOficial(pl, c, pc, cfg);
-  var serif = (pc.layout || "").indexOf("Minimalista") >= 0;
+  /* v6.0 — o app tinha três layouts diferentes para os anos finais, e o
+     professor via um ou outro conforme a escolha gravada no plano. Agora
+     existe um só: o modelo oficial de Santa Luzia. Planos antigos, salvos
+     com outro layout, passam a ser exibidos neste também — o conteúdo é o
+     mesmo, só a apresentação mudou. */
 
   var skills = A(c.bnccSkills).map(function(s) {
     return '<div class="card-soft" style="padding:9px 13px;margin-bottom:7px;display:flex;gap:11px">' +
@@ -10057,82 +10109,33 @@ function viewPlan() {
       (state.activeSaved ? '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deletePlan(\'' + pl.id + '\')">Excluir</button>' : "") +
     "</div></div>";
 
-  var header = '<div style="display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap;align-items:center">' +
+  /* v6.0 — as etiquetas de estado (teste, origem, aderência) são do app, não
+     do documento: ficam fora da impressão. O documento em si começa pelo
+     título do formulário da rede, dentro de planoModeloSL. */
+  var cabecalhoPlano = '<div class="noprint" style="display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap;align-items:center">' +
       seloTeste(pl, "g") +
       '<span class="badge">' + (pl.generatedByAi ? "Gerado com Claude" : "Gerador local") + "</span>" +
       (state.activeSaved ? '<span class="badge badge-ok">Salvo</span>' : "") +
-      (A(c.contents).length > 1
-        ? '<span class="badge badge-mute">' + A(c.contents).length + " conte&uacute;dos discriminados</span>"
-        : (c.contentProfile ? '<span class="badge badge-mute">' + esc(c.contentProfile.label) + "</span>" : "")) +
       (typeof c.skillsRelevance === "number"
         ? '<span class="badge ' + (c.skillsRelevance >= 50 ? "badge-ok" : "badge-warn") +
-          '" title="Ader&ecirc;ncia das habilidades BNCC ao conte&uacute;do informado">Ader&ecirc;ncia BNCC ' +
+          '" title="Aderência das habilidades BNCC ao conteúdo informado">Ader&ecirc;ncia BNCC ' +
           c.skillsRelevance + "%</span>"
         : "") +
+      '<span class="badge badge-mute">' + esc(cfg.network || "") + " &middot; " + esc(cfg.city || "") + "</span>" +
     "</div>" +
-    '<div style="font-size:10.5px;color:var(--t4);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:5px">' +
-      esc(cfg.network || "") + " &middot; " + esc(cfg.city || "") + "</div>" +
-    '<h1 style="font-size:' + (serif ? 26 : 29) + 'px;margin:0 0 4px">' + esc(c.title) + "</h1>" +
-    '<div style="font-size:12.5px;color:var(--t4);margin-bottom:22px;line-height:1.6">' +
-      "<strong>" + esc(pc.subject) + "</strong> &middot; " + esc(pc.gradeLevel) + " &middot; " + esc(pc.month) +
-      " &middot; " + esc(pc.duration) + " &middot; Turno " + esc(pc.shift || cfg.defaultShift) + "<br/>" +
-      "Prof. " + esc(cfg.teacherName || "—") + " &middot; " + esc(cfg.schoolName || "—") + "</div>";
+    '<div class="soprint" style="display:none;font-size:11px;text-align:center;margin-bottom:8px">' +
+      esc(cfg.schoolName || "") + (cfg.city ? " &mdash; " + esc(cfg.city) : "") + "</div>";
 
   return '<div class="wrap fade" style="padding:28px 18px 56px">' + toolbar +
-    '<div class="card" id="planPaper" style="padding:32px 36px;max-width:880px' +
-      (serif ? ";font-family:var(--serif)" : "") + '">' + header +
+    '<div class="card" id="planPaper" style="padding:30px 32px;max-width:880px">' +
+      cabecalhoPlano +
       (pl.fallbackWarning
-        ? '<div class="card-soft" style="padding:11px 14px;margin-bottom:18px;border:1px solid var(--amb);' +
-          'background:var(--ambBg,transparent)"><div style="font-size:12px;font-weight:700;color:var(--amb)">' +
+        ? '<div class="noprint card-soft" style="padding:11px 14px;margin-bottom:16px;border:1px solid var(--amb)">' +
+          '<div style="font-size:12px;font-weight:700;color:var(--amb)">' +
           "&#9888; Plano montado pelo gerador local</div>" +
           '<div style="font-size:11.5px;color:var(--t3);margin-top:3px">' + esc(pl.fallbackWarning) + "</div></div>"
         : "") +
-      sec("1. Contextualização", "<p style='margin:0'>" + esc(c.context) + "</p>") +
-      (A(c.contents).length > 1
-        ? sec("1.1 Conteúdos Discriminados",
-            "<p style='margin:0 0 9px;font-size:12.5px;color:var(--t3)'>Esta aula contempla " +
-            A(c.contents).length + " conte&uacute;dos distintos. Cada um recebe momento did&aacute;tico, " +
-            "atividade e instrumento avaliativo pr&oacute;prios, conforme discriminado abaixo.</p>" +
-            '<div class="tscroll"><table class="tb"><thead><tr><th style="width:34px">#</th>' +
-            "<th>Conte&uacute;do</th><th style='width:170px'>Natureza</th><th style='width:110px'>Eixo</th>" +
-            "<th style='width:120px'>Habilidade BNCC</th></tr></thead><tbody>" +
-            A(c.contents).map(function(ct) {
-              return "<tr><td style='text-align:center;font-weight:700;color:var(--acc)'>" + ct.order + "</td>" +
-                "<td style='font-weight:600'>" + esc(ct.text) + "</td>" +
-                "<td>" + esc(ct.label) + "</td>" +
-                "<td>" + esc(A(ct.axes).join(", ") || "—") + "</td>" +
-                "<td style='font-family:var(--mono);font-size:11px'>" + esc(A(ct.codes).join(", ") || "—") + "</td></tr>";
-            }).join("") + "</tbody></table></div>")
-        : "") +
-      (c.justification ? sec("2. Justificativa Pedagógica", "<p style='margin:0'>" + esc(c.justification) + "</p>") : "") +
-      (chHtml ? sec("3. Carga Horária", chHtml) : "") +
-      sec("4. Competências", "<p style='margin:0 0 7px'><strong>Compet&ecirc;ncia geral (BNCC):</strong> " + esc(c.generalCompetency) + "</p>" +
-        "<div style='font-size:13px;margin-bottom:3px'><strong>Compet&ecirc;ncias espec&iacute;ficas:</strong></div>" + li(c.specificCompetencies)) +
-      sec("5. Habilidades BNCC", skills) +
-      (kobj ? sec("6. Objetos de Conhecimento por Eixo", kobj) : "") +
-      sec("7. Objetivos de Aprendizagem",
-        "<div style='font-size:13px;margin-bottom:3px'><strong>Gerais:</strong></div>" + li(c.objectives) +
-        (A(c.specificObjectives).length ? "<div style='font-size:13px;margin:7px 0 3px'><strong>Espec&iacute;ficos:</strong></div>" + li(c.specificObjectives) : "")) +
-      (A(c.crossCuttingThemes).length ? sec("8. Temas Contemporâneos Transversais", chips(c.crossCuttingThemes)) : "") +
-      (inter ? sec("9. Interdisciplinaridade", inter) : "") +
-      (A(c.socioemotional).length ? sec("10. Competências Socioemocionais", li(c.socioemotional)) : "") +
-      (comp ? sec("11. Três Eixos da Computação", comp) : "") +
-      sec("12. Metodologia (Sequência Didática)", meth) +
-      (seq ? sec("13. Distribuição por Aula", seq) : "") +
-      sec("14. Atividades", acts) +
-      (c.homework ? sec("15. Tarefa de Casa", "<p style='margin:0'>" + esc(c.homework) + "</p>") : "") +
-      sec("16. Avaliação", asse) +
-      (rub ? sec("17. Rubrica de Avaliação", rub) : "") +
-      (c.recovery ? sec("18. Retomada e Recuperação", "<p style='margin:0'>" + esc(c.recovery) + "</p>") : "") +
-      (saeb ? sec("19. Descritores SAEB", saeb) : "") +
-      (olimpHtml ? sec("20. Olimpíada de Língua Portuguesa", olimpHtml) : "") +
-      sec("21. Materiais e Recursos", li(c.materials) +
-        (A(c.digitalResources).length ? "<div style='font-size:13px;margin:7px 0 3px'><strong>Recursos digitais:</strong></div>" + li(c.digitalResources) : "")) +
-      (aeeHtml ? sec("22. Atendimento Educacional Especializado (AEE)", aeeHtml) : "") +
-      (c.teacherNotes ? sec("23. Registro do Professor",
-        "<p style='margin:0 0 9px;font-size:12px;color:var(--t3)'>" + esc(c.teacherNotes) + "</p>" +
-        "<div style='border:1px dashed var(--border);border-radius:10px;height:76px'></div>") : "") +
-      sec("Referências", li(c.references), true) +
+      planoModeloSL(pl) +
     "</div></div>";
 }
 
@@ -12059,6 +12062,18 @@ function _xmlEsc(s) {
 /* Converte um elemento da tela em parágrafos do Word, preservando negrito,
    itálico, tamanho e centralização — é o que dá ao documento a mesma cara
    do plano exibido no app. */
+/* So gravamos a cor do texto quando ela e clara — e o caso das faixas de
+   secao. Texto escuro fica no padrao do Word, que ja e preto. */
+function _corDoTextoWml(cs) {
+  if (!cs) return "";
+  var m = String(cs.color || "").match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!m) return "";
+  var r = +m[1], g = +m[2], b = +m[3];
+  if ((r + g + b) / 3 < 170) return "";
+  var h = function(n){ return ("0" + n.toString(16)).slice(-2); };
+  return "<w:color w:val=\"" + (h(r) + h(g) + h(b)).toUpperCase() + "\"/>";
+}
+
 function _wmlPara(texto, el) {
   if (!texto) return "";
   var cs = el ? getComputedStyle(el) : null;
@@ -12072,6 +12087,9 @@ function _wmlPara(texto, el) {
   return "<w:p><w:pPr><w:spacing w:after=\"70\" w:line=\"264\" w:lineRule=\"auto\"/>" +
       "<w:jc w:val=\"" + alinha + "\"/></w:pPr>" +
       "<w:r><w:rPr>" + (negrito ? "<w:b/>" : "") + (italico ? "<w:i/>" : "") +
+        /* v6.0 — texto claro sobre faixa escura precisa chegar claro ao Word.
+           Sem isto, o titulo branco da faixa azul virava preto sobre azul. */
+        _corDoTextoWml(cs) +
         "<w:sz w:val=\"" + meiosPontos + "\"/><w:szCs w:val=\"" + meiosPontos + "\"/></w:rPr>" +
       "<w:t xml:space=\"preserve\">" + _xmlEsc(marcador + texto) + "</w:t></w:r></w:p>";
 }
@@ -12159,6 +12177,21 @@ function _larguraColunas(tbl, colunas, larguraUtil) {
   return saida;
 }
 
+/* Cor de fundo da celula, em hexadecimal de seis digitos, pronta para o
+   Word. Branco e transparente voltam vazio: so vale a pena gravar sombreado
+   quando ha cor de verdade. */
+function _corHexDaCelula(td) {
+  var cor = "";
+  try { cor = getComputedStyle(td).backgroundColor || ""; } catch (e) { return ""; }
+  var m = cor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+  if (!m) return "";
+  if (m[4] !== undefined && parseFloat(m[4]) < 0.1) return "";
+  var r = +m[1], g = +m[2], b = +m[3];
+  if (r > 246 && g > 246 && b > 246) return "";
+  var h = function(n){ return ("0" + n.toString(16)).slice(-2); };
+  return (h(r) + h(g) + h(b)).toUpperCase();
+}
+
 function _wmlTabela(tbl) {
   /* O título de seção é desenhado como tabelinha na tela (quadrado com o
      número + texto). No Word ele vira um título de verdade. */
@@ -12199,7 +12232,13 @@ function _wmlTabela(tbl) {
       if (!conteudo) conteudo = "<w:p/>";
       var larguraCelula = 0;
       for (var k = 0; k < cel.colSpan && (c + k) < larguras.length; k++) larguraCelula += larguras[c + k];
+      /* v6.0 — a cor de fundo da celula agora acompanha para o Word. Sem
+         isso, as faixas azuis do modelo de Santa Luzia chegavam brancas ao
+         arquivo entregue a coordenacao, e o plano perdia justamente o que o
+         identifica como documento da rede. */
+      var fundo = _corHexDaCelula(cel.el);
       xml += "<w:tc><w:tcPr><w:tcW w:w=\"" + (larguraCelula || 1000) + "\" w:type=\"dxa\"/>" +
+        (fundo ? "<w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"" + fundo + "\"/>" : "") +
         (cel.colSpan > 1 ? "<w:gridSpan w:val=\"" + cel.colSpan + "\"/>" : "") +
         (cel.rowSpan > 1 ? "<w:vMerge" + (cel.origem ? " w:val=\"restart\"" : "") + "/>" : "") +
         "<w:vAlign w:val=\"top\"/></w:tcPr>" + conteudo + "</w:tc>";
@@ -12207,6 +12246,209 @@ function _wmlTabela(tbl) {
     xml += "</w:tr>";
   });
   return xml + "</w:tbl><w:p/>";
+}
+
+/* ===========================================================
+   PLANO NO MODELO OFICIAL DE SANTA LUZIA (v6.0)
+   Estrutura tirada do formulário que o professor entrega à coordenação:
+   identificação no topo e dez seções em faixas azuis. O conteúdo que o
+   EducaPlan produz é distribuído dentro dessas seções — nada do que o app
+   sabe se perde, só muda de lugar para caber no documento da rede.
+   =========================================================== */
+
+var COMPETENCIAS_GERAIS_BNCC = [
+  "Conhecimento", "Pensamento científico, crítico e criativo", "Repertório cultural",
+  "Comunicação", "Cultura digital", "Trabalho e projeto de vida", "Argumentação",
+  "Autoconhecimento e autocuidado", "Empatia e cooperação", "Responsabilidade e cidadania"
+];
+
+/* Campos de atuação: a matriz organiza a língua por campos, e o formulário
+   pede esta linha logo no começo. Vêm dos eixos das habilidades escolhidas
+   quando dá para inferir; senão, os quatro campos dos anos finais. */
+var CAMPOS_ATUACAO_PADRAO = [
+  "Campo artístico-literário",
+  "Campo das práticas de estudo e pesquisa",
+  "Campo jornalístico-midiático",
+  "Campo de atuação na vida pública"
+];
+
+function mslFaixa(titulo, alt) {
+  return '<tr class="msl-faixa' + (alt ? " alt" : "") + '"><td><strong>' + titulo + "</strong></td></tr>";
+}
+function mslLinha(html) {
+  return "<tr><td>" + (html || "&nbsp;") + "</td></tr>";
+}
+function mslLista(itens) {
+  var a = A(itens).filter(Boolean);
+  if (!a.length) return "";
+  return '<ul class="msl-lista">' + a.map(function(x){ return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
+}
+
+function planoModeloSL(pl) {
+  var c = pl.content, pc = pl.config, cfg = state.cfg;
+  var mi = CALENDAR.meses[pc.month];
+  var periodo = (mi && mi.periodo) || pc.month;
+  var bim = bimestreOfMonth(pc.month);
+  var ch = c.cargaHoraria;
+
+  /* ---- Identificação ---- */
+  var ident =
+    '<table class="msl-id"><tbody>' +
+      '<tr><td class="rot">Professor (a):</td><td>' + esc(cfg.teacherName || "—") + "</td></tr>" +
+    "</tbody></table>" +
+    '<table class="msl-id" style="margin-top:-1px"><tbody><tr>' +
+      '<td class="rot">Componente Curricular:</td><td>' + esc(pc.subject) + "</td>" +
+      '<td class="rot-curto">Período:</td><td>' + esc(periodo) + (bim ? " (" + esc(bim) + ")" : "") + "</td>" +
+    "</tr></tbody></table>" +
+    '<table class="msl-id" style="margin-top:-1px"><tbody><tr>' +
+      '<td class="rot">Turma:</td><td>' + esc(pc.gradeLevel) + "</td>" +
+      '<td class="rot-curto">Turno:</td><td>' + esc(pc.shift || cfg.defaultShift || "—") + "</td>" +
+    "</tr></tbody></table>" +
+    '<table class="msl-id" style="margin-top:-1px"><tbody><tr>' +
+      '<td class="rot">Mês de referência:</td><td>' + esc(pc.month) +
+        (mi ? " &mdash; " + mi.diasLetivos + " dias letivos" : "") + "</td>" +
+      '<td class="rot-curto">Aulas:</td><td>' +
+        (ch && ch.configured
+          ? "<strong>" + ch.encounters + "</strong> registradas &middot; <strong>" +
+            ch.monthlyLessons + "</strong> previstas (" + esc(ch.days) + ")"
+          : "&mdash;") + "</td>" +
+    "</tr></tbody></table>";
+
+  /* ---- Habilidades: código municipal quando existe, BNCC sempre ---- */
+  var habs = A(c.bnccSkills).map(function(k) {
+    return '<div style="margin-bottom:5px"><span class="msl-cod">(' + esc(k.code) + ")</span> " +
+      esc(k.description) + "</div>";
+  }).join("") || "<em>Nenhuma habilidade selecionada.</em>";
+
+  /* ---- Objetos de conhecimento e temas das aulas ---- */
+  var objs = A(c.knowledgeObjects).map(function(k) {
+    return '<div style="margin-bottom:5px"><strong>' + esc(k.content) + "</strong>" +
+      (A(k.codes).length ? ' <span class="msl-cod">(' + esc(A(k.codes).join(", ")) + ")</span>" : "") +
+      (k.note ? '<div class="msl-nota">' + esc(k.note) + "</div>" : "") + "</div>";
+  }).join("");
+  var seq = A(c.lessonSequence).map(function(l) {
+    return "<li><strong>Aula " + esc(l.lesson) + " &mdash; " + esc(l.focus) + ":</strong> " +
+      esc(l.description) + "</li>";
+  }).join("");
+  var objetos = objs +
+    (seq ? '<div class="msl-sub">Distribuição pelas aulas do mês</div><ol class="msl-lista">' + seq + "</ol>" : "");
+
+  /* ---- Metodologias: etapas com minutos, mais as atividades ---- */
+  var metod = A(c.methodology).map(function(m) {
+    return '<div class="msl-etapa">' +
+      '<span class="msl-min">' + esc(m.order) + ". " + esc(m.title) +
+      (m.minutes ? " (" + esc(m.minutes) + " min)" : "") + ":</span> " + esc(m.description) +
+      (m.organization ? ' <span class="msl-nota">[' + esc(m.organization) + "]</span>" : "") +
+    "</div>";
+  }).join("");
+  var ativs = A(c.activities).map(function(a) {
+    return '<div class="msl-etapa"><strong>' + esc(a.title) + "</strong>" +
+      (a.type ? ' <span class="msl-nota">(' + esc(a.type) + ")</span>" : "") +
+      "<div>" + esc(a.description) + "</div>" +
+      (A(a.steps).length ? mslLista(a.steps) : "") +
+      (a.support ? '<div class="msl-nota"><strong>Apoio:</strong> ' + esc(a.support) + "</div>" : "") +
+      (a.challenge ? '<div class="msl-nota"><strong>Desafio:</strong> ' + esc(a.challenge) + "</div>" : "") +
+    "</div>";
+  }).join("");
+  var metodologias = metod +
+    (ativs ? '<div class="msl-sub">Atividades</div>' + ativs : "") +
+    (c.homework ? '<div class="msl-sub">Tarefa de casa</div>' + esc(c.homework) : "");
+
+  /* ---- Avaliação: instrumentos, rubrica e retomada ---- */
+  var aval = A(c.assessment).map(function(a) {
+    return '<div class="msl-etapa"><strong>' + esc(a.instrument) + "</strong>" +
+      (a.type ? " (" + esc(a.type) + ")" : "") +
+      (a.criteria ? '<div class="msl-nota">Critérios: ' + esc(a.criteria) + "</div>" : "") +
+    "</div>";
+  }).join("");
+  var rubrica = A(c.rubric).length
+    ? '<div class="msl-sub">Rubrica</div><table class="msl-rub"><thead><tr>' +
+      "<th>Critério</th><th>Insuficiente</th><th>Parcial</th><th>Pleno</th></tr></thead><tbody>" +
+      A(c.rubric).map(function(r) {
+        return "<tr><td><strong>" + esc(r.criterion) + "</strong></td><td>" + esc(r.below) +
+          "</td><td>" + esc(r.partial) + "</td><td>" + esc(r.full) + "</td></tr>";
+      }).join("") + "</tbody></table>"
+    : "";
+  var avaliacao = aval + rubrica +
+    (c.recovery ? '<div class="msl-sub">Retomada e recuperação</div>' + esc(c.recovery) : "");
+
+  /* ---- Recursos ---- */
+  var recursos = mslLista(c.materials) +
+    (A(c.digitalResources).length ? '<div class="msl-sub">Recursos digitais</div>' + mslLista(c.digitalResources) : "");
+
+  /* ---- Seções extras que o EducaPlan traz e o formulário não previa,
+         mas que a coordenação valoriza: contextualização, transversais,
+         socioemocionais, interdisciplinaridade, SAEB e AEE. ---- */
+  var transversais = A(c.crossCuttingThemes).length ? mslLista(c.crossCuttingThemes) : "";
+  var socio = A(c.socioemotional).length ? mslLista(c.socioemotional) : "";
+  var inter = A(c.interdisciplinarity).map(function(x) {
+    return "<li><strong>" + esc(x.subject) + ":</strong> " + esc(x.connection) + "</li>";
+  }).join("");
+  var saeb = A(c.saebDescriptors).map(function(d) {
+    return "<li><span class='msl-cod'>" + esc(d.code) + "</span> &mdash; " + esc(d.description) + "</li>";
+  }).join("");
+  var comput = A(c.computacao).map(function(x) {
+    return "<li><strong>" + esc(x.eixo) + ":</strong> " + esc(x.desc) + "</li>";
+  }).join("");
+
+  var aee = "";
+  if (c.aeePlan) {
+    var p2 = c.aeePlan;
+    aee = "<div><strong>Diagnóstico:</strong> " + esc(p2.diagnosis) + "</div>" +
+      (p2.barriers ? "<div><strong>Barreiras previstas:</strong> " + esc(p2.barriers) + "</div>" : "") +
+      (A(p2.strategies).length ? '<div class="msl-sub">Estratégias e flexibilizações</div>' + mslLista(p2.strategies) : "") +
+      (A(p2.resources).length ? '<div class="msl-sub">Recursos assistivos</div>' + mslLista(p2.resources) : "") +
+      (p2.assessment ? '<div class="msl-sub">Avaliação adaptada</div>' + esc(p2.assessment) : "");
+  }
+
+  var eixos = getAxes(pc.subject);
+
+  var corpo = '<table class="msl-corpo"><tbody>' +
+    mslFaixa("Práticas de Linguagem &ndash; Campos") +
+      mslLinha(mslLista(CAMPOS_ATUACAO_PADRAO)) +
+    mslFaixa("Práticas de Linguagem &ndash; Eixos", true) +
+      mslLinha(mslLista(eixos)) +
+    mslFaixa("Habilidades") +
+      mslLinha(habs) +
+    (saeb ? mslFaixa("Descritores SAEB / Acerta Brasil", true) +
+      mslLinha('<ul class="msl-lista">' + saeb + "</ul>") : "") +
+    (comput ? mslFaixa("BNCC Computação") +
+      mslLinha('<ul class="msl-lista">' + comput + "</ul>") : "") +
+    mslFaixa("Competências Gerais", true) +
+      mslLinha(mslLista(COMPETENCIAS_GERAIS_BNCC)) +
+    mslFaixa("Competências Específicas") +
+      mslLinha(mslLista(c.specificCompetencies)) +
+    (socio ? mslFaixa("Competências Socioemocionais", true) + mslLinha(socio) : "") +
+    mslFaixa("Objetos de conhecimento e temas das aulas") +
+      mslLinha(objetos) +
+    mslFaixa("Justificativa e contextualização", true) +
+      mslLinha("<div>" + esc(c.context) + "</div>" +
+        (c.justification ? '<div style="margin-top:6px">' + esc(c.justification) + "</div>" : "")) +
+    mslFaixa("Objetivos de aprendizagem") +
+      mslLinha(mslLista(c.objectives) +
+        (A(c.specificObjectives).length ? '<div class="msl-sub">Específicos</div>' + mslLista(c.specificObjectives) : "")) +
+    mslFaixa("Metodologias", true) +
+      mslLinha(metodologias) +
+    (transversais ? mslFaixa("Temas Contemporâneos Transversais") + mslLinha(transversais) : "") +
+    (inter ? mslFaixa("Interdisciplinaridade", true) +
+      mslLinha('<ul class="msl-lista">' + inter + "</ul>") : "") +
+    mslFaixa("Recursos") +
+      mslLinha(recursos) +
+    mslFaixa("Avaliação", true) +
+      mslLinha(avaliacao) +
+    (aee ? mslFaixa("Atendimento Educacional Especializado (AEE)") + mslLinha(aee) : "") +
+    mslFaixa("Referências", true) +
+      mslLinha(mslLista(c.references)) +
+  "</tbody></table>";
+
+  var titulo = "PLANO MENSAL (" + String(pc.subject).toUpperCase() + ") " +
+    esc(String(pc.gradeLevel).replace("Ensino Fundamental II ", "").replace(/[()]/g, "")) +
+    " &ndash; " + esc(pc.month);
+
+  return '<div class="msl">' +
+    "<h1>" + titulo + "</h1>" +
+    ident + corpo +
+  "</div>";
 }
 
 function planDocxBlob(pl) {
