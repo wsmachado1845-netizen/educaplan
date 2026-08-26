@@ -111,8 +111,16 @@ body:not(.dark) {
 }
 h1,h2,h3,h4,.serif { font-family: var(--serif); letter-spacing: -.01em; }
 a { color: var(--acc); }
-.wrap { max-width: 1180px; margin: 0 auto; padding: 0 26px; width: 100%; }
-@media (max-width: 900px) { .wrap { padding: 0 16px; } }
+/* v6.2 — o quadro da página, igual em todas as telas.
+   Antes o Painel media 1040px e todas as outras 1180px: mudando de tela, o
+   conteúdo pulava de lugar e as margens não batiam. Pior no notebook, onde
+   um formulário de dois campos se esticava por 1180px e a linha de leitura
+   ficava larga demais para acompanhar com o olho.
+   Agora existe uma medida só, e ela vem de quanto texto cabe numa linha
+   confortável — não de quanto espaço a tela tem. */
+:root { --pagina: 1040px; --pagina-lado: 24px; }
+@media (max-width: 900px) { :root { --pagina-lado: 16px; } }
+.wrap { max-width: var(--pagina); margin: 0 auto; padding: 0 var(--pagina-lado); width: 100%; }
 ::selection { background: var(--acc3); color: var(--accInk); }
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 20px; }
@@ -143,7 +151,7 @@ a { color: var(--acc); }
 .snav:hover { background: var(--bg3); color: var(--t1); }
 .snav.active { background: var(--acc); color: #fff; }
 .snav.active .snav-ic { color: #fff; }
-.snav-ic { width: 23px; text-align: center; font-size: 17px; flex-shrink: 0; color: var(--acc); }
+.snav-ic { width: 23px; flex-shrink: 0; color: var(--acc); }
 .side-foot { margin-top: auto; padding: 12px 14px 0; border-top: 1px solid var(--border2); }
 .side-user { font-size: 11.5px; color: var(--t3); padding: 0 4px 9px; line-height: 1.45; }
 .side-user strong { color: var(--t1); font-size: 12.5px; display: block; }
@@ -477,6 +485,38 @@ body.exporting .noprint { display: none !important; }
   .msl-rub td, .msl-rub th { font-size: 11px; padding: 3px 4px; }
 }
 
+/* ── Cobertura em lista compacta (v6.2) ── */
+.cob-tit { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700;
+  color: var(--t3); margin: 18px 0 8px; letter-spacing: .01em; }
+.cob-tit span { font-size: 11px; font-weight: 800; color: var(--acc); background: var(--acc3);
+  border-radius: 99px; padding: 1px 8px; font-variant-numeric: tabular-nums; }
+.cob-lista { border: 1px solid var(--border2); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(20,40,70,.06); }
+.cob-item { display: grid; grid-template-columns: 1fr auto; align-items: center;
+  border-bottom: 1px solid var(--border2); background: var(--bg2); }
+.cob-item:last-child { border-bottom: none; }
+.cob-linha { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+  background: none; border: none; font-family: inherit; text-align: left;
+  padding: 9px 4px 9px 12px; cursor: pointer; min-width: 0; width: 100%; }
+.cob-item.ok { background: var(--grnBg); }
+.cob-cod { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px;
+  font-weight: 700; color: var(--acc); flex: none; }
+.cob-item.ok .cob-cod { color: var(--grn); }
+.cob-obj { font-size: 12.5px; color: var(--t1); font-weight: 600; min-width: 0; }
+.cob-meses { font-size: 10px; color: var(--t4); }
+.cob-usar { border: 1px solid var(--acc); background: none; color: var(--acc);
+  border-radius: 7px; font-family: inherit; font-size: 11px; font-weight: 700;
+  padding: 4px 11px; margin-right: 10px; cursor: pointer; flex: none; }
+.cob-usar:hover { background: var(--acc3); }
+.cob-desc { grid-column: 1 / -1; font-size: 11px; color: var(--t3); line-height: 1.55;
+  padding: 0 12px 10px; text-align: justify; }
+
+/* ── Conjunto de ícones (v6.2) ──
+   O SVG herda a cor do texto e alinha pelo centro óptico. Em botão, ele
+   nunca deve encolher quando o rótulo for comprido. */
+.ico { display: block; flex: none; }
+.snav-ic, .tab-ic { display: inline-flex; align-items: center; justify-content: center; }
+
 /* ── Escolha de habilidades (v5.4) ──
    O que o professor precisa decidir aqui é "uso esta ou não". Antes, cada
    resultado despejava a descrição inteira da BNCC — parágrafos de norma —
@@ -536,7 +576,7 @@ body.exporting .noprint { display: none !important; }
    profundidade vem da luz, não de bordas grossas. Tipografia sem serifa
    também nos títulos — em tela pequena a serifada cansa mais do que
    enfeita (o plano impresso continua serifado, lá ela tem função). */
-.pn-wrap { padding: 20px 16px 40px; max-width: 720px; }
+.pn-wrap { padding: 20px var(--pagina-lado) 40px; max-width: 720px; }
 .pn-card { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px;
   box-shadow: 0 1px 3px rgba(20,40,70,.06); padding: 15px 17px; margin-bottom: 12px; }
 
@@ -593,10 +633,10 @@ body.exporting .noprint { display: none !important; }
 .pn-tool:hover { box-shadow: 0 3px 10px rgba(20,40,70,.10); }
 .pn-tool-ic { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center;
   justify-content: center; font-size: 21px; line-height: 1; margin-bottom: 11px; }
-.ic-azul { background: var(--acc3); }
-.ic-verde { background: var(--grnBg); }
-.ic-ambar { background: var(--ambBg); }
-.ic-roxo { background: var(--roxBg); }
+.ic-azul  { background: var(--acc3);  color: var(--acc); }
+.ic-verde { background: var(--grnBg); color: var(--grn); }
+.ic-ambar { background: var(--ambBg); color: var(--amb); }
+.ic-roxo  { background: var(--roxBg);  color: var(--rox); }
 .pn-tool-tt { font-size: 13.5px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
 .pn-tool-ds { font-size: 11px; color: var(--t4); margin-top: 4px; line-height: 1.4; }
 
@@ -638,7 +678,7 @@ body.exporting .noprint { display: none !important; }
    esquerda leva o que se lê em sequência (métricas, matriz, retomada);
    a da direita fica com os atalhos, que são consulta rápida. */
 @media (min-width: 900px) {
-  .pn-wrap { max-width: 1040px; }
+  .pn-wrap { max-width: var(--pagina); }
   .pn-grid { display: grid; gap: 12px; align-items: start;
     grid-template-columns: 1.45fr 1fr;
     grid-template-areas: "pil too" "cob too" "rec too"; }
@@ -747,7 +787,7 @@ body.exporting .noprint { display: none !important; }
     color: var(--t4); font-size: 10px; font-weight: 700; letter-spacing: .2px;
     padding: 3px 1px; min-height: 48px; cursor: pointer; text-align: center; line-height: 1.2;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
-  .tab .tab-ic { font-size: 19px; line-height: 1; }
+  .tab .tab-ic { line-height: 1; }
   .tab.on { color: var(--acc); }
   /* Traço fino no topo da aba ativa: com ícones coloridos, só mudar a cor do
      texto ficava discreto demais para dizer "você está aqui". */
@@ -835,7 +875,7 @@ body.travado .topbar, body.travado footer, body.travado .side-ovl { display: non
 @media (max-width: 620px) { .cal-ic { display: none; } }
 
 /* Ícones do menu lateral no mesmo desenho dos atalhos do painel. */
-.snav-ic { font-size: 15px; }
+.snav-ic { width: 20px; }
 
 /* ── Indicadores do painel ──
    Cartões próprios com número, rótulo e ícone ilustrativo à direita. O ícone
@@ -1027,7 +1067,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 6.1 · 26/08/2026 · Brasão dentro do app agora é o ícone novo</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 6.2 · 26/08/2026 · Ícones desenhados, espaçamento igual em todas as telas</div>
     </footer>
   </div>
 </div>
@@ -1678,14 +1718,50 @@ function matrizPeriodoHtml(subject, grade, month) {
   "</div>";
 }
 
+/* ===========================================================
+   CONJUNTO DE ÍCONES (v6.2)
+   Até aqui a navegação usava emoji. Parecia prático, mas emoji não é
+   desenho: é caractere, e cada sistema desenha do seu jeito. No Windows a
+   casinha vinha em 3D, a medalha dourada, o ♿ num quadrado azul e o 📅
+   com o dia 17 gravado — nove ícones de famílias diferentes, sem relação
+   entre si. No Android eram outros nove.
+   Estes aqui são traço, não caractere: mesma espessura, mesmo raio de
+   canto, herdam a cor do texto e ficam idênticos em qualquer aparelho.
+   =========================================================== */
+var ICONES = {
+  painel:    '<path d="M3 10.2 12 3l9 7.2"/><path d="M5.6 9.1V20h12.8V9.1"/><path d="M9.7 20v-6.1h4.6V20"/>',
+  criar:     '<path d="M12 5v14"/><path d="M5 12h14"/>',
+  planos:    '<path d="M4 6.4A1.4 1.4 0 0 1 5.4 5h4l1.8 2.3h7.4A1.4 1.4 0 0 1 20 8.7v9.9A1.4 1.4 0 0 1 18.6 20H5.4A1.4 1.4 0 0 1 4 18.6Z"/><path d="M4 11.4h16"/>',
+  cobertura: '<circle cx="12" cy="9.4" r="5.2"/><path d="M9.6 13.9 8.4 21l3.6-2 3.6 2-1.2-7.1"/>',
+  registro:  '<rect x="5" y="4.2" width="14" height="16" rx="1.6"/><path d="M9 3.2h6v2.6H9Z"/><path d="M8.7 11h6.6"/><path d="M8.7 15h4.4"/>',
+  agenda:    '<rect x="4" y="5.4" width="16" height="14.4" rx="1.7"/><path d="M4 10h16"/><path d="M8.4 3.4v3.6"/><path d="M15.6 3.4v3.6"/><path d="M8.6 13.8h2"/><path d="M13.4 13.8h2"/>',
+  arquivo:   '<path d="M3.4 7.6h17.2v10.8A1.6 1.6 0 0 1 19 20H5A1.6 1.6 0 0 1 3.4 18.4Z"/><path d="M4.6 4.4h14.8l1.2 3.2H3.4Z"/><path d="M10 11.4h4"/>',
+  aee:       '<circle cx="12" cy="5.1" r="1.9"/><path d="M7.3 9.1h9.4"/><path d="M12 9.1v5.3"/><path d="M12 14.4 8.7 20"/><path d="M12 14.4 15.3 20"/>',
+  ajustes:   '<circle cx="12" cy="12" r="3.1"/><path d="M12 3.2v2.3M12 18.5v2.3M20.8 12h-2.3M5.5 12H3.2M18.2 5.8l-1.6 1.6M7.4 16.6l-1.6 1.6M18.2 18.2l-1.6-1.6M7.4 7.4 5.8 5.8"/>',
+  mais:      '<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>',
+  voltar:    '<path d="M15 5.5 8.5 12l6.5 6.5"/>'
+};
+
+/* Devolve o SVG do ícone. O tamanho vem por fora (CSS ou parâmetro), e a
+   cor é sempre a do texto ao redor — assim ele acompanha o tema claro e
+   escuro sem nenhuma regra extra. */
+function ico(nome, tamanho) {
+  var d = ICONES[nome];
+  if (!d) return "";
+  var t = tamanho || 20;
+  return '<svg class="ico" viewBox="0 0 24 24" width="' + t + '" height="' + t + '" ' +
+    'fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" ' +
+    'stroke-linejoin="round" aria-hidden="true" focusable="false">' + d + "</svg>";
+}
+
 /* Mesmos icones do painel e do menu, para o atalho ser reconhecido pelo
    desenho em qualquer lugar do app. */
 var NAV_ITEMS = [
-  { id:"home",     label:"Painel Principal",     short:"Painel",   icon:"🏠" },
-  { id:"gen",      label:"Criar Planejamento",   short:"Criar",    icon:"📝" },
-  { id:"plans",    label:"HistÃ³rico de Planos",  short:"Planos",   icon:"🗂️" },
-  { id:"diario",   label:"Registro de Aulas",    short:"Registro", icon:"📋" },
-  { id:"settings", label:"Ajustes & Mais",       short:"Ajustes",  icon:"⚙️" }
+  { id:"home",     label:"Painel Principal",     short:"Painel",   icon:"painel" },
+  { id:"gen",      label:"Criar Planejamento",   short:"Criar",    icon:"criar" },
+  { id:"plans",    label:"HistÃ³rico de Planos",  short:"Planos",   icon:"planos" },
+  { id:"diario",   label:"Registro de Aulas",    short:"Registro", icon:"registro" },
+  { id:"settings", label:"Ajustes & Mais",       short:"Ajustes",  icon:"ajustes" }
 ];
 
 var DEFAULT_CONFIG = {
@@ -2966,9 +3042,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "6.1";
+var APP_VERSAO = "6.2";
 var APP_VERSAO_DATA = "26/08/2026";
-var APP_VERSAO_NOTA = "Brasão dentro do app agora é o ícone novo";
+var APP_VERSAO_NOTA = "Ícones desenhados, espaçamento igual em todas as telas";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -9720,15 +9796,15 @@ function viewHome() {
   /* ---- 4. Atalhos exclusivos (o que não está na barra de baixo) ---- */
   var atalho = function(id, icone, titulo, desc, classe) {
     return '<div class="pn-tool" onclick="go(\'' + id + '\')">' +
-      '<div class="pn-tool-ic ' + classe + '">' + icone + "</div>" +
+      '<div class="pn-tool-ic ' + classe + '">' + ico(icone, 22) + "</div>" +
       '<div class="pn-tool-tt">' + titulo + "</div>" +
       '<div class="pn-tool-ds">' + desc + "</div></div>";
   };
   var ferramentas = '<div class="pn-tools">' +
-    atalho("cobertura", "🏅", "Cobertura BNCC", "Habilidades j&aacute; trabalhadas", "ic-azul") +
-    atalho("aee", "♿", "Hub AEE", "Estrat&eacute;gias de inclus&atilde;o", "ic-verde") +
-    atalho("archive", "🗃️", "Arquivo Bimestral", "Planos por bimestre", "ic-ambar") +
-    atalho("plans", "🗂️", "Hist&oacute;rico de Planos", "Tudo que voc&ecirc; salvou", "ic-roxo") +
+    atalho("cobertura", "cobertura", "Cobertura BNCC", "Habilidades j&aacute; trabalhadas", "ic-azul") +
+    atalho("aee", "aee", "Hub AEE", "Estrat&eacute;gias de inclus&atilde;o", "ic-verde") +
+    atalho("archive", "arquivo", "Arquivo Bimestral", "Planos por bimestre", "ic-ambar") +
+    atalho("plans", "planos", "Hist&oacute;rico de Planos", "Tudo que voc&ecirc; salvou", "ic-roxo") +
   "</div>";
 
   /* ---- 5. Retomar o trabalho, com abas ---- */
@@ -10628,6 +10704,11 @@ function viewDiario() {
    faltam — usando dados que o app já guarda (nenhum dado novo precisa ser
    digitado). Pedido pelo professor após perceber que 7º/8º ano pareciam
    "mais vazios" que o 9º ano na hora de escolher habilidades. */
+function cobAlternar(code) {
+  if (!state.cobDesc) state.cobDesc = {};
+  state.cobDesc[code] = !state.cobDesc[code];
+  render();
+}
 function setCoberturaSubject(v) { state.covSubject = v; render(); }
 function setCoberturaGrade(v) { state.covGrade = v; render(); }
 
@@ -10672,27 +10753,37 @@ function viewCobertura() {
   var subjList = (state.cfg.preferredSubjects && state.cfg.preferredSubjects.length) ? state.cfg.preferredSubjects : SUBJECTS;
   var gradeList = (state.cfg.preferredGrades && state.cfg.preferredGrades.length) ? state.cfg.preferredGrades : GRADES;
 
+  /* v6.2 — antes cada habilidade era um cartão com a descrição inteira da
+     BNCC e um botão de linha cheia. Com 64 habilidades, a tela passava de
+     9.900 pixels no celular: dez telas de rolagem para uma lista de
+     conferência. Agora é uma linha por habilidade — código, assunto e, nas
+     pendentes, um botão pequeno à direita. A descrição completa abre ao
+     tocar na linha, como no quadro da matriz. */
   function skillCard(s, feita) {
     var uses = d.used[s.code];
     var mesesSet = {}, meses = [];
     if (uses) uses.forEach(function(u){ if (u.month && !mesesSet[u.month]) { mesesSet[u.month] = 1; meses.push(u.month); } });
-    return '<div class="card-soft" style="padding:9px 11px;margin-bottom:7px;border-left:3px solid ' + (feita ? "var(--grn)" : "#ccc") + '">' +
-      '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">' +
-        '<span style="font-weight:700;color:var(--acc);font-size:11.5px">' + esc(s.code) + "</span>" +
-        '<span class="badge' + (feita ? "" : " badge-mute") + '" style="font-size:9px' + (feita ? ";background:var(--grn);color:#fff;border-color:var(--grn)" : "") + '">' +
-          (feita ? "Trabalhada" + (uses && uses.length > 1 ? " (" + uses.length + "x)" : "") : "Pendente") + "</span>" +
-      "</div>" +
-      '<div style="font-size:11.5px;margin-top:3px;font-weight:600">' + esc(s.objeto) + "</div>" +
-      '<div style="font-size:10px;color:var(--t4);margin-top:2px">' + esc(s.description) + "</div>" +
-      (feita
-        ? '<div style="font-size:10px;color:var(--t4);margin-top:3px">Trabalhada em: ' + esc(meses.join(", ")) + "</div>"
-        : '<button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="goGenWithSkill(\'' +
-          subject.replace(/'/g,"\\'") + "','" + grade.replace(/'/g,"\\'") + "','" + s.code.replace(/'/g,"\\'") +
-          '\')">Usar num plano novo</button>') +
+    var aberta = !!(state.cobDesc && state.cobDesc[s.code]);
+    var cod = String(s.code).replace(/'/g, "\\'");
+    return '<div class="cob-item' + (feita ? " ok" : "") + '">' +
+      '<button class="cob-linha" onclick="cobAlternar(\'' + cod + '\')" ' +
+        'title="Ler a descrição completa">' +
+        '<span class="cob-cod">' + esc(s.code) + "</span>" +
+        '<span class="cob-obj">' + esc(resumirObjeto(s.objeto || s.code, 52) || s.code) + "</span>" +
+        (feita
+          ? '<span class="cob-meses">' + esc(meses.join(", ") || "trabalhada") +
+            (uses && uses.length > 1 ? " (" + uses.length + "x)" : "") + "</span>"
+          : "") +
+      "</button>" +
+      (feita ? "" :
+        '<button class="cob-usar" onclick="goGenWithSkill(\'' +
+          subject.replace(/'/g,"\\'") + "','" + grade.replace(/'/g,"\\'") + "','" + cod +
+          '\')" title="Criar um plano com esta habilidade">Usar</button>') +
+      (aberta ? '<div class="cob-desc">' + esc(s.description) + "</div>" : "") +
     "</div>";
   }
 
-  return '<div class="wrap fade" style="padding:34px 18px 56px">' +
+  return '<div class="wrap fade" style="padding:34px 0 56px">' +
     pageHead("Cobertura Curricular BNCC",
       "Veja quais habilidades j&aacute; foram trabalhadas ao longo do ano e quais ainda faltam, por turma e disciplina.",
       "home") +
@@ -10713,12 +10804,12 @@ function viewCobertura() {
       (total === 0 ? '<div style="font-size:11.5px;color:var(--t4);margin-top:8px">Nenhuma habilidade cadastrada para esta combina&ccedil;&atilde;o de disciplina e turma.</div>' : "") +
     "</div>" +
     (d.pendentes.length
-      ? '<div style="font-size:13px;font-weight:700;color:var(--t2);margin-bottom:8px">Ainda faltam trabalhar (' + d.pendentes.length + ")</div>" +
-        d.pendentes.map(function(s){ return skillCard(s, false); }).join("") + '<div style="height:14px"></div>'
+      ? '<div class="cob-tit">Ainda faltam trabalhar <span>' + d.pendentes.length + "</span></div>" +
+        '<div class="cob-lista">' + d.pendentes.map(function(s){ return skillCard(s, false); }).join("") + "</div>"
       : "") +
     (d.trabalhadas.length
-      ? '<div style="font-size:13px;font-weight:700;color:var(--t2);margin:14px 0 8px">J&aacute; trabalhadas (' + d.trabalhadas.length + ")</div>" +
-        d.trabalhadas.map(function(s){ return skillCard(s, true); }).join("")
+      ? '<div class="cob-tit">J&aacute; trabalhadas <span>' + d.trabalhadas.length + "</span></div>" +
+        '<div class="cob-lista">' + d.trabalhadas.map(function(s){ return skillCard(s, true); }).join("") + "</div>"
       : "") +
   "</div>";
 }
@@ -12660,11 +12751,11 @@ function setTheme(id) {
 /* Barra inferior (v3.9) — só no celular. "Mais" abre o mesmo menu lateral,
    então nada do app deixa de ser alcançável. */
 var TABBAR = [
-  { id:"home",   label:"Painel",   icon:"🏠" },
-  { id:"diario", label:"Registro", icon:"📋" },
-  { id:"gen",    label:"Criar",    icon:"＋", meio:true },
-  { id:"agenda", label:"Agenda",   icon:"📅" },
-  { id:"mais",   label:"Mais",     icon:"☰" }
+  { id:"home",   label:"Painel",   icon:"painel" },
+  { id:"diario", label:"Registro", icon:"registro" },
+  { id:"gen",    label:"Criar",    icon:"criar", meio:true },
+  { id:"agenda", label:"Agenda",   icon:"agenda" },
+  { id:"mais",   label:"Mais",     icon:"mais" }
 ];
 /* Qual botão fica aceso em cada tela. As telas que não estão na barra
    (Ajustes, AEE, Arquivo, Cobertura) acendem "Mais", que é por onde se chega
@@ -12696,7 +12787,7 @@ function renderTabbar() {
     var on = atual === b.id;
     return '<button class="tab' + (b.meio ? " tab-mid" : "") + (on ? " on" : "") +
       '" onclick="tabIr(\'' + b.id + '\')" aria-label="' + b.label + '">' +
-      '<span class="tab-ic">' + b.icon + "</span><span>" + b.label + "</span></button>";
+      '<span class="tab-ic">' + ico(b.icon, b.meio ? 24 : 21) + "</span><span>" + b.label + "</span></button>";
   }).join("");
 }
 
@@ -12717,19 +12808,19 @@ function marcaNome(tamanho) {
 
 var SIDE_MENU = [
   { group:"Planejamento", items:[
-    { id:"home",   label:"Painel Principal",  icon:"🏠" },
-    { id:"gen",    label:"Criar Planejamento", icon:"📝" },
-    { id:"plans",  label:"Hist&oacute;rico de Planos", icon:"🗂️" },
-    { id:"cobertura", label:"Cobertura BNCC", icon:"🏅" }
+    { id:"home",   label:"Painel Principal",  icon:"painel" },
+    { id:"gen",    label:"Criar Planejamento", icon:"criar" },
+    { id:"plans",  label:"Hist&oacute;rico de Planos", icon:"planos" },
+    { id:"cobertura", label:"Cobertura BNCC", icon:"cobertura" }
   ]},
   { group:"Rotina Escolar", items:[
-    { id:"diario", label:"Registro de Aulas", icon:"📋" },
-    { id:"agenda", label:"Agenda Letiva",     icon:"📅" },
-    { id:"archive",label:"Arquivo Bimestral", icon:"🗃️" }
+    { id:"diario", label:"Registro de Aulas", icon:"registro" },
+    { id:"agenda", label:"Agenda Letiva",     icon:"agenda" },
+    { id:"archive",label:"Arquivo Bimestral", icon:"arquivo" }
   ]},
   { group:"Apoio", items:[
-    { id:"aee",      label:"Hub AEE",       icon:"♿" },
-    { id:"settings", label:"Ajustes &amp; Mais", icon:"⚙️" }
+    { id:"aee",      label:"Hub AEE",       icon:"aee" },
+    { id:"settings", label:"Ajustes &amp; Mais", icon:"ajustes" }
   ]}
 ];
 
@@ -12751,7 +12842,7 @@ function renderSide() {
     g.items.forEach(function(it) {
       var on = state.view === it.id || (state.view === "plan" && it.id === "plans");
       html += '<div class="snav' + (on ? " active" : "") + '" onclick="go(\'' + it.id + '\');closeSide()">' +
-        '<span class="snav-ic">' + it.icon + "</span><span>" + it.label + "</span></div>";
+        '<span class="snav-ic">' + ico(it.icon, 19) + "</span><span>" + it.label + "</span></div>";
     });
   });
 
