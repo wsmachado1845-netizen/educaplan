@@ -1091,6 +1091,35 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
   p, li, .sec-body div { orphans: 3; widows: 3; }
   /* Só blocos pequenos permanecem inteiros */
   tr, .card-soft { break-inside: avoid; page-break-inside: avoid; }
+
+  /* v6.6 — no modelo de Santa Luzia cada seção é UMA linha de tabela. Com a
+     regra acima, uma seção longa (Habilidades, Metodologias, Avaliação) que
+     não coubesse no resto da página pulava inteira para a próxima, deixando
+     um terço ou metade da folha em branco. Medi um plano de 11 páginas:
+     cinco delas com 33% a 48% do rodapé vazio.
+     Aqui a seção volta a poder atravessar a quebra de página, e o texto
+     desce até o fim da folha como em qualquer documento. */
+  .msl-corpo, .msl-corpo tbody, .msl-corpo tr, .msl-corpo td {
+    break-inside: auto !important; page-break-inside: auto !important;
+  }
+  /* A faixa azul nunca fica sozinha no pé da página, separada do que anuncia. */
+  .msl-faixa, .msl-faixa td {
+    break-inside: avoid !important; page-break-inside: avoid !important;
+    break-after: avoid-page !important; page-break-after: avoid !important;
+  }
+  /* O cabeçalho de identificação é curto: sai inteiro, na primeira página. */
+  .msl-id, .msl-id tr, .msl-id td {
+    break-inside: avoid !important; page-break-inside: avoid !important;
+  }
+  /* Dentro da seção, o que não deve rachar ao meio. */
+  .msl-etapa, .msl-sub, .msl-lista li, .msl-rub tr {
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  .msl-sub { break-after: avoid-page; page-break-after: avoid; }
+  /* Margem igual nos quatro lados, e o papel sem recuo próprio: quem define
+     a margem é a página, não o cartão. */
+  .msl { padding: 0 !important; }
+  #planPaper { padding: 0 !important; margin: 0 !important; }
   /* Tabela pode quebrar, repetindo o cabeçalho na página seguinte */
   table { break-inside: auto; page-break-inside: auto; }
   thead { display: table-header-group; }
@@ -1098,7 +1127,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
   table.tb { font-size: 9pt !important; }
   img { break-inside: avoid; max-height: 62mm; object-fit: cover; }
 
-  @page { size: A4; margin: 15mm 14mm; }
+  @page { size: A4; margin: 15mm; }
 }
 </style>
 </head>
@@ -1121,7 +1150,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     <footer class="noprint" style="border-top:1px solid var(--border);padding:18px;margin-top:36px;
       text-align:center;font-size:11px;color:var(--t4)">
       EducaPlan BNCC — planejamento pedagógico com apoio do Claude (Anthropic).
-      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 6.5 · 26/08/2026 · Plano justificado e sem etiquetas no topo</div>
+      <div id="rodapeVersao" style="margin-top:5px;font-size:10.5px;letter-spacing:.03em">Versão 6.7 · 26/08/2026 · Metodologia enxuta, sem repetição</div>
     </footer>
   </div>
 </div>
@@ -3123,9 +3152,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "6.5";
+var APP_VERSAO = "6.7";
 var APP_VERSAO_DATA = "26/08/2026";
-var APP_VERSAO_NOTA = "Plano justificado e sem etiquetas no topo";
+var APP_VERSAO_NOTA = "Metodologia enxuta, sem repetição";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -7853,7 +7882,15 @@ function generateLocal(cfg) {
     ratios.push(0.14);
     var mm = splitMinutes(total, ratios);
 
-    var listaConteudos = contents.map(function(c){ return c.text; }).join("; ");
+    /* v6.7 — a lista completa dos conteúdos entrava por extenso na abertura E
+       no fechamento. Com oito conteúdos, os mesmos oito nomes apareciam duas
+       vezes, ocupando meia página cada — e eles já estão listados, um a um,
+       na seção Objetos de conhecimento e nos títulos das próprias etapas.
+       Até três conteúdos, a lista continua por extenso: ali ela ajuda. Acima
+       disso, vira referência curta. */
+    var listaConteudos = contents.length <= 3
+      ? contents.map(function(c){ return c.text; }).join("; ")
+      : "os " + contents.length + " conteúdos do mês";
     var aberturas = [
       "Apresentação da pauta com os conteúdos que serão trabalhados de forma distinta: " + listaConteudos +
         ". O professor sonda o que a turma já sabe de cada um separadamente, registrando no quadro em colunas, " +
@@ -7901,8 +7938,19 @@ function generateLocal(cfg) {
         core = passos[idx];
       }
       var hab = ct.skills[0] ? ct.skills[0].code : "prevista";
-      var fecho = _variar(FECHOS_BLOCO, semBloco)
-        .replace("{C}", ct.text).replace("{H}", hab);
+      /* v6.7 — enxugada na metodologia.
+         O título da etapa já diz qual é o conteúdo, e a seção Habilidades já
+         lista o código. Repetir "Este bloco trata exclusivamente de X,
+         articulado à habilidade Y" em cada uma das dez etapas era papel
+         gasto com o que o leitor acabou de ler. Num plano de dez conteúdos
+         essa frase saía dez vezes, e a de "o professor circula identificando
+         as dúvidas" também.
+         Agora o fecho só aparece quando há POUCOS conteúdos (até três), que
+         é quando ele de fato esclarece o recorte. Com muitos, some. */
+      var poucos = contents.length <= 3;
+      var fecho = poucos
+        ? " " + _variar(FECHOS_BLOCO, semBloco).replace("{C}", ct.text).replace("{H}", hab)
+        : "";
       var generico = _variar(BLOCOS_GENERICOS, semBloco).replace("{C}", ct.text);
       methodology.push({
         order: i + 2,
@@ -7910,8 +7958,8 @@ function generateLocal(cfg) {
         minutes: mm[i + 1],
         organization: _variar(ORGANIZACOES_BLOCO, semBloco + i),
         description: core
-          ? fill(core[1], ct.text) + " " + fecho
-          : generico + " O professor circula identificando as dúvidas próprias deste conteúdo."
+          ? fill(core[1], ct.text) + fecho
+          : generico + (poucos ? " O professor circula identificando as dúvidas próprias deste conteúdo." : "")
       });
     });
 
@@ -12183,7 +12231,7 @@ function exportCss() {
   var line = "#D7E3EE";
   var soft = "#F5F8FC";
   var head = "#EAF1F8";
-  return "@page{size:A4;margin:15mm 14mm}" +
+  return "@page{size:A4;margin:15mm}" +
     /* O Word recebe o HTML da tela; se o professor exportar pelo celular, a
        tela está no formato empilhado. Aqui o documento volta ao formato de
        tabela, que é o que a escola espera no papel. */
