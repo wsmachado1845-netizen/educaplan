@@ -3019,7 +3019,11 @@ function getSaeb(subject, theme) {
 /* Três Eixos da Computação (BNCC — Computação na Educação Básica) */
 function computacaoEixos(subject, theme) {
   return [
-    { eixo:"Pensamento Computacional", desc:'Decompor o desafio de "' + theme + '" em etapas menores e descrever a sequência de passos usada para resolvê-lo.' },
+    /* v6.9 — o tema entra na forma curta: escrito por extenso aqui, ele
+       repetia pela quarta vez a mesma lista já dada no alto do plano. */
+    { eixo:"Pensamento Computacional", desc:"Decompor o desafio de " +
+      (typeof temaCurto === "function" ? temaCurto(theme) : theme) +
+      " em etapas menores e descrever a sequência de passos usada para resolvê-lo." },
     { eixo:"Cultura Digital", desc:"Utilizar recursos digitais de forma crítica e ética na busca, verificação e organização das informações do tema." },
     { eixo:"Mundo Digital", desc:"Reconhecer como as informações são representadas e compartilhadas em meios digitais durante o registro da atividade." }
   ];
@@ -3201,9 +3205,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "6.8";
+var APP_VERSAO = "6.9";
 var APP_VERSAO_DATA = "28/08/2026";
-var APP_VERSAO_NOTA = "Timbre da rede com brasão no alto do plano";
+var APP_VERSAO_NOTA = "Recursos oficiais, plano sem repetição e botão Refinar";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -7798,8 +7802,63 @@ var ORGANIZACOES_BLOCO = [
   "Coletiva na abertura e em duplas na prática."
 ];
 
+/* Forma curta do tema (v6.9).
+   O tema de um plano mensal é uma lista: "O tema de um texto; Fato e
+   opinião; Coesão referencial". Escrever essa lista inteira em cada seção
+   — contexto, justificativa, objetivos, competências, tarefa de casa —
+   enche o plano de repetição sem acrescentar informação: quem lê já viu a
+   lista no alto da página. A lista completa aparece uma vez, no contexto;
+   nas outras seções entra esta forma curta. */
+function temaCurto(theme) {
+  var itens = String(theme || "").split(/\s*;\s*/).map(function(x){ return x.trim(); }).filter(Boolean);
+  if (itens.length <= 1) return itens[0] || String(theme || "");
+  if (itens.length === 2) return itens[0] + " e " + itens[1];
+  return itens[0] + " e mais " + (itens.length - 1) + " conteúdos do mês";
+}
+
+/* Verbo que abre o objetivo específico de cada eixo — "mobilizar EF09LP01
+   a partir de X" repetido linha após linha não diz o que o aluno faz. */
+var VERBO_DO_EIXO = [
+  [/leitura/i,        "Ler e interpretar"],
+  [/escrita|produ/i,  "Produzir e revisar"],
+  [/oralidade|oral/i, "Falar e escutar em situações planejadas"],
+  [/an[áa]lise/i,     "Analisar e aplicar na própria escrita"],
+  [/computacional/i,  "Resolver por etapas"],
+  [/digital/i,        "Usar com critério os recursos digitais"],
+  [/acerta|saeb/i,    "Cumprir as missões previstas"]
+];
+function verboDoEixo(eixo) {
+  for (var i = 0; i < VERBO_DO_EIXO.length; i++) {
+    if (VERBO_DO_EIXO[i][0].test(String(eixo || ""))) return VERBO_DO_EIXO[i][1];
+  }
+  return "Trabalhar";
+}
+
+/* Um objetivo específico por EIXO, e não um por habilidade. Com oito
+   habilidades no mesmo eixo saíam oito linhas com a mesma redação e só o
+   código mudando. */
+function objetivosPorEixo(knowledgeObjects) {
+  var ordem = [], grupos = {};
+  A(knowledgeObjects).forEach(function(k) {
+    var eixo = String(k.axis || "geral").trim();
+    if (!grupos[eixo]) { grupos[eixo] = { conteudos: [], codigos: [] }; ordem.push(eixo); }
+    var g = grupos[eixo];
+    if (k.content && g.conteudos.indexOf(k.content) < 0) g.conteudos.push(k.content);
+    A(k.codes).forEach(function(c) { if (c && g.codigos.indexOf(c) < 0) g.codigos.push(c); });
+  });
+  return ordem.map(function(eixo) {
+    var g = grupos[eixo];
+    var lista = g.conteudos.length > 3
+      ? g.conteudos.slice(0, 3).join("; ") + " e mais " + (g.conteudos.length - 3)
+      : g.conteudos.join("; ");
+    return eixo.charAt(0).toUpperCase() + eixo.slice(1) + " — " + verboDoEixo(eixo).toLowerCase() +
+      ": " + lista + (g.codigos.length ? " (" + g.codigos.join(", ") + ")." : ".");
+  });
+}
+
 function generateLocal(cfg) {
   var theme = String(cfg.theme || "").trim() || "Conteúdo curricular";
+  var temaBreve = temaCurto(theme);
   /* Semente do plano: muda a cada mês e a cada turma, mas é sempre a mesma
      para a mesma combinação — o plano não muda sozinho ao ser reaberto. */
   var _sem = _semente(String(cfg.month) + "|" + String(cfg.gradeLevel) + "|" + String(cfg.subject));
@@ -7954,18 +8013,22 @@ function generateLocal(cfg) {
       "Sondagem por escrito: cada estudante anota, em três linhas separadas, o que sabe sobre " + listaConteudos + ". " +
         "O professor recolhe uma amostra e comenta oralmente as concepções mais frequentes antes de iniciar."
     ];
+    /* v6.9 — o fechamento não repete a lista dos conteúdos. A abertura já a
+       enuncia, e cada etapa do meio leva o nome do seu conteúdo no título:
+       escrevê-la uma terceira vez, no último parágrafo, era a repetição que
+       mais pesava na leitura do plano. */
     var fechamentos = [
-      "Cada estudante registra, em linhas separadas, uma conclusão para cada conteúdo trabalhado (" + listaConteudos +
-        "), além de uma dúvida remanescente. O registro discriminado permite ao professor identificar em qual conteúdo " +
-        "específico houve menor compreensão.",
-      "Fechamento em bilhete de saída: uma frase por conteúdo (" + listaConteudos + ") explicando o que ficou claro, " +
-        "e uma última linha com o que ainda gera dúvida. O professor recolhe e usa como pauta da retomada.",
+      "Cada estudante registra, em linhas separadas, uma conclusão para cada conteúdo trabalhado, além de uma dúvida " +
+        "remanescente. O registro discriminado permite ao professor identificar em qual conteúdo específico houve " +
+        "menor compreensão.",
+      "Fechamento em bilhete de saída: uma frase por conteúdo explicando o que ficou claro, e uma última linha com o " +
+        "que ainda gera dúvida. O professor recolhe e usa como pauta da retomada.",
       "A turma retoma o quadro da sondagem inicial e confronta o que havia registrado com o que aprendeu em cada " +
-        "conteúdo (" + listaConteudos + "). Cada estudante anota no caderno a mudança que percebeu no próprio entendimento.",
-      "Síntese em duplas: os estudantes explicam um ao outro, conteúdo por conteúdo (" + listaConteudos + "), o que " +
-        "entenderam. Em seguida, cada um registra individualmente a explicação do colega que achou mais clara.",
-      "Cada estudante monta um quadro com uma coluna por conteúdo (" + listaConteudos + "), preenchendo com o conceito " +
-        "central e um exemplo próprio. As colunas separadas evidenciam o que pertence a cada assunto."
+        "conteúdo. Cada estudante anota no caderno a mudança que percebeu no próprio entendimento.",
+      "Síntese em duplas: os estudantes explicam um ao outro, conteúdo por conteúdo, o que entenderam. Em seguida, " +
+        "cada um registra individualmente a explicação do colega que achou mais clara.",
+      "Cada estudante monta um quadro com uma coluna por conteúdo, preenchendo com o conceito central e um exemplo " +
+        "próprio. As colunas separadas evidenciam o que pertence a cada assunto."
     ];
 
     methodology = [{
@@ -8268,17 +8331,17 @@ function generateLocal(cfg) {
       ", partindo dos conhecimentos prévios da turma para chegar à produção autônoma dos estudantes." +
       (CALENDAR.meses[cfg.month] ? " O mês de referência conta com " + CALENDAR.meses[cfg.month].diasLetivos +
         " dias letivos previstos no calendário (" + (CALENDAR.meses[cfg.month].periodo || "período não letivo") + ")." : ""),
-    justification: 'O trabalho com "' + theme + '" justifica-se por sua função estruturante no percurso de ' +
+    justification: "Esse conjunto justifica-se por sua função estruturante no percurso de " +
       cfg.gradeLevel + ": consolida aprendizagens anteriores e cria as condições para os conteúdos subsequentes. " +
       "A sequência adota progressão do apoio à autonomia — modelagem pelo professor, prática mediada em duplas e produção individual — " +
       "de modo que a mediação seja retirada gradualmente conforme o domínio se consolida." +
       (cfg.extraDetails ? " Considerações informadas para esta turma: " + cfg.extraDetails : ""),
     generalCompetency: getGeneralCompetency(cfg.subject),
     specificCompetencies: [
-      prof ? "Mobilizar " + prof.focus + ' no trabalho com "' + theme + '", conforme previsto para ' + cfg.gradeLevel + "."
-        : isEng ? 'Compreender o inglês em situações reais de uso, identificando marcas de intencionalidade ligadas a "' + theme + '".'
-        : isLetras ? 'Analisar a função estrutural e expressiva dos recursos linguísticos mobilizados em "' + theme + '".'
-        : 'Mapear e relacionar os conceitos constitutivos do tema "' + theme + '" em situações-problema.',
+      prof ? "Mobilizar " + prof.focus + ", conforme previsto para " + cfg.gradeLevel + "."
+        : isEng ? "Compreender o inglês em situações reais de uso, identificando as marcas de intencionalidade dos textos trabalhados."
+        : isLetras ? "Analisar a função estrutural e expressiva dos recursos linguísticos deste conjunto de conteúdos."
+        : "Mapear e relacionar os conceitos de " + temaBreve + " em situações-problema.",
       prof ? "Aplicar " + prof.focus + " em situações novas, com autonomia crescente e sem depender do modelo do professor."
            : "Desenvolver postura crítica e reflexiva, sustentando afirmações com evidências e procedimentos validados.",
       "Expressar-se de forma argumentada e respeitosa, empregando o vocabulário próprio do componente curricular."
@@ -8292,13 +8355,14 @@ function generateLocal(cfg) {
     saebDescriptors: getSaeb(cfg.subject, theme).map(function(d){ return { code:d[0], description:d[1] }; }),
     olimpiada: olimp,
     objectives: [
-      'Compreender a estrutura conceitual de "' + theme + '", em alinhamento às habilidades ' + codes + " da BNCC.",
+      (multi
+        ? "Compreender a estrutura conceitual dos " + contents.length + " conteúdos previstos para " + cfg.month +
+          ", distinguindo o que é próprio de cada um."
+        : "Compreender a estrutura conceitual de " + temaBreve + ", reconhecendo onde ela se aplica."),
       "Aplicar o conteúdo estudado na resolução de tarefas graduadas, com autonomia crescente.",
       "Justificar oralmente e por escrito as escolhas feitas durante as atividades."
     ],
-    specificObjectives: knowledgeObjects.map(function(k) {
-      return "No eixo de " + String(k.axis).toLowerCase() + ": mobilizar " + k.codes[0] + " a partir de " + k.content + ".";
-    }),
+    specificObjectives: objetivosPorEixo(knowledgeObjects),
     methodology: methodology,
     lessonSequence: lessonSequence,
     activities: activities,
@@ -8313,7 +8377,7 @@ function generateLocal(cfg) {
         }).join("  ")
       : prof ? prof.homework : (isLetras
       ? "Selecionar um texto do gênero estudado em circulação real (jornal, rede social, livro) e registrar duas características que o identificam como pertencente a esse gênero."
-      : 'Registrar no caderno uma situação do cotidiano em que o conteúdo de "' + theme + '" é aplicado, explicando de que forma.'),
+      : "Registrar no caderno uma situação do cotidiano em que " + temaBreve + " aparece, explicando de que forma."),
     contentProfile: prof ? { id:prof.id, label:prof.label, focus:prof.focus } : null,
     bnccSource: "Códigos e habilidades conforme a Base Nacional Comum Curricular (BRASIL. MEC, 2018). " +
       "Seleção feita por aderência ao conteúdo informado; recomenda-se conferir o texto integral da habilidade " +
@@ -8970,6 +9034,25 @@ var RECURSOS_MUNICIPIO = [
 ];
 var RECURSO_ACERTA_BRASIL = "Livro Acerta Brasil";
 
+/* Referências oficiais por componente e ano (v6.9).
+   Estava escrito dentro de viewPlanOficial, uma tela que hoje não é mais
+   chamada — por isso o plano do professor saía com a bibliografia genérica
+   que o gerador monta, e não com os livros que a rede realmente adotou.
+   Aqui a regra virou função, para o modelo de Santa Luzia usar também:
+   Português do 9º ano tem a lista da SEMED (Acerta Brasil e A Conquista);
+   Inglês do 6º ao 9º tem a da Coordenação de Língua Inglesa (Joy Starter e
+   a matriz municipal); o resto mantém o que foi gerado, sempre com o
+   documento curricular do Maranhão ao final. */
+function referenciasDoPlano(pc, geradas) {
+  var assunto = String(pc && pc.subject || "").toLowerCase();
+  var ano = String(pc && pc.gradeLevel || "");
+  if (assunto.indexOf("ingl") >= 0) return LI_REFERENCIAS.slice();
+  if (assunto.indexOf("portug") >= 0 && ano.indexOf("9º") >= 0) return LP_REFERENCIAS_9ANO.slice();
+  var lista = A(geradas).filter(Boolean);
+  if (lista.indexOf(REFERENCIAS_MARANHAO) < 0) lista = lista.concat([REFERENCIAS_MARANHAO]);
+  return lista;
+}
+
 /* Junta a lista oficial do município com os recursos que o plano gerou,
    descartando repetições (compara sem acento, sem maiúscula e sem pontuação). */
 function recursosDoPlano(pc, gerados) {
@@ -9023,10 +9106,18 @@ function _juntarRecursos(base, gerados) {
     var txt = String(item || "").trim();
     if (txt) saida.push(txt);
   });
+  /* v6.9 — teto nos recursos gerados. O formulário da rede traz meia dúzia
+     de itens; o gerador acrescentava mais doze ("cronômetro para o debate",
+     "marca-texto ou lápis de cor") e o campo Recursos virava a seção mais
+     longa do plano. Ficam os seis primeiros, que são os mais específicos do
+     conteúdo do mês — o resto é material de sala que a lista oficial já
+     cobre por dentro. */
+  var extras = 0;
   A(gerados).forEach(function(item) {
     var txt = String(item || "").trim();
-    if (!txt || repetido(txt, saida)) return;
+    if (!txt || extras >= 6 || repetido(txt, saida)) return;
     saida.push(txt);
+    extras++;
   });
   return saida;
 }
@@ -9367,6 +9458,11 @@ function viewPlanAnosIniciais(pl, c, pc, cfg) {
     '<button class="btn btn-ghost btn-sm" onclick="go(\'' + (state.activeSaved ? "plans" : "gen") + '\')">&larr; Voltar</button>' +
     "<div style='display:flex;gap:7px;flex-wrap:wrap'>" +
       (state.activeSaved ? "" : '<button class="btn btn-primary btn-sm" onclick="savePlan()">Salvar no Hist&oacute;rico</button>') +
+      /* v6.9 — Refinar reescreve o plano com as regras mais recentes do
+         gerador e tira o que ficou repetido entre as seções. Vale para o
+         plano recém-gerado e para os que já estão no histórico. */
+      '<button class="btn btn-outline btn-sm" title="Reescrever o texto deste plano sem repeti&ccedil;&atilde;o, mantendo as habilidades escolhidas" ' +
+        'onclick="refinarPlanoAtual()">&#10022; Refinar</button>' +
       '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / PDF</button>' +
       '<button class="btn btn-outline btn-sm" onclick="downloadDoc()">Baixar Word</button>' +
       '<button class="btn btn-outline btn-sm" title="' +
@@ -9614,6 +9710,11 @@ function viewPlanOficial(pl, c, pc, cfg) {
     '<button class="btn btn-ghost btn-sm" onclick="go(\'' + (state.activeSaved ? "plans" : "gen") + '\')">&larr; Voltar</button>' +
     "<div style='display:flex;gap:7px;flex-wrap:wrap'>" +
       (state.activeSaved ? "" : '<button class="btn btn-primary btn-sm" onclick="savePlan()">Salvar no Hist&oacute;rico</button>') +
+      /* v6.9 — Refinar reescreve o plano com as regras mais recentes do
+         gerador e tira o que ficou repetido entre as seções. Vale para o
+         plano recém-gerado e para os que já estão no histórico. */
+      '<button class="btn btn-outline btn-sm" title="Reescrever o texto deste plano sem repeti&ccedil;&atilde;o, mantendo as habilidades escolhidas" ' +
+        'onclick="refinarPlanoAtual()">&#10022; Refinar</button>' +
       '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / PDF</button>' +
       '<button class="btn btn-outline btn-sm" onclick="downloadDoc()">Baixar Word</button>' +
       '<button class="btn btn-outline btn-sm" title="' +
@@ -10376,6 +10477,11 @@ function viewPlan() {
     '<button class="btn btn-ghost btn-sm" onclick="go(\'' + (state.activeSaved ? "plans" : "gen") + '\')">&larr; Voltar</button>' +
     "<div style='display:flex;gap:7px;flex-wrap:wrap'>" +
       (state.activeSaved ? "" : '<button class="btn btn-primary btn-sm" onclick="savePlan()">Salvar no Hist&oacute;rico</button>') +
+      /* v6.9 — Refinar reescreve o plano com as regras mais recentes do
+         gerador e tira o que ficou repetido entre as seções. Vale para o
+         plano recém-gerado e para os que já estão no histórico. */
+      '<button class="btn btn-outline btn-sm" title="Reescrever o texto deste plano sem repeti&ccedil;&atilde;o, mantendo as habilidades escolhidas" ' +
+        'onclick="refinarPlanoAtual()">&#10022; Refinar</button>' +
       '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / PDF</button>' +
       '<button class="btn btn-outline btn-sm" onclick="downloadDoc()">Baixar Word</button>' +
       '<button class="btn btn-outline btn-sm" title="' +
@@ -10648,6 +10754,17 @@ function calendarioPlanejamentoHtml(mesAtual) {
 }
 
 /* ---------------- REGISTRO DE AULAS (DIÁRIO) ---------------- */
+/* v6.9 — registros salvos antes desta versão guardam "EF09LP04 · BNCC" ou
+   "D11 · SAEB / Matriz Santa Luzia" dentro do próprio texto. Como a coluna
+   Currículo deixou de existir, o sufixo é retirado na exibição — sem mexer
+   no que está gravado, para o professor não perder nada que digitou. */
+function semCurriculo(txt) {
+  return String(txt == null ? "" : txt)
+    .replace(/\s*·\s*(BNCC|SAEB[^,;·]*|Matriz[^,;·]*)/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function viewDiario() {
   var d = state.diarioSel;
   var rows = getLessonDates(d.subject, d.grade, d.month);
@@ -10759,7 +10876,11 @@ function viewDiario() {
   function especificarConteudo(conteudo, nota) {
     var base = String(conteudo || "").trim();
     if (!base) return "";
-    if (base.indexOf("—") >= 0 && base.length > 45) return base;
+    /* v6.9 — o travessão já indica conteúdo especificado. O corte antigo era
+       por tamanho, e "O tema de um texto — leitura e interpretação", com 44
+       caracteres, escapava por um fio: ganhava um segundo travessão e a
+       descrição inteira da habilidade colada atrás, no meio do diário. */
+    if (base.indexOf("—") >= 0) return base;
     for (var i = 0; i < FOCOS_CONTEUDO.length; i++) {
       if (FOCOS_CONTEUDO[i][0].test(base)) return base + " — " + FOCOS_CONTEUDO[i][1];
     }
@@ -10767,28 +10888,17 @@ function viewDiario() {
     return f ? base + " — " + f : base;
   }
 
-  function curriculoDoCodigo(codigo, skills) {
-    var achado = A(skills).filter(function(s){ return s.code === codigo; })[0];
-    return (achado && achado.fonte === "Acerta Brasil / SAEB") ? "SAEB / Matriz Santa Luzia" : "BNCC";
-  }
   if (hasMatch) {
     var mp = match[0];
     if (A(mp.content.knowledgeObjects).length) {
       pool = mp.content.knowledgeObjects.map(function(k) {
-        var codigos = A(k.codes).filter(Boolean);
-        var curriculos = [];
-        codigos.forEach(function(cod) {
-          var cur = curriculoDoCodigo(cod, mp.content.bnccSkills);
-          if (curriculos.indexOf(cur) < 0) curriculos.push(cur);
-        });
         return {
           conteudo: especificarConteudo(k.content, k.note),
-          habilidades: codigos.join(", "),
-          curriculo: curriculos.join(" / ")
+          habilidades: A(k.codes).filter(Boolean).join(", ")
         };
       });
     } else if (A(mp.content.activities).length) {
-      pool = mp.content.activities.map(function(a){ return { conteudo:a.title, habilidades:"", curriculo:"" }; });
+      pool = mp.content.activities.map(function(a){ return { conteudo:a.title, habilidades:"" }; });
     }
     if (!pool.length) {
       pool = ["Introdução ao conteúdo e sondagem inicial",
@@ -10796,16 +10906,14 @@ function viewDiario() {
         "Atividade prática de aplicação e fixação",
         "Leitura, interpretação e produção orientada",
         "Revisão integradora e avaliação formativa"
-      ].map(function(t){ return { conteudo:t, habilidades:"", curriculo:"" }; });
+      ].map(function(t){ return { conteudo:t, habilidades:"" }; });
     }
   }
 
   /* Reserva de habilidades para os conteúdos que não trouxeram código
      próprio — mantém a coluna preenchida sem inventar associação. */
   var skillPool = hasMatch && A(match[0].content.bnccSkills).length
-    ? match[0].content.bnccSkills.map(function(s) {
-        return { habilidades:s.code, curriculo:(s.fonte === "Acerta Brasil / SAEB" ? "SAEB / Matriz Santa Luzia" : "BNCC") };
-      })
+    ? match[0].content.bnccSkills.map(function(s) { return { habilidades:s.code }; })
     : [];
 
   /* Distribuição conteúdo × data: mesma lógica proporcional de
@@ -10827,17 +10935,21 @@ function viewDiario() {
     var contIdx = pool.length ? Math.min(pool.length - 1, Math.floor((n - 1) / perItemContent)) : -1;
     var item = contIdx >= 0 ? (pool[contIdx] || null) : null;
     var cont = rec.content !== undefined ? rec.content : (item ? item.conteudo : "");
-    /* Habilidade + currículo do MESMO conteúdo da linha. Só cai na reserva
-       quando o conteúdo do plano não trouxe código associado. */
+    /* Habilidade do MESMO conteúdo da linha. Só cai na reserva quando o
+       conteúdo do plano não trouxe código associado.
+       v6.9 — o "currículo" (BNCC / SAEB) saiu. Ele repetia "BNCC" em quase
+       toda linha do diário sem dizer nada que o próprio código já não
+       diga: EF09LP04 é BNCC pela forma como é escrito. O que interessa no
+       diário é o conteúdo e o código da habilidade de onde ele veio. */
     var sksAuto = "";
     if (item && item.habilidades) {
-      sksAuto = item.habilidades + (item.curriculo ? " · " + item.curriculo : "");
+      sksAuto = item.habilidades;
     } else if (skillPool.length) {
       var sksIdx = Math.min(skillPool.length - 1, Math.floor((n - 1) / (lessons.length / skillPool.length)));
       var alt = skillPool[sksIdx];
-      if (alt) sksAuto = alt.habilidades + (alt.curriculo ? " · " + alt.curriculo : "");
+      if (alt) sksAuto = alt.habilidades;
     }
-    var sks = rec.skills !== undefined ? rec.skills : sksAuto;
+    var sks = rec.skills !== undefined ? semCurriculo(rec.skills) : sksAuto;
     var contPh = hasMatch ? "" : " placeholder='Sem plano gerado — preencha manualmente ou gere um planejamento'";
     var sksPh = hasMatch ? "" : " placeholder='Sem plano gerado'";
     return "<tr><td style='white-space:nowrap;font-weight:600'>" + String(r.day).padStart(2,"0") + "/" +
@@ -10888,7 +11000,7 @@ function viewDiario() {
       (lessons.length
         ? '<div class="tscroll"><table class="tb"><thead><tr><th style="width:66px">Data</th><th style="width:96px">Dia</th>' +
           '<th style="width:56px">Aulas</th><th style="width:52px">Entrada</th>' +
-          "<th>Conte&uacute;do Curricular (o que foi trabalhado)</th><th style='width:200px'>Habilidade &middot; Curr&iacute;culo</th></tr></thead><tbody>" +
+          "<th>Conte&uacute;do Curricular (o que foi trabalhado)</th><th style='width:150px'>Habilidade</th></tr></thead><tbody>" +
           body + "<tr style='background:var(--acc3)'><td colspan='2'><strong>SUBTOTAL DO M&Ecirc;S</strong></td>" +
           "<td style='text-align:center'><strong>" + ch.monthlyLessons + "</strong></td><td></td>" +
           "<td><strong>" + ch.encounters + " encontros letivos registrados</strong></td>" +
@@ -11972,6 +12084,141 @@ function limparTestes() {
   toast(n + " plano(s) de teste excluído(s).");
 }
 
+/* =========================================================
+   REFINAR O PLANO (v6.9)
+   ---------------------------------------------------------
+   Duas coisas acontecem aqui, nesta ordem.
+
+   1. O plano é reescrito pelo gerador com as regras atuais. Um plano feito
+      na v6.2 carrega a redação da v6.2 para sempre — o texto fica gravado
+      dentro dele. Refinar é o que faz uma melhoria do gerador alcançar os
+      planos que já estão no histórico.
+      As escolhas do professor não são tocadas: habilidades selecionadas,
+      objetos de conhecimento, título, capa e o plano de AEE atravessam
+      intactos. O que muda é só a redação em volta.
+
+   2. O texto passa por uma peneira que tira frase repetida entre seções.
+      Mesmo com o gerador melhor, uma frase de efeito pode reaparecer na
+      justificativa e na avaliação; aqui ela fica só na primeira vez.
+
+   Antes de qualquer coisa é gravada uma versão de segurança, porque isto
+   sobrescreve o que estava escrito.
+   ========================================================= */
+
+/* Assinatura de uma frase: sem acento, sem pontuação, sem maiúscula — para
+   reconhecer a mesma frase escrita com vírgula em lugar diferente. */
+function _assinaturaFrase(f) {
+  return deaccent(String(f || "")).toLowerCase().replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ").trim();
+}
+/* Corte em frases sem lookbehind: navegador de celular antigo não entende
+   `(?<=...)` e o app inteiro pararia de carregar por causa disso. */
+function _frases(txt) {
+  var s = String(txt || "");
+  var fs = [], atual = "";
+  for (var i = 0; i < s.length; i++) {
+    atual += s[i];
+    if (".!?".indexOf(s[i]) >= 0 && (i + 1 >= s.length || /\s/.test(s[i + 1]))) {
+      fs.push(atual.trim());
+      atual = "";
+    }
+  }
+  if (atual.trim()) fs.push(atual.trim());
+  return fs.filter(Boolean);
+}
+
+/* Percorre os campos de prosa na ordem em que o leitor os encontra e
+   descarta a frase que já apareceu antes. Nunca esvazia um campo: se todas
+   as frases de um item forem repetidas, a primeira fica. */
+function enxugarPlano(c) {
+  var vistas = {};
+  function peneirar(txt) {
+    var fs = _frases(txt), saida = [];
+    fs.forEach(function(f) {
+      var a = _assinaturaFrase(f);
+      if (a.length < 25) { saida.push(f); return; }   /* frase curta não é repetição incômoda */
+      if (vistas[a]) return;
+      vistas[a] = 1;
+      saida.push(f);
+    });
+    if (!saida.length && fs.length) saida.push(fs[0]);
+    return saida.join(" ");
+  }
+  function peneirarLista(lista) {
+    var saida = [];
+    A(lista).forEach(function(item) {
+      var t = peneirar(item);
+      if (t) saida.push(t);
+    });
+    return saida.length ? saida : A(lista);
+  }
+
+  c.context = peneirar(c.context);
+  c.justification = peneirar(c.justification);
+  c.objectives = peneirarLista(c.objectives);
+  c.specificObjectives = peneirarLista(c.specificObjectives);
+  c.specificCompetencies = peneirarLista(c.specificCompetencies);
+  A(c.methodology).forEach(function(m){ m.description = peneirar(m.description); });
+  A(c.activities).forEach(function(a){ a.description = peneirar(a.description); });
+  A(c.assessment).forEach(function(a){ a.criteria = peneirar(a.criteria); });
+  c.recovery = peneirar(c.recovery);
+  return c;
+}
+
+/* Reescreve mantendo o que é escolha do professor. */
+function refinarConteudo(pl) {
+  var antigo = pl.content || {};
+  var novo;
+  try { novo = generateLocal(pl.config); }
+  catch (e) { return null; }
+  if (!novo) return null;
+
+  ["title", "coverImage", "bnccSkills", "knowledgeObjects", "aeePlan",
+   "cargaHoraria", "saebDescriptors", "olimpiada"].forEach(function(campo) {
+    if (antigo[campo] !== undefined && antigo[campo] !== null) novo[campo] = antigo[campo];
+  });
+  return enxugarPlano(novo);
+}
+
+function _tamanhoProsa(c) {
+  var t = String(c.context || "") + String(c.justification || "") +
+    A(c.objectives).join("") + A(c.specificObjectives).join("") +
+    A(c.methodology).map(function(m){ return m.description || ""; }).join("") +
+    A(c.activities).map(function(a){ return a.description || ""; }).join("") +
+    A(c.assessment).map(function(a){ return a.criteria || ""; }).join("") +
+    String(c.recovery || "");
+  return t.length;
+}
+
+function refinarPlanoAtual() {
+  var pl = state.activePlan;
+  if (!pl || !pl.config) { toast("Nenhum plano aberto para refinar."); return; }
+  if (!confirm("Refinar reescreve o texto deste plano com as regras mais recentes e tira as repetições.\n\n" +
+      "As habilidades e os conteúdos que você escolheu continuam os mesmos.\n" +
+      "Uma versão de segurança é guardada antes — dá para voltar em Ajustes → Backup e Versões.")) return;
+
+  pushSnapshot("Antes de refinar: " + (pl.content && pl.content.title || "plano"), true);
+  var antes = _tamanhoProsa(pl.content || {});
+  var novo = refinarConteudo(pl);
+  if (!novo) { toast("Não consegui refinar este plano — o texto original continua intacto."); return; }
+  var depois = _tamanhoProsa(novo);
+
+  pl.content = novo;
+  pl.refinadoEm = new Date().toISOString();
+  pl.refinadoNa = APP_VERSAO;
+  /* Se o plano já está no histórico, a versão refinada é gravada por cima. */
+  if (state.activeSaved) {
+    for (var i = 0; i < state.plans.length; i++) {
+      if (state.plans[i].id === pl.id) { state.plans[i] = pl; break; }
+    }
+    savePlans();
+  }
+  render();
+  var corte = antes > 0 ? Math.round(100 * (antes - depois) / antes) : 0;
+  toast("Plano refinado" + (corte > 0 ? " — texto " + corte + "% mais enxuto." : ".") +
+    (state.activeSaved ? " Gravado no histórico." : ""));
+}
+
 function savePlan() {
   if (!state.activePlan) return;
   state.plans.unshift(state.activePlan);
@@ -12907,8 +13154,19 @@ function planoModeloSL(pl) {
   var avaliacao = aval + rubrica +
     (c.recovery ? '<div class="msl-sub">Retomada e recuperação</div>' + esc(c.recovery) : "");
 
-  /* ---- Recursos ---- */
-  var recursos = mslLista(c.materials) +
+  /* ---- Recursos ----
+     v6.9 — a lista de recursos da SEMED existia no aplicativo desde a v6.0,
+     mas só o modelo dos anos iniciais a usava. O plano do 6º ao 9º ano — o
+     que o professor entrega — mostrava apenas o que o gerador inventava, e
+     por isso o livro Acerta Brasil (Português do 9º ano) e o Joy Starter
+     (Inglês) nunca apareciam no campo que a coordenação confere.
+     Agora a lista oficial vem primeiro, como no formulário da rede, e os
+     recursos específicos deste plano entram depois, sem repetir o que a
+     lista já diz. */
+  var materiaisOficiais = typeof recursosDoPlano === "function"
+    ? recursosDoPlano(pc, c.materials)
+    : A(c.materials);
+  var recursos = mslLista(materiaisOficiais) +
     (A(c.digitalResources).length ? '<div class="msl-sub">Recursos digitais</div>' + mslLista(c.digitalResources) : "");
 
   /* ---- Seções extras que o EducaPlan traz e o formulário não previa,
@@ -12973,7 +13231,7 @@ function planoModeloSL(pl) {
       mslLinha(avaliacao) +
     (aee ? mslFaixa("Atendimento Educacional Especializado (AEE)") + mslLinha(aee) : "") +
     mslFaixa("Referências", true) +
-      mslLinha(mslLista(c.references)) +
+      mslLinha(mslLista(referenciasDoPlano(pc, c.references))) +
   "</tbody></table>";
 
   var titulo = "PLANO MENSAL (" + String(pc.subject).toUpperCase() + ") " +
