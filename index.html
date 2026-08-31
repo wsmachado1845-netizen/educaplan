@@ -471,6 +471,39 @@ body.exporting .noprint { display: none !important; }
 @media (max-width: 620px) { #planPaper { padding: 16px 13px; } }
 .msl h1 { font-family: inherit; font-size: 17px; font-weight: 700; text-align: center;
   margin: 0 0 14px; line-height: 1.3; letter-spacing: 0; }
+
+/* ── Timbre institucional (v6.8) ──
+   O documento da rede começa pela identificação da instituição, não pelo
+   título do plano: brasão à esquerda e, ao lado, as quatro linhas em caixa
+   alta — Estado, Prefeitura, Secretaria e a unidade de ensino.
+   É uma tabela, e não um flex, por um motivo prático: assim o bloco chega
+   ao Word já montado em duas colunas, com o brasão no lugar certo.
+   Sem borda, porque no modelo impresso o que separa o timbre do corpo é
+   apenas a linha de baixo. */
+.msl-timbre { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+.msl-timbre td { border: none; padding: 0; vertical-align: middle; }
+.msl-timbre td.tb-bra { width: 74px; text-align: center; padding-right: 12px; }
+.msl-timbre td.tb-bra img, .msl-timbre td.tb-bra svg {
+  width: 62px; height: 62px; object-fit: contain; display: inline-block; }
+.msl-timbre td.tb-txt { text-align: center; }
+.msl-timbre td.tb-eq { width: 74px; }
+.msl-tb-l { font-size: 12.5px; line-height: 1.42; letter-spacing: .02em;
+  text-align: center; hyphens: none; }
+.msl-tb-l.forte { font-weight: 700; }
+.msl-tb-l.escola { font-weight: 700; font-size: 13px; }
+.msl-timbre-linha { border: none; border-top: 1.5px solid #000; margin: 7px 0 13px; }
+/* No celular a coluna de texto ficaria com uns 270px, e "SECRETARIA
+   MUNICIPAL DE EDUCAÇÃO — SEMED" quebrava no meio. O brasão sobe para
+   cima das linhas e o texto passa a ter a largura toda. */
+@media (max-width: 620px) {
+  .msl-timbre, .msl-timbre tbody, .msl-timbre tr, .msl-timbre td { display: block; width: 100%; }
+  .msl-timbre td.tb-bra { width: 100%; padding: 0 0 7px; text-align: center; }
+  .msl-timbre td.tb-bra img, .msl-timbre td.tb-bra svg { width: 44px; height: 44px; }
+  .msl-timbre td.tb-eq { display: none; }
+  .msl-tb-l { font-size: 11px; line-height: 1.4; }
+  .msl-tb-l.escola { font-size: 11.5px; }
+  .msl-timbre-linha { margin: 8px 0 12px; }
+}
 .msl table { width: 100%; border-collapse: collapse; }
 .msl .msl-id td { border: 1px solid #000; padding: 4px 7px; font-size: 13px; vertical-align: top; }
 .msl .msl-id td.rot { white-space: nowrap; width: 170px; font-weight: 600; }
@@ -1111,6 +1144,16 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
   .msl-id, .msl-id tr, .msl-id td {
     break-inside: avoid !important; page-break-inside: avoid !important;
   }
+  /* v6.8 — o timbre é indivisível: brasão, Estado, Prefeitura, Secretaria e
+     escola são um bloco só, e nunca se soltam do título que vem embaixo. */
+  .msl-timbre, .msl-timbre tbody, .msl-timbre tr, .msl-timbre td {
+    break-inside: avoid !important; page-break-inside: avoid !important;
+  }
+  .msl-timbre, .msl-timbre-linha, .msl h1 {
+    break-after: avoid-page !important; page-break-after: avoid !important;
+  }
+  /* O brasão foge da regra geral de imagem: ele é pequeno e não recorta. */
+  .msl-timbre img { max-height: none !important; object-fit: contain !important; }
   /* Dentro da seção, o que não deve rachar ao meio. */
   .msl-etapa, .msl-sub, .msl-lista li, .msl-rub tr {
     break-inside: avoid; page-break-inside: avoid;
@@ -1880,6 +1923,12 @@ var DEFAULT_CONFIG = {
   "city": "Santa Luzia / MA",
   "network": "Prefeitura Municipal de Santa Luzia",
   "secretaria": "Secretaria Municipal de Educação — SEMED",
+  /* v6.8 — o timbre no alto do plano, no padrão dos documentos da rede.
+     "estado" e "schoolFullName" existem porque o cabeçalho oficial usa o
+     nome por extenso, enquanto o resto do app usa a forma curta. */
+  "estado": "Estado do Maranhão",
+  "schoolFullName": "Unidade Integrada Deuris de Deus Moreno Dias Carneiro",
+  "brasao": "",
   "coordinator": "",
   "defaultShift": "Vespertino",
   "preferredGrades": [
@@ -3152,9 +3201,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "6.7";
-var APP_VERSAO_DATA = "26/08/2026";
-var APP_VERSAO_NOTA = "Metodologia enxuta, sem repetição";
+var APP_VERSAO = "6.8";
+var APP_VERSAO_DATA = "28/08/2026";
+var APP_VERSAO_NOTA = "Timbre da rede com brasão no alto do plano";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -9327,10 +9376,11 @@ function viewPlanAnosIniciais(pl, c, pc, cfg) {
       (state.activeSaved ? '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deletePlan(\'' + pl.id + '\')">Excluir</button>' : "") +
     "</div></div>";
 
+  /* v6.8 — o mesmo timbre do plano do 6º ao 9º ano, com brasão e as quatro
+     linhas da rede. Antes daqui saíam três linhas soltas, sem a Secretaria
+     e sem o brasão. */
   var body =
-    '<div style="text-align:center;font-size:11px;color:' + OF_TXT2 + ';font-weight:700;margin-bottom:2px">ESTADO DO MARANH&Atilde;O</div>' +
-    '<div style="text-align:center;font-size:11px;color:' + OF_TXT2 + ';margin-bottom:2px">' + esc(cfg.network || "SECRETARIA MUNICIPAL DE EDUCAÇÃO") + "</div>" +
-    '<div style="text-align:center;font-size:11px;color:' + OF_TXT2 + ';margin-bottom:16px">' + esc(cfg.schoolName || "") + "</div>" +
+    mslTimbre(cfg) +
     '<h1 style="text-align:center;font-size:20px;font-weight:800;color:' + OF_TXT + ';margin:0 0 16px">PLANEJAMENTO DE ' +
       esc((pc.subject || "").toUpperCase()) + "</h1>" +
 
@@ -10349,9 +10399,10 @@ function viewPlan() {
     var marcas = seloTeste(pl, "g");
     if (!marcas) return "";
     return '<div class="noprint" style="margin-bottom:12px">' + marcas + "</div>";
-  })() +
-    '<div class="soprint" style="display:none;font-size:11px;text-align:center;margin-bottom:8px">' +
-      esc(cfg.schoolName || "") + (cfg.city ? " &mdash; " + esc(cfg.city) : "") + "</div>";
+  })();
+  /* v6.8 — a linha discreta com o nome da escola saía só na impressão.
+     Agora o timbre traz a escola por extenso no alto do plano, em toda
+     tela e em toda impressão; repetir aqui seria dizer duas vezes. */
 
   return '<div class="wrap fade" style="padding:28px 18px 56px">' + toolbar +
     '<div class="card" id="planPaper" style="max-width:880px">' +
@@ -11048,6 +11099,47 @@ function viewSettings() {
       "</div>" +
       '<div style="margin-top:13px;max-width:300px"><label class="lbl">Dura&ccedil;&atilde;o de cada hor&aacute;rio (minutos)</label>' +
         '<input class="inp" id="s_min" type="number" min="20" max="90" value="' + (c.lessonMinutes || 45) + '" /></div>' +
+
+      /* v6.8 — o timbre do documento. Fica aqui, e não numa seção nova,
+         porque é a mesma identidade: o que muda é só onde ela aparece. */
+      '<div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border)">' +
+        '<div style="font-size:13px;font-weight:700;margin-bottom:4px">Timbre do plano</div>' +
+        '<p style="font-size:11.5px;color:var(--t4);margin:0 0 14px;line-height:1.6">' +
+          "Estas linhas saem no alto de todo plano, em caixa alta, no padr&atilde;o dos " +
+          "documentos da rede &mdash; na tela, no PDF e no arquivo Word. Campo vazio " +
+          "simplesmente n&atilde;o aparece." +
+        "</p>" +
+        '<div class="g2">' +
+          '<div><label class="lbl">Estado</label><input class="inp" id="s_estado" value="' +
+            esc(c.estado || "") + '" /></div>' +
+          '<div><label class="lbl">Secretaria de Educa&ccedil;&atilde;o</label><input class="inp" id="s_semed" value="' +
+            esc(c.secretaria || "") + '" /></div>' +
+        "</div>" +
+        '<div style="margin-top:13px"><label class="lbl">Escola por extenso (como no timbre)</label>' +
+          '<input class="inp" id="s_schoolfull" value="' + esc(c.schoolFullName || "") + '" /></div>' +
+
+        '<div style="margin-top:18px"><label class="lbl">Bras&atilde;o da prefeitura</label>' +
+          '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:7px">' +
+            '<div id="s_brasao_prev" style="width:64px;height:64px;flex:none;border:1px solid var(--border);' +
+              'border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;' +
+              'padding:6px;overflow:hidden">' + brasaoPreviewHtml(c.brasao) + "</div>" +
+            '<div style="flex:1;min-width:190px">' +
+              '<input type="file" id="s_brasao_file" accept="image/png,image/jpeg,image/webp,image/svg+xml" ' +
+                'style="display:none" onchange="carregarBrasao(this)" />' +
+              '<button class="btn btn-outline btn-sm" onclick="el(\'s_brasao_file\').click()">' +
+                (c.brasao ? "Trocar imagem" : "Escolher imagem") + "</button>" +
+              (c.brasao
+                ? ' <button class="btn btn-ghost btn-sm" onclick="removerBrasao()">Remover</button>'
+                : "") +
+              '<div style="font-size:11px;color:var(--t4);margin-top:7px;line-height:1.55">' +
+                "PNG, JPG ou SVG. Fica guardado neste aparelho &mdash; se voc&ecirc; usar o " +
+                "EducaPlan no celular e no computador, envie em cada um." +
+              "</div>" +
+            "</div>" +
+          "</div>" +
+        "</div>" +
+      "</div>" +
+
       '<button class="btn btn-primary" style="margin-top:16px" onclick="saveIdentity()">Salvar Identidade</button>' +
     "</div></details>" +
 
@@ -11990,12 +12082,58 @@ function saveIdentity() {
   state.cfg.city = el("s_city").value.trim();
   state.cfg.network = el("s_net").value.trim();
   state.cfg.defaultShift = el("s_shift").value;
+  /* v6.8 — campos do timbre. */
+  if (el("s_estado")) state.cfg.estado = el("s_estado").value.trim();
+  if (el("s_semed")) state.cfg.secretaria = el("s_semed").value.trim();
+  if (el("s_schoolfull")) state.cfg.schoolFullName = el("s_schoolfull").value.trim();
   var mn = parseInt(el("s_min").value, 10);
   state.cfg.lessonMinutes = (mn >= 20 && mn <= 90) ? mn : 45;
   saveCfg();
   applyTheme();
   render();
   toast("Identidade salva.");
+}
+
+/* ---- Brasão do timbre (v6.8) ----
+   A imagem vira texto (data URL) e mora no próprio aparelho, junto do
+   resto dos ajustes. Não sobe para lugar nenhum.
+   O limite de 400 KB não é capricho: o localStorage do navegador guarda
+   poucos megabytes no total, e um brasão pesado espremeria os planos de
+   aula, que são o que realmente importa ali. Um brasão de 300px de lado
+   resolve o timbre com folga e cabe em muito menos que isso. */
+var BRASAO_MAX_BYTES = 400 * 1024;
+
+function brasaoPreviewHtml(dataUrl) {
+  return dataUrl
+    ? '<img src="' + esc(dataUrl) + '" alt="Bras&atilde;o" ' +
+      'style="max-width:100%;max-height:100%;object-fit:contain" />'
+    : '<div style="width:100%;height:100%;color:#666">' + brasaoPadraoSvg() + "</div>";
+}
+
+function carregarBrasao(input) {
+  var f = input && input.files && input.files[0];
+  if (!f) return;
+  if (f.size > BRASAO_MAX_BYTES) {
+    toast("Imagem muito grande (" + Math.round(f.size / 1024) + " KB). O limite é 400 KB.");
+    input.value = "";
+    return;
+  }
+  var leitor = new FileReader();
+  leitor.onload = function() {
+    state.cfg.brasao = String(leitor.result || "");
+    saveCfg();
+    render();
+    toast("Brasão salvo. Ele passa a sair no alto dos planos.");
+  };
+  leitor.onerror = function() { toast("Não consegui ler essa imagem."); };
+  leitor.readAsDataURL(f);
+}
+
+function removerBrasao() {
+  state.cfg.brasao = "";
+  saveCfg();
+  render();
+  toast("Brasão removido. Volta o emblema padrão.");
 }
 function saveRotina() {
   var campo = el("s_rotina");
@@ -12370,6 +12508,74 @@ function _wmlPara(texto, el) {
       "<w:t xml:space=\"preserve\">" + _xmlEsc(marcador + texto) + "</w:t></w:r></w:p>";
 }
 
+/* ---- Imagens no Word (v6.8) ----
+   O brasão precisava chegar ao arquivo entregue à coordenação, não só à
+   tela. O .docx é um zip: além do texto, ele guarda o arquivo da imagem
+   dentro de word/media e uma "relação" que aponta para ela.
+   A imagem é redesenhada num canvas antes de entrar. Isso resolve dois
+   problemas de uma vez: normaliza qualquer formato (JPG, WebP) para PNG,
+   que o Word abre sempre, e me dá as dimensões reais em pixels para
+   converter no EMU que o OOXML exige.
+   O emblema padrão é um <svg> desenhado na página, não uma imagem — ele
+   fica de fora do Word de propósito: um brasão genérico num documento
+   oficial seria pior que nenhum. */
+var _wmlImgs = [];
+var EMU_POR_PX = 9525;   /* 914400 EMU por polegada ÷ 96 px por polegada */
+
+function _dataUrlBytes(dataUrl) {
+  var base64 = String(dataUrl).split(",")[1] || "";
+  var bruto = atob(base64);
+  var bytes = new Uint8Array(bruto.length);
+  for (var i = 0; i < bruto.length; i++) bytes[i] = bruto.charCodeAt(i);
+  return bytes;
+}
+
+function _wmlImagem(img) {
+  if (!img.complete || !img.naturalWidth) return "";
+  /* Tamanho impresso: o que a tela mostra, com um teto para o brasão nunca
+     empurrar o timbre para duas linhas. */
+  var larguraCss = Math.round(img.getBoundingClientRect().width) || img.naturalWidth;
+  var razao = img.naturalHeight / img.naturalWidth;
+  var lp = Math.min(larguraCss || 62, 110);
+  var ap = Math.round(lp * razao);
+
+  var png;
+  try {
+    var cv = document.createElement("canvas");
+    cv.width = img.naturalWidth;
+    cv.height = img.naturalHeight;
+    var ctx = cv.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    png = cv.toDataURL("image/png");
+  } catch (e) { return ""; }
+  if (!png || png.indexOf("data:image/png") !== 0) return "";
+
+  var n = _wmlImgs.length + 1;
+  var rid = "rIdImg" + n;
+  _wmlImgs.push({ nome: "image" + n + ".png", rid: rid, bytes: _dataUrlBytes(png) });
+
+  var cx = lp * EMU_POR_PX, cy = ap * EMU_POR_PX;
+  return '<w:p><w:pPr><w:spacing w:after="40"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>' +
+    '<wp:inline distT="0" distB="0" distL="0" distR="0" ' +
+      'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">' +
+      '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+      '<wp:docPr id="' + (100 + n) + '" name="Imagem ' + n + '"/>' +
+      '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+        '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+          '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+            '<pic:nvPicPr><pic:cNvPr id="' + (100 + n) + '" name="Imagem ' + n + '"/>' +
+              "<pic:cNvPicPr/></pic:nvPicPr>" +
+            "<pic:blipFill>" +
+              '<a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+                'r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch>' +
+            "</pic:blipFill>" +
+            '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+              '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+          "</pic:pic>" +
+        "</a:graphicData></a:graphic>" +
+    "</wp:inline></w:drawing></w:r></w:p>";
+}
+
 function _ehBloco(el) {
   var d = getComputedStyle(el).display;
   if (d === "block" || d === "flex" || d === "grid" || d === "list-item" || d === "table") return true;
@@ -12387,6 +12593,10 @@ function _wmlBlocos(el) {
     if (n.nodeType === 3) { buffer.push(n.nodeValue); return; }
     if (n.nodeType !== 1) return;
     if (getComputedStyle(n).display === "none") return;
+    if (n.tagName === "IMG") { despejar(); saida += _wmlImagem(n); return; }
+    /* Ícones e o emblema padrão são SVG desenhado na página: não têm
+       equivalente no Word e não carregam texto. Somem sem deixar rastro. */
+    if (n.tagName === "svg" || n.tagName === "SVG") return;
     if (n.tagName === "TABLE") { despejar(); saida += _wmlTabela(n); return; }
     if (_ehBloco(n)) { despejar(); saida += _wmlBlocos(n); return; }
     buffer.push(n.textContent);
@@ -12560,6 +12770,55 @@ function mslLista(itens) {
   return '<ul class="msl-lista">' + a.map(function(x){ return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
 }
 
+/* Emblema provisório (v6.8).
+   Enquanto o professor não enviar o brasão oficial da prefeitura em
+   Ajustes, o timbre mostra este desenho neutro — um escudo simples, em
+   traço preto, que imprime bem em preto e branco e não finge ser o brasão
+   de nenhum município. Assim o plano já sai com a estrutura do documento
+   da rede, e o brasão de verdade entra depois, sem mexer em mais nada. */
+function brasaoPadraoSvg() {
+  return '<svg viewBox="0 0 100 112" xmlns="http://www.w3.org/2000/svg" ' +
+    'role="img" aria-label="Brasão">' +
+    '<path d="M50 4 L94 20 L94 60 C94 86 74 100 50 108 C26 100 6 86 6 60 L6 20 Z" ' +
+      'fill="none" stroke="#000" stroke-width="5"/>' +
+    '<path d="M50 20 L50 92" stroke="#000" stroke-width="3"/>' +
+    '<path d="M14 46 L86 46" stroke="#000" stroke-width="3"/>' +
+    '<circle cx="50" cy="46" r="11" fill="#fff" stroke="#000" stroke-width="4"/>' +
+  "</svg>";
+}
+
+/* O timbre: quem assina o documento, antes do que o documento diz. */
+function mslTimbre(cfg) {
+  cfg = cfg || state.cfg || {};
+  var linhas = [
+    { t: cfg.estado, cls: "" },
+    { t: cfg.network, cls: "forte" },
+    { t: cfg.secretaria, cls: "forte" },
+    { t: cfg.schoolFullName || cfg.schoolName, cls: "escola" }
+  ].filter(function(l) { return String(l.t || "").trim(); });
+  if (!linhas.length) return "";
+
+  var bra = cfg.brasao
+    ? '<img src="' + esc(cfg.brasao) + '" alt="Brasão" />'
+    : brasaoPadraoSvg();
+
+  /* A coluna vazia à direita não é enfeite: sem ela o texto ficaria
+     centralizado no espaço que sobra ao lado do brasão, e não no meio da
+     folha — o desalinho que se nota quando o documento fica ao lado do
+     modelo impresso da rede. */
+  return '<table class="msl-timbre"><tbody><tr>' +
+      '<td class="tb-bra">' + bra + "</td>" +
+      '<td class="tb-txt">' +
+        linhas.map(function(l) {
+          return '<div class="msl-tb-l ' + l.cls + '">' +
+            esc(String(l.t).toUpperCase()) + "</div>";
+        }).join("") +
+      "</td>" +
+      '<td class="tb-eq"></td>' +
+    "</tr></tbody></table>" +
+    '<hr class="msl-timbre-linha" />';
+}
+
 function planoModeloSL(pl) {
   var c = pl.content, pc = pl.config, cfg = state.cfg;
   var mi = CALENDAR.meses[pc.month];
@@ -12722,6 +12981,7 @@ function planoModeloSL(pl) {
     " &ndash; " + esc(pc.month);
 
   return '<div class="msl">' +
+    mslTimbre(cfg) +
     "<h1>" + titulo + "</h1>" +
     ident + corpo +
   "</div>";
@@ -12734,6 +12994,7 @@ function planDocxBlob(pl) {
      o documento sai com as tabelas completas, como a escola espera. */
   document.body.classList.add("exporting");
   var corpo;
+  _wmlImgs = [];   /* v6.8 — a coleta de imagens começa zerada a cada exportação */
   try { corpo = _wmlBlocos(papel); }
   finally { document.body.classList.remove("exporting"); }
 
@@ -12750,6 +13011,7 @@ function planDocxBlob(pl) {
     '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
     '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
     '<Default Extension="xml" ContentType="application/xml"/>' +
+    (_wmlImgs.length ? '<Default Extension="png" ContentType="image/png"/>' : "") +
     '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
     "</Types>";
 
@@ -12759,11 +13021,33 @@ function planDocxBlob(pl) {
     '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
     "</Relationships>";
 
-  return zipSemCompressao([
+  var arquivos = [
     { name:"[Content_Types].xml", data:_utf8Bytes(contentTypes) },
     { name:"_rels/.rels",         data:_utf8Bytes(rels) },
     { name:"word/document.xml",   data:_utf8Bytes(documentXml) }
-  ], "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+  ];
+
+  /* v6.8 — a imagem só entra no pacote quando existe. Um .docx com uma
+     relação apontando para arquivo inexistente o Word recusa a abrir, e
+     é por isso que tudo aqui é condicional. */
+  if (_wmlImgs.length) {
+    var relsDoc =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      _wmlImgs.map(function(im) {
+        return '<Relationship Id="' + im.rid + '" ' +
+          'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" ' +
+          'Target="media/' + im.nome + '"/>';
+      }).join("") +
+      "</Relationships>";
+    arquivos.push({ name:"word/_rels/document.xml.rels", data:_utf8Bytes(relsDoc) });
+    _wmlImgs.forEach(function(im) {
+      arquivos.push({ name:"word/media/" + im.nome, data:im.bytes });
+    });
+  }
+
+  return zipSemCompressao(arquivos,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 }
 
 function planStandaloneHtml(pl) {
