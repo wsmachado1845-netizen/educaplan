@@ -3205,9 +3205,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "7.1";
+var APP_VERSAO = "7.2";
 var APP_VERSAO_DATA = "31/08/2026";
-var APP_VERSAO_NOTA = "Histórico separado por mês, disciplina e turma";
+var APP_VERSAO_NOTA = "O app aponta as turmas sem plano no mês";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -6854,6 +6854,82 @@ function entradasSemanais(subject, grade) {
   return slots.length;
 }
 
+/* =========================================================
+   O QUE FALTA PLANEJAR (v7.2)
+   ---------------------------------------------------------
+   O aplicativo já sabe tudo o que precisa para responder isso, só nunca
+   tinha cruzado as duas pontas: o horário semanal diz quais turmas o
+   professor entra em cada componente, e o histórico diz para quais delas
+   já existe plano naquele mês. A diferença entre as duas listas é a
+   resposta.
+   Fonte da verdade é o horário semanal (Ajustes → Horário Semanal de
+   Aulas), não a lista de turmas preferidas: turma preferida é uma
+   conveniência de formulário; horário é onde o professor realmente entra.
+   ========================================================= */
+
+/* Todas as combinações componente × turma que o professor leciona, com o
+   nome completo da turma (o horário guarda a forma curta). */
+function combinacoesQueLeciona() {
+  var sched = activeSchedule();
+  var saida = [];
+  Object.keys(sched || {}).forEach(function(disciplina) {
+    var turmas = sched[disciplina] || {};
+    Object.keys(turmas).forEach(function(turmaCurtaChave) {
+      var slots = turmas[turmaCurtaChave] || [];
+      if (!slots.length) return;
+      /* O horário usa "7º Ano U"; o resto do app usa o nome completo.
+         normGrade converte os dois para a mesma forma, então a busca é por
+         equivalência, não por texto igual. */
+      var completo = null;
+      for (var i = 0; i < GRADES.length; i++) {
+        if (normGrade(GRADES[i]) === normGrade(turmaCurtaChave)) { completo = GRADES[i]; break; }
+      }
+      saida.push({
+        subject: disciplina,
+        gradeCurto: turmaCurtaChave,
+        gradeLevel: completo || turmaCurtaChave,
+        encontros: slots.length,
+        conhecida: !!completo
+      });
+    });
+  });
+  return saida;
+}
+
+/* Existe plano salvo para esta combinação neste mês?
+   Planos de teste não contam: o que a coordenação cobra é o definitivo. */
+function temPlanoPara(subject, grade, month) {
+  return state.plans.some(function(p) {
+    if (typeof ehTeste === "function" && ehTeste(p)) return false;
+    return normSubj(p.config.subject) === normSubj(subject) &&
+      normGrade(p.config.gradeLevel) === normGrade(grade) &&
+      p.config.month === month;
+  });
+}
+
+/* Situação do mês: o que já foi planejado, o que falta e a proporção. */
+function situacaoDoMes(month) {
+  var combos = combinacoesQueLeciona();
+  var feitos = [], faltando = [];
+  combos.forEach(function(c) {
+    (temPlanoPara(c.subject, c.gradeLevel, month) ? feitos : faltando).push(c);
+  });
+  return {
+    month: month,
+    total: combos.length,
+    feitos: feitos,
+    faltando: faltando,
+    pct: combos.length ? Math.round(100 * feitos.length / combos.length) : 0
+  };
+}
+
+/* Abre o Criar Planejamento já com componente, turma e mês preenchidos —
+   o atalho existe para que apontar o que falta leve direto a resolver. */
+function planejarFaltante(subject, grade, month) {
+  state.form = { subject: subject, gradeLevel: grade, month: month };
+  go("gen");
+}
+
 /* Por que este mês difere da média de quatro semanas: quase sempre porque
    algum dia da semana aparece cinco vezes. Dizer qual dia evita o professor
    achar que o app errou. */
@@ -10209,7 +10285,7 @@ function viewHome() {
      leitura. No notebook eles se distribuem em duas colunas — antes o painel
      virava uma tira estreita no meio da tela, com metade do monitor vazia. */
   return '<div class="wrap fade pn-wrap">' +
-    banner + backupReminderHtml() +
+    banner + backupReminderHtml() + avisoDoQueFaltaNoPainel() +
     '<div class="pn-grid">' +
       '<div class="pn-a-pil">' + pilulas + "</div>" +
       '<div class="pn-a-cob">' + coberturaHtml + "</div>" +
@@ -10615,6 +10691,96 @@ function turmaCurta(g) {
   return t || String(g || "");
 }
 
+/* Uma linha no Painel Principal (v7.2), porque é a primeira tela que o
+   professor vê. Só aparece quando há pendência — painel em dia não precisa
+   de aviso. Levar ao Histórico, e não abrir a lista aqui, mantém o painel
+   curto: lá a pendência vem com os atalhos de criar. */
+function avisoDoQueFaltaNoPainel() {
+  var mes = mesCorrenteLetivo();
+  var sit = situacaoDoMes(mes);
+  if (!sit.total || !sit.faltando.length) return "";
+  var n = sit.faltando.length;
+  var quais = sit.faltando.slice(0, 2).map(function(c) {
+    return c.subject.replace(" / Inglês", "") + " · " +
+      (c.conhecida ? turmaCurta(c.gradeLevel) : c.gradeCurto.replace(/\s+U$/, ""));
+  }).join(", ");
+  return '<div class="card" onclick="state.planMes=\'' + esc(mes) + '\';go(\'plans\')" ' +
+    'style="cursor:pointer;padding:13px 16px;margin-bottom:14px;border-left:4px solid var(--amb);' +
+    'display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
+    '<div style="min-width:0;flex:1">' +
+      '<div style="font-size:12.5px;font-weight:700;color:var(--amb)">' +
+        (n === 1 ? "1 turma sem plano em " : n + " turmas sem plano em ") + esc(mes) + "</div>" +
+      '<div style="font-size:11.5px;color:var(--t4);margin-top:2px">' + esc(quais) +
+        (n > 2 ? " e mais " + (n - 2) : "") + "</div>" +
+    "</div>" +
+    '<span class="badge badge-mute">Ver</span>' +
+  "</div>";
+}
+
+/* Mês corrente, limitado ao ano letivo: em janeiro e nas férias o painel
+   olharia para um mês sem aulas e diria que falta tudo. */
+function mesCorrenteLetivo() {
+  var m = MONTHS_FULL[new Date().getMonth()];
+  return MONTHS.indexOf(m) >= 0 ? m : MONTHS[0];
+}
+
+/* Painel "o que falta planejar" (v7.2).
+   Respeita os filtros de disciplina e turma que estiverem ativos: se o
+   professor está olhando só Inglês, a pendência mostrada é a de Inglês. */
+function painelDoQueFalta(month, fDisc, fTurma) {
+  var sit = situacaoDoMes(month);
+  var faltando = sit.faltando, feitos = sit.feitos.length, total = sit.total;
+  if (fDisc) {
+    faltando = faltando.filter(function(c){ return normSubj(c.subject) === normSubj(fDisc); });
+  }
+  if (fTurma) {
+    faltando = faltando.filter(function(c){ return normGrade(c.gradeLevel) === normGrade(fTurma); });
+  }
+  if (!total) {
+    return '<div class="card-soft" style="padding:13px 16px;margin-bottom:16px;font-size:12.5px;color:var(--t3)">' +
+      "Para eu apontar o que falta planejar, preciso do seu hor&aacute;rio semanal &mdash; " +
+      '<a href="#" onclick="go(\'settings\');return false">cadastre em Ajustes</a>.</div>';
+  }
+
+  var completo = !faltando.length;
+  var cor = completo ? "var(--grn)" : "var(--amb)";
+  var fundo = completo ? "var(--grnBg)" : "var(--ambBg)";
+  var pct = sit.pct;
+
+  return '<div class="card" style="padding:16px 18px;margin-bottom:16px;border-left:4px solid ' + cor + '">' +
+    '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:9px">' +
+      '<span style="font-size:13.5px;font-weight:700">' +
+        (completo ? "Planejamento de " + esc(month) + " completo"
+                  : "Falta planejar em " + esc(month)) + "</span>" +
+      '<span style="margin-left:auto;font-size:11.5px;color:var(--t4)">' +
+        feitos + " de " + total + " turmas com plano</span>" +
+    "</div>" +
+    '<div style="height:6px;border-radius:3px;background:var(--bg3);overflow:hidden;margin-bottom:' +
+      (completo ? "0" : "12px") + '">' +
+      '<div style="height:100%;width:' + pct + '%;background:' + cor + '"></div></div>' +
+    (completo
+      ? ""
+      : '<div style="display:flex;flex-wrap:wrap;gap:7px">' +
+          faltando.map(function(c) {
+            return '<button class="btn btn-sm" style="background:' + fundo + ';color:' + cor +
+              ';border:1px solid ' + cor + '" ' +
+              'title="Criar o plano de ' + esc(c.subject) + " para " + esc(c.gradeCurto) +
+                " em " + esc(month) + '" ' +
+              "onclick=\"planejarFaltante('" + esc(c.subject).replace(/'/g, "\\'") + "','" +
+                esc(c.gradeLevel).replace(/'/g, "\\'") + "','" + esc(month) + "')\">" +
+              /* O "U" de "7º Ano U" é marca interna de turma única — nunca
+                 deve chegar à tela do professor. */
+              esc(c.subject.replace(" / Inglês", "")) + " &middot; " +
+              esc(c.conhecida ? turmaCurta(c.gradeLevel) : c.gradeCurto.replace(/\s+U$/, "")) + "</button>";
+          }).join("") +
+        "</div>") +
+    (!completo && (fDisc || fTurma)
+      ? '<div style="font-size:11px;color:var(--t4);margin-top:9px">' +
+        "Mostrando s&oacute; o que os filtros acima selecionam.</div>"
+      : "") +
+  "</div>";
+}
+
 /* Cartão de um plano na lista do histórico. */
 function cartaoDoPlano(p, mostrarCabecalho) {
   return '<div class="card row" onclick="openPlan(\'' + p.id + '\')">' +
@@ -10729,9 +10895,15 @@ function viewPlans() {
   };
   var temFiltro = fDisc || fTurma || fMes;
 
+  /* v7.2 — o painel de pendências do mês. Sem seleção de mês, mostra o mês
+     corrente; com o seletor de Mês em uso, acompanha a escolha. */
+  var mesAlvo = fMes || mesCorrenteLetivo();
+  var faltasHtml = painelDoQueFalta(mesAlvo, fDisc, fTurma);
+
   return '<div class="wrap fade" style="padding:34px 18px 56px">' +
     pageHead("Histórico de Planos",
       nDef + " definitivo(s)" + (nTestes ? " e " + nTestes + " de teste" : "") + " neste navegador", "home") +
+    faltasHtml +
 
     '<div class="card" style="padding:16px 18px;margin-bottom:16px">' +
       '<div class="g3">' +
@@ -10772,6 +10944,12 @@ function viewPlans() {
               (bim ? '<span style="font-size:11px;color:var(--t4)">' + esc(bim) + "</span>" : "") +
               '<span style="margin-left:auto;font-size:11px;color:var(--t4)">' + nNoMes +
                 (nNoMes === 1 ? " plano" : " planos") + "</span>" +
+              /* v7.2 — quantas turmas ainda estão sem plano neste mês. */
+              (function() {
+                var f = situacaoDoMes(mes).faltando.length;
+                return f ? '<span style="font-size:11px;font-weight:700;color:var(--amb)">' +
+                  (f === 1 ? "falta 1 turma" : "faltam " + f + " turmas") + "</span>" : "";
+              })() +
             "</div>" +
             chaves.map(function(chave) {
               return '<div style="margin-bottom:14px">' +
