@@ -3205,9 +3205,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "6.9";
+var APP_VERSAO = "7.0";
 var APP_VERSAO_DATA = "28/08/2026";
-var APP_VERSAO_NOTA = "Recursos oficiais, plano sem repetição e botão Refinar";
+var APP_VERSAO_NOTA = "Plano enxuto, com a procedência das habilidades";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -7774,6 +7774,19 @@ function _variar(pool, semente) {
   return pool[Math.abs(semente) % pool.length];
 }
 
+/* Variação em sequência (v6.9, segunda passada).
+   _variar sorteia pela semente, e duas sementes diferentes podem cair no
+   mesmo índice: num plano de quatro conteúdos, três etapas seguidas saíram
+   com a frase idêntica. Aqui o índice anda de um em um a cada etapa, então
+   blocos vizinhos nunca repetem a redação; a semente continua decidindo por
+   onde a sequência começa, de modo que dois meses diferentes não saem
+   iguais. */
+function _variarSeq(pool, semente, i) {
+  if (!pool || !pool.length) return "";
+  var base = Math.abs(semente) % pool.length;
+  return pool[(base + (i || 0)) % pool.length];
+}
+
 /* Fechamentos possíveis do bloco de cada conteúdo, no lugar da frase única
    "Este bloco trata exclusivamente de X, articulado à habilidade Y". */
 var FECHOS_BLOCO = [
@@ -7854,6 +7867,42 @@ function objetivosPorEixo(knowledgeObjects) {
     return eixo.charAt(0).toUpperCase() + eixo.slice(1) + " — " + verboDoEixo(eixo).toLowerCase() +
       ": " + lista + (g.codigos.length ? " (" + g.codigos.join(", ") + ")." : ".");
   });
+}
+
+/* Fundamentação em uma frase (v6.9, segunda passada).
+   O pedido foi enxugar sem deixar o plano genérico. As duas coisas se
+   resolvem no mesmo lugar: o que fazia volume era a frase de efeito
+   ("partindo dos conhecimentos prévios para chegar à produção autônoma"),
+   que serve para qualquer plano de qualquer componente; o que dá lastro é
+   dizer DE ONDE vem cada habilidade — a Matriz de Referência de Santa
+   Luzia daquele período, o Acerta Brasil ou a BNCC. É curto, é verificável
+   e é exatamente o que a coordenação confere. */
+var NOME_DA_FONTE = {
+  "Matriz Santa Luzia": "da Matriz de Referência de Santa Luzia",
+  "Acerta Brasil / SAEB": "do Acerta Brasil / SAEB",
+  "BNCC": "da BNCC"
+};
+function fundamentacaoDasHabilidades(skills, cfg) {
+  var lista = A(skills).filter(Boolean);
+  if (!lista.length) return "";
+  var contagem = {}, ordem = [];
+  lista.forEach(function(s) {
+    var f = NOME_DA_FONTE[s.fonte] || (s.fonte ? "de " + s.fonte : "da BNCC");
+    if (!(f in contagem)) { contagem[f] = 0; ordem.push(f); }
+    contagem[f]++;
+  });
+  var periodo = CALENDAR.meses[cfg.month] && CALENDAR.meses[cfg.month].periodo;
+  var recorte = periodo ? ", no recorte do " + periodo : "";
+  var plural = lista.length > 1;
+
+  /* Fonte única: a frase fica direta, sem repartir número nenhum. */
+  if (ordem.length === 1) {
+    return (plural ? "As " + lista.length + " habilidades deste plano vêm "
+                   : "A habilidade deste plano vem ") + ordem[0] + recorte + ".";
+  }
+  var partes = ordem.map(function(f) { return contagem[f] + " " + f; });
+  return "Das " + lista.length + " habilidades deste plano, " +
+    partes.slice(0, -1).join(", ") + " e " + partes[partes.length - 1] + recorte + ".";
 }
 
 function generateLocal(cfg) {
@@ -7938,6 +7987,7 @@ function generateLocal(cfg) {
   });
   if (!skills.length) skills = getSkills(cfg.subject, cfg.gradeLevel, theme);
   var codes = skills.map(function(x){ return x.code; }).join(", ");
+  var codigosDoPlano = skills.map(function(x){ return x.code; }).filter(Boolean);
 
   /* Perfil predominante (usado quando há um único conteúdo) */
   var prof = contents[0].profile;
@@ -7999,36 +8049,33 @@ function generateLocal(cfg) {
     var listaConteudos = contents.length <= 3
       ? contents.map(function(c){ return c.text; }).join("; ")
       : "os " + contents.length + " conteúdos do mês";
+    /* v6.9 (segunda passada) — abertura e fechamento em uma frase.
+       Cada redação tinha duas orações: a primeira dizia o que se faz, a
+       segunda explicava por que se faz. A explicação é a mesma sempre
+       ("para mapear o repertório prévio", "para comparar o antes e o
+       depois") e é justamente o que faz o plano soar genérico. Fica a
+       ação, que é o que o professor executa em sala. */
     var aberturas = [
-      "Apresentação da pauta com os conteúdos que serão trabalhados de forma distinta: " + listaConteudos +
-        ". O professor sonda o que a turma já sabe de cada um separadamente, registrando no quadro em colunas, " +
-        "para que os estudantes percebam que são objetos de estudo diferentes.",
-      "O professor escreve no quadro os conteúdos do dia — " + listaConteudos +
-        " — e pergunta, um a um, o que a turma já ouviu falar a respeito. As respostas ficam registradas em colunas " +
-        "e serão retomadas no fechamento, para comparar o antes e o depois.",
-      "Abertura com uma pergunta por conteúdo (" + listaConteudos + "), respondida oralmente ou no caderno. " +
-        "O objetivo é mapear o repertório prévio de cada assunto isoladamente, sem antecipar explicações.",
-      "Roda inicial: a turma recebe a lista dos conteúdos do mês (" + listaConteudos + ") e classifica cada um como " +
-        "\"já sei\", \"já ouvi falar\" ou \"nunca vi\". O professor registra o panorama no quadro e usa como ponto de partida.",
-      "Sondagem por escrito: cada estudante anota, em três linhas separadas, o que sabe sobre " + listaConteudos + ". " +
-        "O professor recolhe uma amostra e comenta oralmente as concepções mais frequentes antes de iniciar."
+      "Pauta no quadro com os conteúdos do mês (" + listaConteudos + "), e sondagem oral de cada um " +
+        "separadamente, registrada em colunas.",
+      "O professor escreve no quadro os conteúdos do dia — " + listaConteudos + " — e pergunta, um a um, " +
+        "o que a turma já ouviu falar a respeito.",
+      "Uma pergunta por conteúdo (" + listaConteudos + "), respondida oralmente ou no caderno, sem " +
+        "antecipar explicações.",
+      "Roda inicial: a turma recebe a lista (" + listaConteudos + ") e classifica cada item como " +
+        "\"já sei\", \"já ouvi falar\" ou \"nunca vi\".",
+      "Sondagem escrita: cada estudante anota, em linhas separadas, o que sabe sobre " + listaConteudos + "."
     ];
     /* v6.9 — o fechamento não repete a lista dos conteúdos. A abertura já a
        enuncia, e cada etapa do meio leva o nome do seu conteúdo no título:
        escrevê-la uma terceira vez, no último parágrafo, era a repetição que
        mais pesava na leitura do plano. */
     var fechamentos = [
-      "Cada estudante registra, em linhas separadas, uma conclusão para cada conteúdo trabalhado, além de uma dúvida " +
-        "remanescente. O registro discriminado permite ao professor identificar em qual conteúdo específico houve " +
-        "menor compreensão.",
-      "Fechamento em bilhete de saída: uma frase por conteúdo explicando o que ficou claro, e uma última linha com o " +
-        "que ainda gera dúvida. O professor recolhe e usa como pauta da retomada.",
-      "A turma retoma o quadro da sondagem inicial e confronta o que havia registrado com o que aprendeu em cada " +
-        "conteúdo. Cada estudante anota no caderno a mudança que percebeu no próprio entendimento.",
-      "Síntese em duplas: os estudantes explicam um ao outro, conteúdo por conteúdo, o que entenderam. Em seguida, " +
-        "cada um registra individualmente a explicação do colega que achou mais clara.",
-      "Cada estudante monta um quadro com uma coluna por conteúdo, preenchendo com o conceito central e um exemplo " +
-        "próprio. As colunas separadas evidenciam o que pertence a cada assunto."
+      "Cada estudante registra, em linhas separadas, uma conclusão por conteúdo e uma dúvida remanescente.",
+      "Bilhete de saída: uma frase por conteúdo sobre o que ficou claro e uma última linha com o que ainda gera dúvida.",
+      "A turma retoma o quadro da sondagem inicial e confronta com o que aprendeu em cada conteúdo.",
+      "Síntese em duplas: cada estudante explica ao colega, conteúdo por conteúdo, o que entendeu.",
+      "Quadro individual com uma coluna por conteúdo, preenchida com o conceito central e um exemplo próprio."
     ];
 
     methodology = [{
@@ -8049,29 +8096,31 @@ function generateLocal(cfg) {
         var idx = 1 + (Math.abs(semBloco) % Math.max(1, passos.length - 1));
         core = passos[idx];
       }
-      var hab = ct.skills[0] ? ct.skills[0].code : "prevista";
-      /* v6.7 — enxugada na metodologia.
-         O título da etapa já diz qual é o conteúdo, e a seção Habilidades já
-         lista o código. Repetir "Este bloco trata exclusivamente de X,
-         articulado à habilidade Y" em cada uma das dez etapas era papel
-         gasto com o que o leitor acabou de ler. Num plano de dez conteúdos
-         essa frase saía dez vezes, e a de "o professor circula identificando
-         as dúvidas" também.
-         Agora o fecho só aparece quando há POUCOS conteúdos (até três), que
-         é quando ele de fato esclarece o recorte. Com muitos, some. */
-      var poucos = contents.length <= 3;
-      var fecho = poucos
-        ? " " + _variar(FECHOS_BLOCO, semBloco).replace("{C}", ct.text).replace("{H}", hab)
-        : "";
-      var generico = _variar(BLOCOS_GENERICOS, semBloco).replace("{C}", ct.text);
+      /* v6.9 (segunda passada) — a frase de recorte saiu de vez.
+         Ela dizia, em uma oração inteira, aquilo que o título da etapa e a
+         seção Habilidades já dizem: qual conteúdo e qual código. No lugar
+         dela o código passa a ser um campo próprio da etapa (skills), que o
+         plano imprime como etiqueta ao lado do título — ocupa uma linha em
+         vez de um parágrafo e é mais fácil de conferir do que a mesma
+         informação diluída no meio do texto.
+         A cauda "o professor circula identificando as dúvidas" também saiu:
+         as redações de BLOCOS_GENERICOS já descrevem a mediação. */
+      var codigosDaEtapa = A(ct.skills).map(function(k){ return k.code; }).filter(Boolean);
+      var fontesDaEtapa = [];
+      A(ct.skills).forEach(function(k) {
+        var f = k.fonte || "BNCC";
+        if (fontesDaEtapa.indexOf(f) < 0) fontesDaEtapa.push(f);
+      });
       methodology.push({
         order: i + 2,
         title: "Conteúdo " + (i + 1) + " — " + ct.text,
         minutes: mm[i + 1],
-        organization: _variar(ORGANIZACOES_BLOCO, semBloco + i),
+        organization: _variarSeq(ORGANIZACOES_BLOCO, _sem, i),
+        skills: codigosDaEtapa,
+        fontes: fontesDaEtapa,
         description: core
-          ? fill(core[1], ct.text) + fecho
-          : generico + (poucos ? " O professor circula identificando as dúvidas próprias deste conteúdo." : "")
+          ? fill(core[1], ct.text)
+          : _variarSeq(BLOCOS_GENERICOS, _sem, i).replace("{C}", ct.text)
       });
     });
 
@@ -8096,25 +8145,34 @@ function generateLocal(cfg) {
     });
   } else {
     methodology = [
+      /* v6.9 (segunda passada) — mesma enxugada do plano de vários conteúdos,
+         agora no de conteúdo único: cada etapa em uma frase de ação, sem a
+         oração que explicava a finalidade (sempre a mesma, em qualquer
+         plano), e sem repetir o nome do conteúdo em todas elas — ele está
+         no título do documento e nas Habilidades. Os códigos viram etiqueta
+         da etapa, no campo skills. */
       { order:1, title:"Acolhida e sondagem inicial", minutes:mins[0],
         organization:"Coletiva, em roda ou com a turma voltada ao quadro.",
-        description:'Registro da pergunta disparadora sobre "' + theme + '". Os estudantes respondem oralmente ou no caderno, permitindo mapear os conhecimentos prévios e identificar concepções equivocadas antes da exposição.' },
+        skills: codigosDoPlano,
+        description:'Pergunta disparadora sobre "' + theme + '", respondida oralmente ou no caderno.' },
       { order:2, title:"Exposição dialogada e modelagem", minutes:mins[1],
         organization:"Coletiva, com registro simultâneo no caderno.",
-        description:'Apresentação dos conceitos centrais de "' + theme + '" articulados às habilidades ' + codes + ". O professor resolve um exemplo completo em voz alta, explicitando o raciocínio, antes de a turma tentar." },
+        skills: codigosDoPlano,
+        description:"Apresentação dos conceitos centrais e resolução de um exemplo completo pelo professor em voz alta, explicitando o raciocínio." },
       { order:3, title:isInfantil ? "Vivência lúdica orientada" : "Prática orientada em duplas", minutes:mins[2],
         organization:isInfantil ? "Pequenos grupos, com mediação constante." : "Duplas produtivas (mais domínio junto a menos domínio).",
+        skills: codigosDoPlano,
         description:isInfantil
-          ? 'Atividade lúdica e sensorial sobre "' + theme + '", com manipulação de materiais concretos e mediação da professora a cada grupo.'
-          : 'Os estudantes aplicam o conteúdo em tarefa graduada (do simples ao complexo) sobre "' + theme + '". O professor circula, observa erros recorrentes e intervém por dupla, sem entregar a resposta.' },
+          ? "Atividade lúdica e sensorial com manipulação de materiais concretos e mediação da professora a cada grupo."
+          : "Tarefa graduada, do simples ao complexo, com o professor circulando e intervindo por dupla, sem entregar a resposta." },
       { order:4, title:"Socialização e correção coletiva", minutes:mins[3],
         organization:"Coletiva, com mediação do professor.",
-        description:"Duas ou três duplas apresentam suas soluções, incluindo as que erraram, para que a turma analise o percurso. O professor sistematiza no quadro os consensos e os equívocos mais frequentes." },
+        description:"Duas ou três duplas apresentam suas soluções, incluindo as que erraram, e o professor sistematiza no quadro os consensos e os equívocos." },
       { order:5, title:"Síntese e verificação de saída", minutes:mins[4],
         organization:"Individual, com recolhimento dos registros.",
         description:isInfantil
-          ? "Roda final de conversa: cada criança relata o que mais gostou e o que aprendeu, com registro da professora."
-          : 'Cada estudante registra em até três linhas o que compreendeu sobre "' + theme + '" e uma dúvida remanescente. Esse bilhete de saída orienta a aula seguinte.' }
+          ? "Roda final: cada criança relata o que aprendeu, com registro da professora."
+          : "Bilhete de saída: até três linhas sobre o que foi compreendido e uma dúvida remanescente." }
     ];
   }
 
@@ -8123,10 +8181,15 @@ function generateLocal(cfg) {
     /* Distribui os conteúdos entre as aulas disponíveis, sem misturá-los */
     if (nAulas >= contents.length) {
       var extras = nAulas - contents.length;
+      /* v6.9 (segunda passada) — a descrição não repete o foco da aula, que
+         já está na coluna ao lado. Traz o código da habilidade, que é o que
+         faltava para amarrar aula ⇄ matriz, e a rotina em três tempos. */
       contents.forEach(function(ct, i) {
+        var cods = A(ct.skills).map(function(k){ return k.code; }).filter(Boolean);
         lessonSequence.push({ lesson:i+1, focus:ct.text,
-          description:"Aula dedicada a " + ct.text + (ct.profile ? " (" + ct.profile.label.toLowerCase() + ")" : "") +
-            ": sondagem, desenvolvimento e prática orientada específicos deste conteúdo." });
+          description:(cods.length ? cods.join(", ") + " — " : "") +
+            "sondagem, desenvolvimento e prática orientada" +
+            (ct.profile ? ", no formato de " + ct.profile.label.toLowerCase() : "") + "." });
       });
       for (var e = 0; e < extras; e++) {
         lessonSequence.push({ lesson:contents.length + e + 1, focus:"Retomada e sistematização",
@@ -8137,10 +8200,18 @@ function generateLocal(cfg) {
       for (var la = 0; la < nAulas; la++) {
         var bloco = contents.slice(la * perAula, (la + 1) * perAula);
         if (!bloco.length) bloco = [contents[contents.length - 1]];
+        var codsBloco = [];
+        bloco.forEach(function(c) {
+          A(c.skills).forEach(function(k) {
+            if (k.code && codsBloco.indexOf(k.code) < 0) codsBloco.push(k.code);
+          });
+        });
         lessonSequence.push({ lesson:la+1,
           focus: bloco.map(function(c){ return c.text; }).join(" + "),
-          description:"Nesta aula trabalha-se " + bloco.map(function(c){ return c.text; }).join(" e depois ") +
-            ", em blocos separados, com registro distinto no caderno para cada um." });
+          description:(codsBloco.length ? codsBloco.join(", ") + " — " : "") +
+            (bloco.length > 1
+              ? bloco.length + " blocos separados na mesma aula, com registro distinto no caderno para cada conteúdo."
+              : "sondagem, desenvolvimento e prática orientada, com registro no caderno.") });
       }
     }
   } else {
@@ -8324,17 +8395,24 @@ function generateLocal(cfg) {
   return {
     title: theme,
     coverImage: cfg.coverImage || "",
-    context: 'Este planejamento aborda "' + theme + '" no componente de ' + cfg.subject +
-      ", com a turma de " + cfg.gradeLevel + " (turno " + (cfg.shift || state.cfg.defaultShift) + "), no mês de " +
-      cfg.month + ", em uma carga de " + cfg.duration + ". A proposta articula as habilidades " + codes +
-      " da BNCC aos eixos de " + axes.slice(0,2).join(" e ").toLowerCase() +
-      ", partindo dos conhecimentos prévios da turma para chegar à produção autônoma dos estudantes." +
-      (CALENDAR.meses[cfg.month] ? " O mês de referência conta com " + CALENDAR.meses[cfg.month].diasLetivos +
-        " dias letivos previstos no calendário (" + (CALENDAR.meses[cfg.month].periodo || "período não letivo") + ")." : ""),
-    justification: "Esse conjunto justifica-se por sua função estruturante no percurso de " +
-      cfg.gradeLevel + ": consolida aprendizagens anteriores e cria as condições para os conteúdos subsequentes. " +
-      "A sequência adota progressão do apoio à autonomia — modelagem pelo professor, prática mediada em duplas e produção individual — " +
-      "de modo que a mediação seja retirada gradualmente conforme o domínio se consolida." +
+    /* v6.9 (segunda passada) — componente, turma, turno, mês e carga saíram
+       daqui: as cinco informações estão na tabela de identificação, três
+       centímetros acima, e repeti-las em prosa era o que mais engordava a
+       contextualização sem acrescentar nada.
+       No lugar entra o que só este campo pode dizer: os códigos, os eixos e
+       o calendário do mês. */
+    context: 'Este planejamento aborda "' + theme + '", articulando as habilidades ' + codes +
+      " aos eixos de " + axes.slice(0,2).join(" e ").toLowerCase() + "." +
+      (CALENDAR.meses[cfg.month] ? " O mês conta com " + CALENDAR.meses[cfg.month].diasLetivos +
+        " dias letivos (" + (CALENDAR.meses[cfg.month].periodo || "período não letivo") + ")." : ""),
+    /* A justificativa passa a abrir pela procedência das habilidades — é o
+       lastro do plano — e mantém uma única frase sobre o percurso didático.
+       A frase "consolida aprendizagens anteriores e cria as condições para
+       os conteúdos subsequentes" saiu: vale para qualquer plano de qualquer
+       componente, e era ela que fazia o documento soar de fôrma. */
+    justification: fundamentacaoDasHabilidades(skills, cfg) +
+      " A sequência vai do apoio à autonomia: modelagem pelo professor, prática mediada em duplas e produção " +
+      "individual, com a mediação retirada à medida que o domínio se consolida." +
       (cfg.extraDetails ? " Considerações informadas para esta turma: " + cfg.extraDetails : ""),
     generalCompetency: getGeneralCompetency(cfg.subject),
     specificCompetencies: [
@@ -13116,10 +13194,18 @@ function planoModeloSL(pl) {
     (seq ? '<div class="msl-sub">Distribuição pelas aulas do mês</div><ol class="msl-lista">' + seq + "</ol>" : "");
 
   /* ---- Metodologias: etapas com minutos, mais as atividades ---- */
+  /* v6.9 — o código da habilidade da etapa vira etiqueta ao lado do título.
+     Antes vinha dissolvido numa frase inteira dentro da descrição ("O foco
+     aqui é exclusivamente X, que responde à habilidade Y"). Como etiqueta
+     ele ocupa três palavras, e a coordenação confere a amarração etapa ⇄
+     habilidade correndo o olho pela coluna, sem ler o parágrafo. */
   var metod = A(c.methodology).map(function(m) {
+    var cods = A(m.skills).filter(Boolean);
     return '<div class="msl-etapa">' +
       '<span class="msl-min">' + esc(m.order) + ". " + esc(m.title) +
-      (m.minutes ? " (" + esc(m.minutes) + " min)" : "") + ":</span> " + esc(m.description) +
+      (m.minutes ? " (" + esc(m.minutes) + " min)" : "") + ":</span> " +
+      (cods.length ? '<span class="msl-cod">' + esc(cods.join(", ")) + "</span> " : "") +
+      esc(m.description) +
       (m.organization ? ' <span class="msl-nota">[' + esc(m.organization) + "]</span>" : "") +
     "</div>";
   }).join("");
