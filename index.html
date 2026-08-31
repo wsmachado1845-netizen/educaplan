@@ -3205,9 +3205,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "7.0";
-var APP_VERSAO_DATA = "28/08/2026";
-var APP_VERSAO_NOTA = "Plano enxuto, com a procedência das habilidades";
+var APP_VERSAO = "7.1";
+var APP_VERSAO_DATA = "31/08/2026";
+var APP_VERSAO_NOTA = "Histórico separado por mês, disciplina e turma";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -6410,6 +6410,10 @@ var state = {
   habBusca: "",
   habFiltro: "",
   bimestre: "b2",
+  /* v7.1 — filtros do Histórico de Planos. Vazio significa "todos". */
+  planDisc: "",
+  planTurma: "",
+  planMes: "",
   diarioSel: { subject:"Língua Portuguesa", grade:"Ensino Fundamental II (9º Ano)", month:"Março" },
   agendaMonth: "Março",
   modal: null
@@ -10602,17 +10606,109 @@ function viewPlan() {
 }
 
 /* ---------------- HISTÓRICO DE PLANOS ---------------- */
+/* Nome curto da turma para os cabeçalhos do histórico: "Ensino Fundamental
+   II (9º Ano)" ocupa a linha inteira e o que distingue é só o "9º Ano". */
+function turmaCurta(g) {
+  var t = String(g || "").replace(/^Ensino Fundamental (I{1,2}|II)\s*/i, "")
+    .replace(/^Ensino M[ée]dio\s*/i, "").replace(/^Educa[çc][ãa]o Infantil\s*/i, "");
+  t = t.replace(/^\(|\)$/g, "").trim();
+  return t || String(g || "");
+}
+
+/* Cartão de um plano na lista do histórico. */
+function cartaoDoPlano(p, mostrarCabecalho) {
+  return '<div class="card row" onclick="openPlan(\'' + p.id + '\')">' +
+    '<div style="min-width:0">' +
+      (mostrarCabecalho
+        ? '<div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">' +
+          esc(p.config.subject) + " &middot; " + esc(p.config.gradeLevel) + "</div>"
+        : "") +
+      '<div class="clamp2" style="font-weight:600;font-size:14px">' + esc(p.content.title) + "</div>" +
+      '<div style="font-size:11px;color:var(--t4);margin-top:2px;display:flex;align-items:center;gap:7px;flex-wrap:wrap">' +
+        seloTeste(p) +
+        "<span>" + esc(p.config.month) +
+        " &middot; criado em " + new Date(p.createdAt).toLocaleDateString("pt-BR") +
+        (p.refinadoNa ? " &middot; refinado na v" + esc(p.refinadoNa) : "") +
+        (p.config.aee && p.config.aee.active ? " &middot; <span style='color:var(--grn)'>AEE</span>" : "") + "</span></div>" +
+    "</div>" +
+    '<div style="display:flex;gap:2px;flex-shrink:0">' +
+      '<button class="btn btn-ghost btn-sm" title="' +
+        (ehTeste(p) ? "Passar para definitivo" : "Marcar como teste") + '" ' +
+        'onclick="event.stopPropagation();alternarTeste(\'' + p.id + '\')">' +
+        (ehTeste(p) ? "&#10003; Definitivo" : "Teste") + "</button>" +
+      '<button class="btn btn-ghost btn-sm" style="color:var(--red)" ' +
+        'onclick="event.stopPropagation();deletePlan(\'' + p.id + '\')">Excluir</button>' +
+    "</div></div>";
+}
+
+/* =========================================================
+   HISTÓRICO DE PLANOS (v7.1)
+   ---------------------------------------------------------
+   Era uma lista corrida em ordem de criação. Com planos de três
+   componentes, cinco turmas e onze meses, achar "o de Inglês do 7º ano de
+   setembro" virava rolagem e leitura de etiqueta por etiqueta.
+   Agora a lista é separada por MÊS e, dentro do mês, por DISCIPLINA +
+   TURMA. O mês vem primeiro porque o planejamento é mensal: é assim que o
+   professor procura.
+   Os três seletores só oferecem os valores que existem nos planos salvos —
+   não adianta poder filtrar por um mês em que não há nada.
+   ========================================================= */
 function viewPlans() {
   var q = (state.planQuery || "").toLowerCase();
   var filtro = state.planFiltro || "todos";   /* todos | definitivos | testes */
+  var fDisc = state.planDisc || "";
+  var fTurma = state.planTurma || "";
+  var fMes = state.planMes || "";
+
+  /* Valores realmente presentes, na ordem em que fazem sentido. */
+  function presentes(campo, ordem) {
+    var vistos = {}, saida = [];
+    state.plans.forEach(function(p) {
+      var v = p.config[campo];
+      if (v && !vistos[v]) { vistos[v] = 1; saida.push(v); }
+    });
+    if (ordem) {
+      saida.sort(function(a, b) {
+        var ia = ordem.indexOf(a), ib = ordem.indexOf(b);
+        if (ia < 0) ia = 999; if (ib < 0) ib = 999;
+        return ia !== ib ? ia - ib : String(a).localeCompare(b);
+      });
+    } else {
+      saida.sort(function(a, b){ return String(a).localeCompare(b); });
+    }
+    return saida;
+  }
+  var discs = presentes("subject");
+  var turmas = presentes("gradeLevel", GRADES);
+  var meses = presentes("month", MONTHS);
+
   var list = state.plans.filter(function(p) {
     if (filtro === "definitivos" && ehTeste(p)) return false;
     if (filtro === "testes" && !ehTeste(p)) return false;
+    if (fDisc && p.config.subject !== fDisc) return false;
+    if (fTurma && p.config.gradeLevel !== fTurma) return false;
+    if (fMes && p.config.month !== fMes) return false;
     return p.content.title.toLowerCase().indexOf(q) >= 0 ||
       p.config.subject.toLowerCase().indexOf(q) >= 0 ||
       p.config.gradeLevel.toLowerCase().indexOf(q) >= 0 ||
       p.config.month.toLowerCase().indexOf(q) >= 0;
   });
+
+  /* Agrupamento: mês → disciplina + turma, cada nível na sua ordem. */
+  var porMes = {};
+  list.forEach(function(p) {
+    var m = p.config.month || "Sem mês";
+    if (!porMes[m]) porMes[m] = {};
+    var chave = p.config.subject + " \u00b7 " + turmaCurta(p.config.gradeLevel);
+    if (!porMes[m][chave]) porMes[m][chave] = [];
+    porMes[m][chave].push(p);
+  });
+  var mesesNaLista = Object.keys(porMes).sort(function(a, b) {
+    var ia = MONTHS.indexOf(a), ib = MONTHS.indexOf(b);
+    if (ia < 0) ia = 999; if (ib < 0) ib = 999;
+    return ia - ib;
+  });
+
   var nTestes = contarTestes();
   var nDef = state.plans.length - nTestes;
   var chip = function(id, rotulo, n) {
@@ -10621,16 +10717,40 @@ function viewPlans() {
       '" onclick="state.planFiltro=\'' + id + '\';render()">' + rotulo +
       (typeof n === "number" ? " (" + n + ")" : "") + "</button>";
   };
+  var seletor = function(id, rotulo, valores, sel, campoEstado, vazio) {
+    return '<div><label class="lbl">' + rotulo + "</label>" +
+      '<select class="inp" id="' + id + '" onchange="state.' + campoEstado + '=this.value;render()">' +
+        '<option value="">' + vazio + "</option>" +
+        valores.map(function(v) {
+          return '<option value="' + esc(v) + '"' + (v === sel ? " selected" : "") + ">" +
+            esc(id === "hp_turma" ? turmaCurta(v) : v) + "</option>";
+        }).join("") +
+      "</select></div>";
+  };
+  var temFiltro = fDisc || fTurma || fMes;
+
   return '<div class="wrap fade" style="padding:34px 18px 56px">' +
     pageHead("Histórico de Planos",
       nDef + " definitivo(s)" + (nTestes ? " e " + nTestes + " de teste" : "") + " neste navegador", "home") +
-    '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px">' +
-      '<input class="inp" id="pq" style="max-width:320px" placeholder="Buscar por tema, componente, turma ou m&ecirc;s..." ' +
-        'value="' + esc(state.planQuery || "") + '" oninput="state.planQuery=this.value;renderKeep(\'pq\')" />' +
-      (state.plans.length ? '<button class="btn btn-outline btn-sm" onclick="exportAll()">Baixar todos (.html)</button>' : "") +
+
+    '<div class="card" style="padding:16px 18px;margin-bottom:16px">' +
+      '<div class="g3">' +
+        seletor("hp_disc", "Disciplina", discs, fDisc, "planDisc", "Todas as disciplinas") +
+        seletor("hp_turma", "Turma", turmas, fTurma, "planTurma", "Todas as turmas") +
+        seletor("hp_mes", "M&ecirc;s", meses, fMes, "planMes", "Todos os meses") +
+      "</div>" +
+      '<div style="display:flex;flex-wrap:wrap;gap:9px;margin-top:13px;align-items:center">' +
+        '<input class="inp" id="pq" style="max-width:300px" placeholder="Buscar por tema..." ' +
+          'value="' + esc(state.planQuery || "") + '" oninput="state.planQuery=this.value;renderKeep(\'pq\')" />' +
+        (temFiltro
+          ? '<button class="btn btn-ghost btn-sm" onclick="state.planDisc=\'\';state.planTurma=\'\';state.planMes=\'\';render()">Limpar filtros</button>'
+          : "") +
+        (state.plans.length ? '<button class="btn btn-outline btn-sm" onclick="exportAll()">Baixar todos (.html)</button>' : "") +
+      "</div>" +
     "</div>" +
+
     (nTestes
-      ? '<div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:14px">' +
+      ? '<div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:16px">' +
           chip("todos", "Todos", state.plans.length) +
           chip("definitivos", "Definitivos", nDef) +
           chip("testes", "Testes", nTestes) +
@@ -10638,30 +10758,37 @@ function viewPlans() {
             (nTestes === 1 ? "Excluir o plano de teste" : "Excluir os " + nTestes + " planos de teste") + "</button>" +
         "</div>"
       : "") +
+
     (list.length
-      ? list.map(function(p) {
-          return '<div class="card row" onclick="openPlan(\'' + p.id + '\')">' +
-            '<div style="min-width:0">' +
-              '<div style="font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">' +
-                esc(p.config.subject) + " &middot; " + esc(p.config.gradeLevel) + "</div>" +
-              '<div class="clamp2" style="font-weight:600;font-size:14px">' + esc(p.content.title) + "</div>" +
-              '<div style="font-size:11px;color:var(--t4);margin-top:2px;display:flex;align-items:center;gap:7px;flex-wrap:wrap">' +
-                seloTeste(p) +
-                "<span>" + esc(p.config.month) +
-                " &middot; criado em " + new Date(p.createdAt).toLocaleDateString("pt-BR") +
-                (p.config.aee && p.config.aee.active ? " &middot; <span style='color:var(--grn)'>AEE</span>" : "") + "</span></div>" +
+      ? mesesNaLista.map(function(mes) {
+          var grupos = porMes[mes];
+          var chaves = Object.keys(grupos).sort(function(a, b){ return a.localeCompare(b); });
+          var nNoMes = chaves.reduce(function(acc, k){ return acc + grupos[k].length; }, 0);
+          var bim = bimestreOfMonth(mes);
+          return '<div style="margin-bottom:26px">' +
+            '<div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;' +
+              'border-bottom:2px solid var(--acc);padding-bottom:6px;margin-bottom:12px">' +
+              '<span style="font-family:var(--serif);font-size:17px;font-weight:700">' + esc(mes) + "</span>" +
+              (bim ? '<span style="font-size:11px;color:var(--t4)">' + esc(bim) + "</span>" : "") +
+              '<span style="margin-left:auto;font-size:11px;color:var(--t4)">' + nNoMes +
+                (nNoMes === 1 ? " plano" : " planos") + "</span>" +
             "</div>" +
-            '<div style="display:flex;gap:2px;flex-shrink:0">' +
-              '<button class="btn btn-ghost btn-sm" title="' +
-                (ehTeste(p) ? "Passar para definitivo" : "Marcar como teste") + '" ' +
-                'onclick="event.stopPropagation();alternarTeste(\'' + p.id + '\')">' +
-                (ehTeste(p) ? "&#10003; Definitivo" : "Teste") + "</button>" +
-              '<button class="btn btn-ghost btn-sm" style="color:var(--red)" ' +
-                'onclick="event.stopPropagation();deletePlan(\'' + p.id + '\')">Excluir</button>' +
-            "</div></div>";
+            chaves.map(function(chave) {
+              return '<div style="margin-bottom:14px">' +
+                '<div style="font-size:11px;font-weight:700;color:var(--acc);text-transform:uppercase;' +
+                  'letter-spacing:.05em;margin:0 0 7px 2px">' + esc(chave) +
+                  '<span style="color:var(--t4);font-weight:600"> &middot; ' + grupos[chave].length + "</span></div>" +
+                grupos[chave].map(function(p){ return cartaoDoPlano(p, false); }).join("") +
+              "</div>";
+            }).join("") +
+          "</div>";
         }).join("")
       : '<div class="card-soft" style="padding:36px;text-align:center;color:var(--t3);font-size:13px">' +
-        (state.plans.length ? "Nenhum plano corresponde &agrave; busca." : "Nenhum plano salvo ainda.") + "</div>") +
+        (state.plans.length
+          ? "Nenhum plano corresponde a esta combina&ccedil;&atilde;o." +
+            (temFiltro ? '<div style="margin-top:11px"><button class="btn btn-outline btn-sm" ' +
+              'onclick="state.planDisc=\'\';state.planTurma=\'\';state.planMes=\'\';render()">Limpar filtros</button></div>' : "")
+          : "Nenhum plano salvo ainda.") + "</div>") +
   "</div>";
 }
 
