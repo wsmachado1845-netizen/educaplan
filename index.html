@@ -579,6 +579,38 @@ body.exporting .noprint { display: none !important; }
    entregue à coordenação. A quebra por sílabas evita os rios de espaço em
    branco que a justificação cria em coluna estreita, sobretudo no celular.
    Títulos, faixas e códigos ficam de fora: número justificado fica torto. */
+/* ── O plano é papel, e papel é branco (v7.6) ──
+   O documento sempre foi desenhado para a folha: bordas pretas, faixas
+   azul-marinho, nota em cinza-escuro. No tema claro isso funciona, porque o
+   cartão atrás é branco. No tema escuro o cartão fica grafite e essas cores
+   fixas viram texto escuro sobre fundo escuro — a descrição da habilidade
+   some, e o cabeçalho da tabela do diário, que tem fundo azul-claro fixo,
+   fica com texto claro por cima de fundo claro.
+   A saída não é repintar cada elemento: é assumir que o plano é uma folha.
+   Todo editor de documento faz assim — o aplicativo escurece, a página
+   continua branca. Aqui o papel é sempre claro, nos dois temas, e tudo que
+   está desenhado sobre ele volta a ter o contraste para o qual foi feito. */
+body.t-grafite #planPaper {
+  background: #FFFFFF !important;
+  border-color: #C9D6E4 !important;
+  color: #16253A !important;
+}
+body.t-grafite #planPaper .msl,
+body.t-grafite #planPaper .msl h1,
+body.t-grafite #planPaper .msl td,
+body.t-grafite #planPaper .msl th,
+body.t-grafite #planPaper .msl div,
+body.t-grafite #planPaper .msl li,
+body.t-grafite #planPaper .msl strong { color: #16253A; }
+/* Especificidade acima da regra genérica de div acima, senão a nota perde
+   o cinza e fica com a mesma cor do texto principal. */
+body.t-grafite #planPaper .msl .msl-nota,
+body.t-grafite #planPaper .msl div.msl-nota { color: #444; }
+body.t-grafite #planPaper .msl-faixa td { color: #fff; }
+body.t-grafite #planPaper .msl-rub th { background: #E7EFF9; color: #16253A; }
+body.t-grafite #planPaper .msl-diario th { background: #E7EFF9; color: #16253A; }
+body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
+
 .msl { font-family: 'Times New Roman', Georgia, serif; font-size: 13.5px; line-height: 1.5;
   text-align: justify; text-justify: inter-word; hyphens: auto;
   -webkit-hyphens: auto; overflow-wrap: break-word; }
@@ -641,18 +673,35 @@ body.exporting .noprint { display: none !important; }
 .msl-sub:first-child { margin-top: 0; }
 .msl-etapa { margin-bottom: 6px; }
 .msl-min { font-weight: 700; }
-/* Tabela nos moldes do diário de classe oficial (v7.5). */
-.msl-diario { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+/* Tabela nos moldes do diário de classe oficial (v7.5, larguras v7.6).
+   As três colunas não carregam a mesma quantidade de texto, e por isso não
+   podem ter a mesma largura:
+     · Objetivos | Habilidades — o código MAIS a descrição da habilidade.
+       É de longe a coluna com mais texto; fica com metade da tabela.
+     · Currículo — só um código curto, e na prática costuma ficar vazio.
+       Espremida ao mínimo que ainda cabe um código sem quebrar.
+     · Conteúdo, Atividade, Rotina ou Experiência — o nome do conteúdo,
+       uma linha ou duas. Não precisa do resto todo.
+   Larguras fixas em % com table-layout fixed, senão o navegador redistribui
+   sozinho pelo conteúdo e a coluna do currículo volta a inchar. */
+.msl-diario { width: 100%; border-collapse: collapse; margin-bottom: 4px; table-layout: fixed; }
 .msl-diario th, .msl-diario td { border: 1px solid #000; padding: 5px 7px; font-size: 12.5px;
-  vertical-align: top; text-align: left; hyphens: none; }
-.msl-diario th { background: #E7EFF9; font-weight: 700; font-size: 11.5px; }
-.msl-diario th:first-child, .msl-diario td:first-child { width: 21%; }
-.msl-diario th:nth-child(2), .msl-diario td:nth-child(2) { width: 17%; }
-.msl-diario .msl-curr { font-size: 11.5px; }
+  vertical-align: top; text-align: left; hyphens: none; word-wrap: break-word;
+  overflow-wrap: break-word; }
+.msl-diario th { background: #E7EFF9; color: #16253A; font-weight: 700; font-size: 11.5px; }
+.msl-diario th:first-child,  .msl-diario td:first-child  { width: 52%; }
+.msl-diario th:nth-child(2), .msl-diario td:nth-child(2) { width: 12%; }
+.msl-diario th:nth-child(3), .msl-diario td:nth-child(3) { width: 36%; }
+.msl-diario .msl-curr { font-size: 11.5px; text-align: center; }
+/* A descrição da habilidade é o único texto corrido da tabela: justificado,
+   como o resto do documento. */
+.msl-diario td .msl-nota { text-align: justify; text-justify: inter-word;
+  hyphens: auto; -webkit-hyphens: auto; margin-top: 3px; }
 @media (max-width: 620px) {
-  .msl-diario th, .msl-diario td { font-size: 11px; padding: 5px; }
-  .msl-diario th:first-child, .msl-diario td:first-child { width: 26%; }
-  .msl-diario th:nth-child(2), .msl-diario td:nth-child(2) { width: 22%; }
+  .msl-diario th, .msl-diario td { font-size: 11px; padding: 5px 6px; }
+  .msl-diario th:first-child,  .msl-diario td:first-child  { width: 50%; }
+  .msl-diario th:nth-child(2), .msl-diario td:nth-child(2) { width: 15%; }
+  .msl-diario th:nth-child(3), .msl-diario td:nth-child(3) { width: 35%; }
 }
 
 .msl-rub { margin-top: 7px; }
@@ -3371,9 +3420,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "7.5";
+var APP_VERSAO = "7.6";
 var APP_VERSAO_DATA = "01/09/2026";
-var APP_VERSAO_NOTA = "Plano e Registro nos campos do diário oficial";
+var APP_VERSAO_NOTA = "Colunas proporcionais e plano legível no modo escuro";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -11683,9 +11732,11 @@ function viewDiario() {
       (lessons.length
         ? '<div class="tscroll"><table class="tb"><thead><tr><th style="width:66px">Data</th><th style="width:96px">Dia</th>' +
           '<th style="width:56px">Aulas</th><th style="width:52px">Entrada</th>' +
+          /* v7.6 — no Registro quem tem mais texto é o conteúdo, e o
+             currículo costuma ficar vazio: ele fica com o mínimo. */
           "<th>Conte&uacute;do, Atividade, Rotina ou Experi&ecirc;ncia</th>" +
-          "<th style='width:120px'>Objetivos | Habilidades</th>" +
-          "<th style='width:110px'>Curr&iacute;culo</th></tr></thead><tbody>" +
+          "<th style='width:118px'>Objetivos | Habilidades</th>" +
+          "<th style='width:74px'>Curr&iacute;culo</th></tr></thead><tbody>" +
           body + "<tr style='background:var(--acc3)'><td colspan='2'><strong>SUBTOTAL DO M&Ecirc;S</strong></td>" +
           "<td style='text-align:center'><strong>" + ch.monthlyLessons + "</strong></td><td></td>" +
           "<td><strong>" + ch.encounters + " entradas registradas</strong></td>" +
@@ -13799,17 +13850,29 @@ function planoModeloSL(pl) {
     ? '<table class="msl-diario"><thead><tr>' +
         "<th>Objetivos | Habilidades</th><th>Curr&iacute;culo</th>" +
         "<th>Conte&uacute;do, Atividade, Rotina ou Experi&ecirc;ncia</th></tr></thead><tbody>" +
-        A(c.knowledgeObjects).map(function(k) {
+        (function() {
+          /* v7.6 — a descrição da habilidade sai por extenso só na primeira
+             linha em que o código aparece. Uma habilidade costuma gerar
+             quatro ou cinco objetos (tirinhas, charges, memes, gifs), e o
+             mesmo parágrafo repetido cinco vezes seguidas enchia meia
+             página sem dizer nada de novo. Nas repetições fica só o código,
+             que é o que o diário pede mesmo. */
+          var jaDescrito = {};
+          return A(c.knowledgeObjects).map(function(k) {
           var codigos = A(k.codes).filter(Boolean);
           var bncc = codigosBNCC(codigos), curr = codigosDoCurriculo(codigos);
+          var chaveDesc = bncc.join(",");
+          var mostrarDesc = k.note && !jaDescrito[chaveDesc];
+          if (mostrarDesc) jaDescrito[chaveDesc] = 1;
           return "<tr>" +
             '<td><span class="msl-cod">' + (bncc.length ? esc(bncc.join(", ")) : "&mdash;") + "</span>" +
-              (k.note ? '<div class="msl-nota">' + esc(k.note) + "</div>" : "") + "</td>" +
+              (mostrarDesc ? '<div class="msl-nota">' + esc(k.note) + "</div>" : "") + "</td>" +
             '<td class="msl-curr"><span class="msl-cod">' +
               (curr.length ? esc(curr.join(", ")) : "&mdash;") + "</span></td>" +
             "<td><strong>" + esc(k.content) + "</strong></td>" +
           "</tr>";
-        }).join("") +
+          }).join("");
+        })() +
       "</tbody></table>" +
       '<div class="msl-nota" style="margin-top:4px">Campos na ordem do di&aacute;rio de classe: ' +
         "c&oacute;digos da BNCC &agrave; esquerda, c&oacute;digos do documento curricular da rede no meio " +
