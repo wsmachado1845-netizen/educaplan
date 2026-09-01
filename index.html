@@ -660,6 +660,22 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 .msl-lista li { margin-bottom: 3px; }
 .msl-cod { font-weight: 700; }
 .msl-nota { font-size: 12px; color: #444; }
+/* ── Quadro de aulas dadas (v8.2) ── */
+.ad-tab th, .ad-tab td { text-align: center; }
+.ad-tab th.ad-turma { text-align: left; white-space: nowrap; }
+.ad-tab td.ad-turma, .ad-tab th.ad-turma {
+  display: table-cell; }
+.ad-tab th.ad-turma span:last-child { margin-left: 7px; vertical-align: middle; }
+.ad-tab th.ad-turma .hp-sig { display: inline-flex; vertical-align: middle; }
+.ad-cel { width: 100%; min-width: 44px; border: none; background: transparent;
+  font-family: inherit; font-size: 13.5px; font-weight: 600; text-align: center;
+  color: var(--t1); padding: 10px 2px; outline: none; }
+.ad-cel:focus { background: var(--acc3); border-radius: 6px; }
+.ad-cel::placeholder { color: var(--t4); font-weight: 400; }
+.ad-total { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+.ad-prev { color: var(--t4); font-variant-numeric: tabular-nums; }
+@media (max-width: 620px) { .ad-cel { min-width: 38px; font-size: 13px; padding: 12px 1px; } }
+
 .msl-corrido { font-size: 12.5px; line-height: 1.55; }
 .msl-art { margin-bottom: 4px; font-size: 12.5px; line-height: 1.5; }
 .msl-art:last-child { margin-bottom: 0; }
@@ -2154,6 +2170,7 @@ var NAV_ITEMS = [
   { id:"gen",      label:"Criar Planejamento",   short:"Criar",    icon:"criar" },
   { id:"plans",    label:"HistÃ³rico de Planos",  short:"Planos",   icon:"planos" },
   { id:"diario",   label:"Registro de Aulas",    short:"Registro", icon:"registro" },
+  { id:"aulasdadas", label:"Aulas Dadas",         short:"Dadas",    icon:"registro" },
   { id:"settings", label:"Ajustes & Mais",       short:"Ajustes",  icon:"ajustes" }
 ];
 
@@ -3453,13 +3470,17 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "8.1";
+var APP_VERSAO = "8.2";
 var APP_VERSAO_DATA = "01/09/2026";
-var APP_VERSAO_NOTA = "Metodologia sem rotinas, avaliação geral e currículo uma vez";
+var APP_VERSAO_NOTA = "Quadro de aulas dadas com contagem parcial";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
 var K_DIARY = "educaplan_diary_v2";
+/* v8.2 — as aulas efetivamente dadas, por turma e por mês. Guardadas à
+   parte do diário porque são outra coisa: o diário registra o CONTEÚDO de
+   cada data; isto é a contagem do que aconteceu no mês. */
+var K_AULAS_DADAS = "educaplan_aulas_dadas_v1";
 var K_USER = "educaplan_user_v2";
 var K_SNAPSHOTS = "educaplan_snapshots_v1";
 var K_SYNCMETA = "educaplan_syncmeta_v1";
@@ -6662,6 +6683,7 @@ var state = {
   planDisc: "",
   planTurma: "",
   planMes: "",
+  aulasDadas: lsGet(K_AULAS_DADAS, {}),
   diarioSel: { subject:"Língua Portuguesa", grade:"Ensino Fundamental II (9º Ano)", month:"Março" },
   agendaMonth: "Março",
   modal: null
@@ -6695,6 +6717,7 @@ state.travado = lockAtivo();
 function saveCfg() { lsSet(K_CFG, state.cfg); markChanged(); }
 function savePlans() { lsSet(K_PLANS, state.plans); markChanged(); }
 function saveDiary() { lsSet(K_DIARY, state.diary); markChanged(); }
+function saveAulasDadas() { lsSet(K_AULAS_DADAS, state.aulasDadas); markChanged(); }
 
 function activeSchedule() {
   var s = state.cfg.horarioSemanal;
@@ -11321,6 +11344,149 @@ function viewPlans() {
   "</div>";
 }
 
+/* =========================================================
+   AULAS DADAS (v8.2)
+   ---------------------------------------------------------
+   O aplicativo já sabia quantas aulas a turma DEVERIA ter no mês — cruza
+   o horário semanal com o calendário letivo. Faltava a outra metade, que
+   é a que a escola cobra no fim do bimestre: quantas aulas foram
+   efetivamente dadas.
+   As duas nunca batem, e não é erro de ninguém: falta professor, cai
+   energia, entra evento, a turma sai para uma atividade. Por isso o quadro
+   mostra as duas lado a lado, sem apontar culpa — a diferença é informação,
+   não cobrança.
+   A contagem é digitada pelo professor, mês a mês, como ele já fazia no
+   papel. O que o app acrescenta é o total parcial calculado sozinho e a
+   comparação com o previsto.
+   ========================================================= */
+function chaveAula(subject, grade) {
+  return normSubj(subject) + "|" + normGrade(grade);
+}
+function aulasDadasDe(subject, grade, month) {
+  var linha = state.aulasDadas[chaveAula(subject, grade)];
+  var v = linha ? linha[month] : null;
+  return (typeof v === "number" && v >= 0) ? v : null;
+}
+function definirAulasDadas(subject, grade, month, valor) {
+  var k = chaveAula(subject, grade);
+  if (!state.aulasDadas[k]) state.aulasDadas[k] = {};
+  var n = parseInt(valor, 10);
+  if (isNaN(n) || n < 0) delete state.aulasDadas[k][month];
+  else state.aulasDadas[k][month] = Math.min(60, n);
+  if (!Object.keys(state.aulasDadas[k]).length) delete state.aulasDadas[k];
+  saveAulasDadas();
+  render();
+}
+function limparAulasDadas() {
+  if (!confirm("Apagar toda a contagem de aulas dadas?\n\nUma versão de segurança é guardada antes.")) return;
+  pushSnapshot("Antes de limpar as aulas dadas", true);
+  state.aulasDadas = {};
+  saveAulasDadas();
+  render();
+  toast("Contagem apagada.");
+}
+
+function viewAulasDadas() {
+  var meses = state.adMeses && state.adMeses.length ? state.adMeses : MONTHS;
+  var combos = combinacoesQueLeciona();
+  if (!combos.length) {
+    return '<div class="wrap fade" style="padding:34px 18px 56px">' +
+      pageHead("Aulas Dadas", "Contagem do que foi efetivamente ministrado", "home") +
+      '<div class="card-soft" style="padding:30px;text-align:center;color:var(--t3);font-size:13px">' +
+      "Para montar o quadro eu preciso do seu hor&aacute;rio semanal &mdash; " +
+      '<a href="#" onclick="go(\'settings\');return false">cadastre em Ajustes</a>.</div></div>';
+  }
+
+  /* v8.2 — o percentual de cumprimento só considera os meses que o professor
+     já lançou. Comparar o que foi dado em quatro meses com o previsto do ano
+     inteiro daria um número assustador e falso (43% quando na verdade está em
+     dia). A coluna "Prev." continua mostrando o previsto de todos os meses,
+     porque ali a leitura é de planejamento anual, não de cumprimento. */
+  var totalDado = 0, totalPrev = 0, totalPrevLanc = 0;
+  var linhas = combos.map(function(c) {
+    var somaDado = 0, somaPrev = 0, somaPrevLanc = 0;
+    var celulas = meses.map(function(m) {
+      var dado = aulasDadasDe(c.subject, c.gradeLevel, m);
+      var ch = cargaHoraria(c.subject, c.gradeLevel, m);
+      var prev = ch.configured ? ch.monthlyLessons : 0;
+      if (dado !== null) { somaDado += dado; somaPrevLanc += prev; }
+      somaPrev += prev;
+      return "<td style='padding:0'>" +
+        "<input type='number' min='0' max='60' inputmode='numeric' class='ad-cel' " +
+          "value='" + (dado === null ? "" : dado) + "' " +
+          "placeholder='" + (prev || "") + "' " +
+          "title='" + esc(m) + " &mdash; previstas: " + prev + "' " +
+          "onchange=\"definirAulasDadas('" + esc(c.subject).replace(/'/g, "\\'") + "','" +
+            esc(c.gradeLevel).replace(/'/g, "\\'") + "','" + esc(m) + "', this.value)\" /></td>";
+    }).join("");
+    totalDado += somaDado; totalPrev += somaPrev; totalPrevLanc += somaPrevLanc;
+    var pct = somaPrevLanc ? Math.round(100 * somaDado / somaPrevLanc) : 0;
+    var cor = !somaDado ? "var(--t4)" : (pct >= 90 ? "var(--grn)" : (pct >= 70 ? "var(--amb)" : "var(--verm)"));
+    return "<tr><th class='ad-turma'>" +
+        '<span class="hp-sig" style="background:' + siglaDoComponente(c.subject).cor + ';width:24px;height:24px;font-size:9.5px">' +
+          esc(siglaDoComponente(c.subject).sigla) + "</span>" +
+        "<span>" + esc(c.conhecida ? turmaCurta(c.gradeLevel) : c.gradeCurto.replace(/\s+U$/, "")) + "</span>" +
+      "</th>" + celulas +
+      "<td class='ad-total' style='color:" + cor + "'>" + somaDado + "</td>" +
+      "<td class='ad-prev'>" + somaPrev + "</td></tr>";
+  }).join("");
+
+  var pctGeral = totalPrevLanc ? Math.round(100 * totalDado / totalPrevLanc) : 0;
+
+  /* quais meses já têm alguma contagem lançada — serve para o rótulo do cartão */
+  var mesesLancados = meses.filter(function(m) {
+    return combos.some(function(c){ return aulasDadasDe(c.subject, c.gradeLevel, m) !== null; });
+  });
+  var rotuloPeriodo = !mesesLancados.length ? "nenhum m&ecirc;s lan&ccedil;ado ainda"
+    : mesesLancados.length === 1 ? esc(mesesLancados[0])
+    : esc(mesesLancados[0]) + " a " + esc(mesesLancados[mesesLancados.length - 1]) +
+      " (" + mesesLancados.length + " meses)";
+
+  return '<div class="wrap fade" style="padding:34px 18px 56px">' +
+    pageHead("Aulas Dadas", "Contagem do que foi efetivamente ministrado, mês a mês", "home") +
+
+    '<div class="card" style="padding:16px 18px;margin-bottom:16px;border-left:4px solid var(--acc)">' +
+      '<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:baseline">' +
+        '<div><div style="font-size:11px;color:var(--t4)">Total dado at&eacute; agora</div>' +
+          '<div style="font-family:var(--serif);font-size:26px;font-weight:700">' + totalDado + "</div></div>" +
+        '<div><div style="font-size:11px;color:var(--t4)">Previstas nesses meses</div>' +
+          '<div style="font-family:var(--serif);font-size:26px;font-weight:700;color:var(--t3)">' + totalPrevLanc + "</div></div>" +
+        '<div><div style="font-size:11px;color:var(--t4)">Cumprimento</div>' +
+          '<div style="font-family:var(--serif);font-size:26px;font-weight:700;color:' +
+            (pctGeral >= 90 ? "var(--grn)" : (pctGeral >= 70 ? "var(--amb)" : "var(--verm)")) + '">' +
+            pctGeral + "%</div></div>" +
+      "</div>" +
+      '<div style="font-size:11.5px;color:var(--t4);margin-top:10px;line-height:1.55">' +
+        "Contagem parcial de <strong>" + rotuloPeriodo + "</strong>. " +
+        "O percentual compara s&oacute; os meses j&aacute; lan&ccedil;ados &mdash; " +
+        "os que ainda n&atilde;o foram preenchidos ficam de fora para n&atilde;o baixar o resultado sem motivo. " +
+        "No ano inteiro est&atilde;o previstas " + totalPrev + " aulas." +
+      "</div>" +
+      '<div style="font-size:11.5px;color:var(--t4);margin-top:7px;line-height:1.55">' +
+        "As previstas vêm do seu hor&aacute;rio semanal cruzado com o calend&aacute;rio. " +
+        "Na pr&aacute;tica quase nunca batem &mdash; falta professor, cai energia, entra evento. " +
+        "A diferen&ccedil;a aqui &eacute; informa&ccedil;&atilde;o para o fechamento do bimestre, n&atilde;o cobran&ccedil;a." +
+      "</div>" +
+    "</div>" +
+
+    '<div class="tscroll"><table class="tb ad-tab"><thead><tr>' +
+      "<th class='ad-turma'>Turma</th>" +
+      meses.map(function(m){ return "<th>" + esc(m.slice(0,3)) + "</th>"; }).join("") +
+      "<th title='Soma do que voc&ecirc; lan&ccedil;ou'>Dadas</th>" +
+      "<th title='Previstas no ano inteiro pelo seu hor&aacute;rio'>Prev. ano</th></tr></thead><tbody>" +
+      linhas + "</tbody></table></div>" +
+
+    '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">' +
+      '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir quadro</button>' +
+      '<button class="btn btn-ghost btn-sm" style="color:var(--verm)" onclick="limparAulasDadas()">Limpar contagem</button>' +
+    "</div>" +
+    '<div style="font-size:11px;color:var(--t4);margin-top:10px;line-height:1.55">' +
+      "O n&uacute;mero cinza dentro da c&eacute;lula vazia &eacute; o previsto daquele m&ecirc;s. " +
+      "Digite por cima com o que foi dado de verdade." +
+    "</div>" +
+  "</div>";
+}
+
 /* ---------------- ARQUIVO BIMESTRAL ---------------- */
 function viewArchive() {
   var sel = state.bimestre;
@@ -14541,6 +14707,7 @@ var SIDE_MENU = [
   ]},
   { group:"Rotina Escolar", items:[
     { id:"diario", label:"Registro de Aulas", icon:"registro" },
+    { id:"aulasdadas", label:"Aulas Dadas",   icon:"registro" },
     { id:"agenda", label:"Agenda Letiva",     icon:"agenda" },
     { id:"archive",label:"Arquivo Bimestral", icon:"arquivo" }
   ]},
@@ -14646,6 +14813,7 @@ function render() {
   else if (state.view === "plans") html = viewPlans();
   else if (state.view === "cobertura") html = viewCobertura();
   else if (state.view === "diario") html = viewDiario();
+  else if (state.view === "aulasdadas") html = viewAulasDadas();
   else if (state.view === "archive") html = viewArchive();
   else if (state.view === "agenda") html = viewAgenda();
   else if (state.view === "aee") html = viewAee();
