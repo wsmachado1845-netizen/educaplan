@@ -31,7 +31,11 @@
   --t1: #0F1F33;
   --t2: #2E4257;
   --t3: #556A82;
-  --t4: #8395A9;
+  /* v7.7 — o cinza de apoio dava 3,07:1 sobre branco, abaixo do mínimo de
+     4,5:1 para texto pequeno. Escurecido até passar folgado, inclusive
+     sobre os fundos levemente azulados (--bg3), que é onde ele mais
+     aparece: rótulo de calendário, contadores, legendas. */
+  --t4: #5A6E86;
   /* v7.3 — identidade do município: azul institucional predominante,
      vermelho como destaque e branco. O azul ficou mais fechado (era
      #1E5AA8, um azul de interface); este é o azul de brasão, que aguenta
@@ -42,14 +46,19 @@
   --acc2: #0D3460;
   --acc3: #DEE9F6;
   --accInk: #0D3460;
-  --verm: #C8332B;
-  --verm2: #A8241D;
+  /* v7.7 — cor do texto que fica POR CIMA do azul de destaque. No tema
+     claro o azul é escuro e o texto é branco; no escuro o azul clareia e
+     branco sobre ele dá 2,5:1, ilegível. Ter o par como token evita que
+     cada botão decida por conta própria. */
+  --accTexto: #FFFFFF;
+  --verm: #B62A22;
+  --verm2: #94201A;
   --vermBg: #FBE7E5;
   --grn: #2F6B4A;
   --grnBg: #E1EFE7;
-  --amb: #9A7118;
+  --amb: #7E5C12;
   --ambBg: #F7EEDA;
-  --red: #C8332B;
+  --red: #B62A22;
   --redBg: #FBE7E5;
   --blu: #4E89C4;
   --bluBg: #E4EEF8;
@@ -79,7 +88,7 @@ body.t-grafite {
   --t1: #F2F3F5;
   --t2: #D8DBE0;
   --t3: #A7ADB6;
-  --t4: #7B818B;
+  --t4: #99A0AB;
   /* v7.3 — o noturno passa a ser da mesma família: azul claro sobre
      grafite, com o vermelho da identidade em versão dessaturada para
      continuar legível no escuro. O âmbar fica só como cor de aviso. */
@@ -87,6 +96,7 @@ body.t-grafite {
   --acc2: #8FBCF2;
   --acc3: rgba(111,166,232,.16);
   --accInk: #8FBCF2;
+  --accTexto: #0C1622;
   --verm: #E58B80;
   --verm2: #F0A79D;
   --vermBg: rgba(229,139,128,.16);
@@ -152,7 +162,7 @@ a { color: var(--acc); }
 /* Marca no topo da lateral */
 .logo { display: flex; align-items: center; gap: 9px; cursor: pointer; padding: 0 16px 14px;
   margin-bottom: 8px; border-bottom: 1px solid var(--border2); }
-.logo-mark { width: 32px; height: 32px; border-radius: 9px; background: var(--acc); color: #fff;
+.logo-mark { width: 32px; height: 32px; border-radius: 9px; background: var(--acc); color: var(--accTexto);
   display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
 .logo-name { font-family: var(--serif); font-size: 16px; font-weight: 600; line-height: 1.1; }
 .logo-sub { font-size: 8px; color: var(--t4); font-weight: 700; letter-spacing: .07em; margin-top: 2px; }
@@ -222,7 +232,7 @@ a { color: var(--acc); }
   white-space: nowrap; line-height: 1.2; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--acc3), 0 0 0 4px var(--acc); }
-.btn-primary { background: var(--acc); color: #fff; }
+.btn-primary { background: var(--acc); color: var(--accTexto); }
 .btn-primary:hover:not(:disabled) { background: var(--acc2); }
 .btn-verm { background: var(--verm); color: #fff; }
 .btn-verm:hover:not(:disabled) { background: var(--verm2); }
@@ -242,7 +252,7 @@ a { color: var(--acc); }
 .btn-grupo .btn { border-radius: 0; border: none; min-height: 42px;
   border-right: 1px solid var(--border); background: transparent; color: var(--t2); }
 .btn-grupo .btn:last-child { border-right: none; }
-.btn-grupo .btn.on { background: var(--acc); color: #fff; }
+.btn-grupo .btn.on { background: var(--acc); color: var(--accTexto); }
 .btn-grupo .btn:not(.on):hover { background: var(--bg3); }
 
 /* No celular o dedo é o ponteiro: alvo maior e nada de botão espremido. */
@@ -299,7 +309,7 @@ textarea.inp { resize: vertical; }
 .hp-mes { display: flex; align-items: center; gap: 14px; margin: 0 0 16px;
   padding-bottom: 14px; border-bottom: 1px solid var(--border); }
 .hp-mes-cir { width: 54px; height: 54px; border-radius: 50%; flex: none;
-  background: var(--acc); color: #fff; display: flex; flex-direction: column;
+  background: var(--acc); color: var(--accTexto); display: flex; flex-direction: column;
   align-items: center; justify-content: center; line-height: 1; }
 .hp-mes-cir .m { font-size: 13px; font-weight: 800; letter-spacing: .06em; }
 .hp-mes-cir .n { font-size: 10px; font-weight: 600; opacity: .82; margin-top: 3px; }
@@ -311,7 +321,7 @@ textarea.inp { resize: vertical; }
 
 .hp-bloco { margin-bottom: 22px; }
 .hp-sub { display: flex; align-items: center; gap: 9px; margin: 0 0 10px 2px; }
-.hp-sig { width: 30px; height: 30px; border-radius: 50%; flex: none; color: #fff;
+.hp-sig { width: 30px; height: 30px; border-radius: 50%; flex: none; color: var(--accTexto);
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 800; letter-spacing: .02em; }
 .hp-sub-txt { font-size: 12.5px; font-weight: 700; color: var(--t2); letter-spacing: .02em; }
@@ -606,9 +616,18 @@ body.t-grafite #planPaper .msl strong { color: #16253A; }
    o cinza e fica com a mesma cor do texto principal. */
 body.t-grafite #planPaper .msl .msl-nota,
 body.t-grafite #planPaper .msl div.msl-nota { color: #444; }
-body.t-grafite #planPaper .msl-faixa td { color: #fff; }
-body.t-grafite #planPaper .msl-rub th { background: #E7EFF9; color: #16253A; }
-body.t-grafite #planPaper .msl-diario th { background: #E7EFF9; color: #16253A; }
+/* A faixa azul vem por último e alcança o <strong> de dentro: a regra
+   genérica de ".msl strong" acima tinha a mesma especificidade e, por vir
+   depois, pintava de azul-escuro o título que está sobre fundo azul-escuro
+   — 1,3:1 de contraste, ou seja, invisível. Era este o texto sumido. */
+body.t-grafite #planPaper .msl-faixa td,
+body.t-grafite #planPaper .msl-faixa td strong,
+body.t-grafite #planPaper .msl-faixa.alt td,
+body.t-grafite #planPaper .msl-faixa.alt td strong { color: #FFFFFF !important; }
+body.t-grafite #planPaper .msl-rub th,
+body.t-grafite #planPaper .msl-rub th strong { background: #E7EFF9; color: #16253A; }
+body.t-grafite #planPaper .msl-diario th,
+body.t-grafite #planPaper .msl-diario th strong { background: #E7EFF9; color: #16253A; }
 body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 
 .msl { font-family: 'Times New Roman', Georgia, serif; font-size: 13.5px; line-height: 1.5;
@@ -624,38 +643,6 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 .msl h1 { font-family: inherit; font-size: 17px; font-weight: 700; text-align: center;
   margin: 0 0 14px; line-height: 1.3; letter-spacing: 0; }
 
-/* ── Timbre institucional (v6.8) ──
-   O documento da rede começa pela identificação da instituição, não pelo
-   título do plano: brasão à esquerda e, ao lado, as quatro linhas em caixa
-   alta — Estado, Prefeitura, Secretaria e a unidade de ensino.
-   É uma tabela, e não um flex, por um motivo prático: assim o bloco chega
-   ao Word já montado em duas colunas, com o brasão no lugar certo.
-   Sem borda, porque no modelo impresso o que separa o timbre do corpo é
-   apenas a linha de baixo. */
-.msl-timbre { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
-.msl-timbre td { border: none; padding: 0; vertical-align: middle; }
-.msl-timbre td.tb-bra { width: 74px; text-align: center; padding-right: 12px; }
-.msl-timbre td.tb-bra img, .msl-timbre td.tb-bra svg {
-  width: 62px; height: 62px; object-fit: contain; display: inline-block; }
-.msl-timbre td.tb-txt { text-align: center; }
-.msl-timbre td.tb-eq { width: 74px; }
-.msl-tb-l { font-size: 12.5px; line-height: 1.42; letter-spacing: .02em;
-  text-align: center; hyphens: none; }
-.msl-tb-l.forte { font-weight: 700; }
-.msl-tb-l.escola { font-weight: 700; font-size: 13px; }
-.msl-timbre-linha { border: none; border-top: 1.5px solid #000; margin: 7px 0 13px; }
-/* No celular a coluna de texto ficaria com uns 270px, e "SECRETARIA
-   MUNICIPAL DE EDUCAÇÃO — SEMED" quebrava no meio. O brasão sobe para
-   cima das linhas e o texto passa a ter a largura toda. */
-@media (max-width: 620px) {
-  .msl-timbre, .msl-timbre tbody, .msl-timbre tr, .msl-timbre td { display: block; width: 100%; }
-  .msl-timbre td.tb-bra { width: 100%; padding: 0 0 7px; text-align: center; }
-  .msl-timbre td.tb-bra img, .msl-timbre td.tb-bra svg { width: 44px; height: 44px; }
-  .msl-timbre td.tb-eq { display: none; }
-  .msl-tb-l { font-size: 11px; line-height: 1.4; }
-  .msl-tb-l.escola { font-size: 11.5px; }
-  .msl-timbre-linha { margin: 8px 0 12px; }
-}
 .msl table { width: 100%; border-collapse: collapse; }
 .msl .msl-id td { border: 1px solid #000; padding: 4px 7px; font-size: 13px; vertical-align: top; }
 .msl .msl-id td.rot { white-space: nowrap; width: 170px; font-weight: 600; }
@@ -673,17 +660,13 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 .msl-sub:first-child { margin-top: 0; }
 .msl-etapa { margin-bottom: 6px; }
 .msl-min { font-weight: 700; }
+
 /* Tabela nos moldes do diário de classe oficial (v7.5, larguras v7.6).
    As três colunas não carregam a mesma quantidade de texto, e por isso não
-   podem ter a mesma largura:
-     · Objetivos | Habilidades — o código MAIS a descrição da habilidade.
-       É de longe a coluna com mais texto; fica com metade da tabela.
-     · Currículo — só um código curto, e na prática costuma ficar vazio.
-       Espremida ao mínimo que ainda cabe um código sem quebrar.
-     · Conteúdo, Atividade, Rotina ou Experiência — o nome do conteúdo,
-       uma linha ou duas. Não precisa do resto todo.
-   Larguras fixas em % com table-layout fixed, senão o navegador redistribui
-   sozinho pelo conteúdo e a coluna do currículo volta a inchar. */
+   podem ter a mesma largura: a da habilidade traz código e descrição e fica
+   com metade da tabela; a do currículo, só um código curto, é espremida ao
+   mínimo. Larguras fixas com table-layout fixed, senão o navegador
+   redistribui sozinho pelo conteúdo. */
 .msl-diario { width: 100%; border-collapse: collapse; margin-bottom: 4px; table-layout: fixed; }
 .msl-diario th, .msl-diario td { border: 1px solid #000; padding: 5px 7px; font-size: 12.5px;
   vertical-align: top; text-align: left; hyphens: none; word-wrap: break-word;
@@ -693,34 +676,29 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 .msl-diario th:nth-child(2), .msl-diario td:nth-child(2) { width: 12%; }
 .msl-diario th:nth-child(3), .msl-diario td:nth-child(3) { width: 36%; }
 .msl-diario .msl-curr { font-size: 11.5px; text-align: center; }
-/* A descrição da habilidade é o único texto corrido da tabela: justificado,
-   como o resto do documento. */
+.msl-idem { color: #666; font-size: 13px; }
 .msl-diario td .msl-nota { text-align: justify; text-justify: inter-word;
   hyphens: auto; -webkit-hyphens: auto; margin-top: 3px; }
-@media (max-width: 620px) {
-  .msl-diario th, .msl-diario td { font-size: 11px; padding: 5px 6px; }
-  .msl-diario th:first-child,  .msl-diario td:first-child  { width: 50%; }
-  .msl-diario th:nth-child(2), .msl-diario td:nth-child(2) { width: 15%; }
-  .msl-diario th:nth-child(3), .msl-diario td:nth-child(3) { width: 35%; }
-}
 
 .msl-rub { margin-top: 7px; }
 .msl-rub td, .msl-rub th { border: 1px solid #000; padding: 4px 6px; font-size: 12px;
   vertical-align: top; }
 .msl-rub th { background: #E7EFF9; font-weight: 700; text-align: left; }
+
 /* v6.4 — o cabeçalho de identificação tem quatro colunas (rótulo, valor,
    rótulo, valor). Isso funciona na folha A4 e no computador, mas num
-   celular de 412px o rótulo "Componente Curricular:" sozinho comia 170px e
-   sobrava um fiapo para o valor: "3º Período (3º Bimestre)" descia em cinco
-   linhas, e a célula do lado ficava com um vazio enorme. Era isso que
-   parecia "pela metade".
-   No celular cada campo passa a ocupar a largura toda, com o rótulo em
-   cima e o valor embaixo. A tabela continua sendo tabela por dentro — o
-   arquivo Word segue saindo com as quatro colunas, como a rede espera. */
+   celular de 412px o rótulo sozinho comia 170px e sobrava um fiapo para o
+   valor. No celular cada campo passa a ocupar a largura toda, com o rótulo
+   em cima e o valor embaixo. A tabela continua sendo tabela por dentro — o
+   arquivo Word segue saindo com as quatro colunas. */
 @media (max-width: 620px) {
   .msl { font-size: 12.5px; }
   .msl-corpo td { padding: 7px 9px; }
   .msl-rub td, .msl-rub th { font-size: 11px; padding: 3px 4px; }
+  .msl-diario th, .msl-diario td { font-size: 11px; padding: 5px 6px; }
+  .msl-diario th:first-child,  .msl-diario td:first-child  { width: 50%; }
+  .msl-diario th:nth-child(2), .msl-diario td:nth-child(2) { width: 15%; }
+  .msl-diario th:nth-child(3), .msl-diario td:nth-child(3) { width: 35%; }
 
   .msl .msl-id,
   .msl .msl-id tbody,
@@ -735,8 +713,38 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
     font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
     text-transform: uppercase; color: #444;
   }
-  /* Campo vazio não vira linha em branco solta. */
   .msl .msl-id td:empty { display: none; }
+}
+
+/* ── Timbre institucional (v7.7) ──
+   Centralizado, como o papel timbrado da SEMED: brasão no meio, acima, e
+   as linhas centradas abaixo dele. Deixou de ser tabela de duas colunas —
+   o brasão à esquerda desalinhava o bloco em relação ao documento oficial. */
+.msl-timbre { text-align: center; margin-bottom: 4px; }
+.msl-timbre .tb-bra { margin-bottom: 6px; }
+.msl-timbre .tb-bra img, .msl-timbre .tb-bra svg {
+  width: 62px; height: 62px; object-fit: contain; display: inline-block; }
+.msl-tb-l { font-size: 12.5px; line-height: 1.4; letter-spacing: .01em;
+  text-align: center; hyphens: none; }
+.msl-tb-l.forte { font-weight: 700; }
+.msl-tb-l.ender { font-style: italic; }
+.msl-tb-l.escola { font-weight: 700; font-size: 13px; margin-top: 2px; }
+.msl-timbre-linha { border: none; border-top: 1.5px solid #000; margin: 7px 0 13px; }
+
+/* Rodapé institucional: uma linha discreta com a marca da rede. É um
+   <tfoot>, então as bordas da tabela do corpo precisam ser desligadas nele
+   — senão ele herda o quadro preto das seções. */
+.msl-rodape td { border: none !important; text-align: center;
+  padding: 9px 0 0 !important; font-size: 10.5px; color: #333;
+  letter-spacing: .02em; }
+.msl-rodape img { max-width: 260px; max-height: 46px; object-fit: contain; }
+
+@media (max-width: 620px) {
+  .msl-timbre .tb-bra img, .msl-timbre .tb-bra svg { width: 50px; height: 50px; }
+  .msl-tb-l { font-size: 11px; line-height: 1.38; }
+  .msl-tb-l.escola { font-size: 11.5px; }
+  .msl-timbre-linha { margin: 7px 0 11px; }
+  .msl-rodape { font-size: 9.5px; }
 }
 
 /* ── Busca de habilidade recolhida (v6.3) ── */
@@ -928,7 +936,7 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
   font-size: 12.5px; font-weight: 700; font-family: inherit; cursor: pointer; }
 .pn-aba:last-child { border-right: none; }
 @media (max-width: 620px) { .pn-abas { width: 100%; } .pn-aba { flex: 1; min-height: 44px; } }
-.pn-aba.on { background: var(--acc); border-color: var(--acc); color: #fff; }
+.pn-aba.on { background: var(--acc); border-color: var(--acc); color: var(--accTexto); }
 .pn-aba-n { opacity: .7; font-weight: 600; }
 .pn-item { display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 10px 0; border-top: 1px solid var(--border2); cursor: pointer; }
@@ -1079,13 +1087,9 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
     border-radius: 0 0 99px 99px; background: var(--acc); }
   .tab-mid.on::after { display: none; }
   .tab-mid .tab-ic { width: 44px; height: 44px; border-radius: 15px; background: var(--acc);
-    color: #fff; display: flex; align-items: center; justify-content: center;
+    color: var(--accTexto); display: flex; align-items: center; justify-content: center;
     margin-top: -15px; box-shadow: var(--sh2); font-size: 22px; }
   .tab-mid.on .tab-ic { background: var(--acc2); }
-  /* v7.3 — no escuro o azul da identidade é claro, e "+" branco por cima
-     dele quase some. O sinal passa a ser escuro, como sobre um botão
-     claro de verdade. */
-  body.t-grafite .tab-mid .tab-ic { color: #14202E; }
   /* Espaço para a barra não cobrir o fim do conteúdo nem o rodapé. */
   body.tem-tab .content { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
   /* Com a barra embaixo, o ☰ vira repetição: o botão "Mais" abre o mesmo menu. */
@@ -1354,8 +1358,18 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
     break-inside: avoid !important; page-break-inside: avoid !important;
   }
   /* v6.8 — o timbre é indivisível: brasão, Estado, Prefeitura, Secretaria e
-     escola são um bloco só, e nunca se soltam do título que vem embaixo. */
-  .msl-timbre, .msl-timbre tbody, .msl-timbre tr, .msl-timbre td {
+     escola são um bloco só, e nunca se soltam do título que vem embaixo.
+     v7.7 — ele sai SÓ NA PRIMEIRA FOLHA, por escolha: é cabeçalho de
+     abertura do documento. Por isso continua no fluxo do texto, e não
+     fixado na página. */
+  .msl-timbre {
+    break-inside: avoid !important; page-break-inside: avoid !important;
+  }
+  /* O rodapé se repete no pé de TODAS as folhas por ser um <tfoot>:
+     table-footer-group é o que faz o navegador redesenhá-lo em cada
+     página. (Elemento com position:fixed NÃO é repetido — testado.) */
+  .msl-rodape { display: table-footer-group; }
+  .msl-rodape tr, .msl-rodape td {
     break-inside: avoid !important; page-break-inside: avoid !important;
   }
   .msl-timbre, .msl-timbre-linha, .msl h1 {
@@ -2144,6 +2158,14 @@ var DEFAULT_CONFIG = {
   "estado": "Estado do Maranhão",
   "schoolFullName": "Unidade Integrada Deuris de Deus Moreno Dias Carneiro",
   "brasao": "",
+  /* v7.7 — as linhas que faltavam no timbre, copiadas do papel timbrado da
+     SEMED: CNPJ junto da prefeitura, endereço em itálico e o departamento
+     em caixa alta fechando o bloco. */
+  "cnpj": "06.191.001.0001-47",
+  "endereco": "Av. Naglb Haickel — Cep: 65390-000 / Santa Luzia — MA",
+  "departamento": "Departamento Pedagógico - SEMED",
+  "rodapeTexto": "Prefeitura de Santa Luzia · Compromisso com o Povo — SEMED · Secretaria Municipal de Educação",
+  "rodapeImg": "",
   "coordinator": "",
   "defaultShift": "Vespertino",
   "preferredGrades": [
@@ -3420,9 +3442,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "7.6";
+var APP_VERSAO = "7.7";
 var APP_VERSAO_DATA = "01/09/2026";
-var APP_VERSAO_NOTA = "Colunas proporcionais e plano legível no modo escuro";
+var APP_VERSAO_NOTA = "Timbre centralizado, rodapé em todas as folhas e contraste";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -11963,8 +11985,18 @@ function viewSettings() {
           '<div><label class="lbl">Secretaria de Educa&ccedil;&atilde;o</label><input class="inp" id="s_semed" value="' +
             esc(c.secretaria || "") + '" /></div>' +
         "</div>" +
+        '<div class="g2" style="margin-top:13px">' +
+          '<div><label class="lbl">CNPJ da prefeitura</label><input class="inp" id="s_cnpj" value="' +
+            esc(c.cnpj || "") + '" /></div>' +
+          '<div><label class="lbl">Departamento</label><input class="inp" id="s_depto" value="' +
+            esc(c.departamento || "") + '" /></div>' +
+        "</div>" +
+        '<div style="margin-top:13px"><label class="lbl">Endere&ccedil;o (sai em it&aacute;lico)</label>' +
+          '<input class="inp" id="s_endereco" value="' + esc(c.endereco || "") + '" /></div>' +
         '<div style="margin-top:13px"><label class="lbl">Escola por extenso (como no timbre)</label>' +
           '<input class="inp" id="s_schoolfull" value="' + esc(c.schoolFullName || "") + '" /></div>' +
+        '<div style="margin-top:13px"><label class="lbl">Rodap&eacute; (sai no p&eacute; de todas as folhas)</label>' +
+          '<input class="inp" id="s_rodape" value="' + esc(c.rodapeTexto || "") + '" /></div>' +
 
         '<div style="margin-top:18px"><label class="lbl">Bras&atilde;o da prefeitura</label>' +
           '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:7px">' +
@@ -13069,6 +13101,10 @@ function saveIdentity() {
   if (el("s_estado")) state.cfg.estado = el("s_estado").value.trim();
   if (el("s_semed")) state.cfg.secretaria = el("s_semed").value.trim();
   if (el("s_schoolfull")) state.cfg.schoolFullName = el("s_schoolfull").value.trim();
+  if (el("s_cnpj")) state.cfg.cnpj = el("s_cnpj").value.trim();
+  if (el("s_endereco")) state.cfg.endereco = el("s_endereco").value.trim();
+  if (el("s_depto")) state.cfg.departamento = el("s_depto").value.trim();
+  if (el("s_rodape")) state.cfg.rodapeTexto = el("s_rodape").value.trim();
   var mn = parseInt(el("s_min").value, 10);
   state.cfg.lessonMinutes = (mn >= 20 && mn <= 90) ? mn : 45;
   saveCfg();
@@ -13770,36 +13806,57 @@ function brasaoPadraoSvg() {
   "</svg>";
 }
 
-/* O timbre: quem assina o documento, antes do que o documento diz. */
+/* O timbre (v7.7) — agora igual ao papel timbrado que a SEMED usa.
+   O modelo impresso traz o brasão CENTRALIZADO acima do texto, e não ao
+   lado: com o brasão à esquerda o bloco fica assimétrico e não bate com o
+   documento que a coordenação recebe. Abaixo dele, cinco linhas, todas
+   centralizadas — Estado, Prefeitura com o CNPJ, Secretaria, endereço em
+   itálico e o departamento em caixa alta.
+   Só na primeira folha: é cabeçalho de abertura, não de repetição. */
 function mslTimbre(cfg) {
   cfg = cfg || state.cfg || {};
+  var prefeitura = String(cfg.network || "").trim();
+  if (prefeitura && String(cfg.cnpj || "").trim()) {
+    prefeitura += " CNPJ: " + String(cfg.cnpj).trim();
+  }
   var linhas = [
-    { t: cfg.estado, cls: "" },
-    { t: cfg.network, cls: "forte" },
-    { t: cfg.secretaria, cls: "forte" },
-    { t: cfg.schoolFullName || cfg.schoolName, cls: "escola" }
+    { t: cfg.estado, cls: "forte" },
+    { t: prefeitura, cls: "" },
+    { t: cfg.secretaria, cls: "" },
+    { t: cfg.endereco, cls: "ender" },
+    { t: cfg.departamento, cls: "forte caps" },
+    { t: cfg.schoolFullName || cfg.schoolName, cls: "escola caps" }
   ].filter(function(l) { return String(l.t || "").trim(); });
-  if (!linhas.length) return "";
+  if (!linhas.length && !cfg.brasao) return "";
 
   var bra = cfg.brasao
     ? '<img src="' + esc(cfg.brasao) + '" alt="Brasão" />'
     : brasaoPadraoSvg();
 
-  /* A coluna vazia à direita não é enfeite: sem ela o texto ficaria
-     centralizado no espaço que sobra ao lado do brasão, e não no meio da
-     folha — o desalinho que se nota quando o documento fica ao lado do
-     modelo impresso da rede. */
-  return '<table class="msl-timbre"><tbody><tr>' +
-      '<td class="tb-bra">' + bra + "</td>" +
-      '<td class="tb-txt">' +
-        linhas.map(function(l) {
-          return '<div class="msl-tb-l ' + l.cls + '">' +
-            esc(String(l.t).toUpperCase()) + "</div>";
-        }).join("") +
-      "</td>" +
-      '<td class="tb-eq"></td>' +
-    "</tr></tbody></table>" +
+  return '<div class="msl-timbre">' +
+      '<div class="tb-bra">' + bra + "</div>" +
+      linhas.map(function(l) {
+        return '<div class="msl-tb-l ' + l.cls + '">' +
+          esc(l.cls.indexOf("caps") >= 0 ? String(l.t).toUpperCase() : String(l.t)) + "</div>";
+      }).join("") +
+    "</div>" +
     '<hr class="msl-timbre-linha" />';
+}
+
+/* O rodapé institucional. Vai dentro de um <tfoot> para que o navegador o
+   repita no pé de cada folha impressa — ver o comentário em planoModeloSL.
+   Na tela ele aparece uma vez, no fim do plano, que é o comportamento
+   natural de um tfoot. */
+function mslRodapeTfoot(cfg) {
+  cfg = cfg || state.cfg || {};
+  var img = String(cfg.rodapeImg || "").trim();
+  var txt = String(cfg.rodapeTexto || "").trim();
+  if (!img && !txt) return "";
+  return '<tfoot class="msl-rodape"><tr><td>' +
+    (img
+      ? '<img src="' + esc(img) + '" alt="' + esc(txt || "Rodapé") + '" />'
+      : "<span>" + esc(txt) + "</span>") +
+  "</td></tr></tfoot>";
 }
 
 function planoModeloSL(pl) {
@@ -13857,18 +13914,28 @@ function planoModeloSL(pl) {
              mesmo parágrafo repetido cinco vezes seguidas enchia meia
              página sem dizer nada de novo. Nas repetições fica só o código,
              que é o que o diário pede mesmo. */
-          var jaDescrito = {};
+          var jaDescrito = {}, jaCurriculo = {};
           return A(c.knowledgeObjects).map(function(k) {
           var codigos = A(k.codes).filter(Boolean);
           var bncc = codigosBNCC(codigos), curr = codigosDoCurriculo(codigos);
           var chaveDesc = bncc.join(",");
           var mostrarDesc = k.note && !jaDescrito[chaveDesc];
           if (mostrarDesc) jaDescrito[chaveDesc] = 1;
+          /* v7.7 — o currículo costuma ser o mesmo em todas as linhas.
+             Escrito só na primeira vez em que aparece; nas seguintes fica a
+             aspa de repetição, que é como se preenche formulário à mão. */
+          var chaveCurr = curr.join(",");
+          var mostrarCurr = !!chaveCurr && !jaCurriculo[chaveCurr];
+          if (mostrarCurr) jaCurriculo[chaveCurr] = 1;
           return "<tr>" +
             '<td><span class="msl-cod">' + (bncc.length ? esc(bncc.join(", ")) : "&mdash;") + "</span>" +
               (mostrarDesc ? '<div class="msl-nota">' + esc(k.note) + "</div>" : "") + "</td>" +
-            '<td class="msl-curr"><span class="msl-cod">' +
-              (curr.length ? esc(curr.join(", ")) : "&mdash;") + "</span></td>" +
+            '<td class="msl-curr">' +
+              (curr.length
+                ? (mostrarCurr
+                    ? '<span class="msl-cod">' + esc(curr.join(", ")) + "</span>"
+                    : '<span class="msl-idem" title="mesmo curriculo da linha acima">&Prime;</span>')
+                : "&mdash;") + "</td>" +
             "<td><strong>" + esc(k.content) + "</strong></td>" +
           "</tr>";
           }).join("");
@@ -14010,7 +14077,16 @@ function planoModeloSL(pl) {
     (aee ? mslFaixa("Atendimento Educacional Especializado (AEE)") + mslLinha(aee) : "") +
     mslFaixa("Referências", true) +
       mslLinha(mslLista(referenciasDoPlano(pc, c.references))) +
-  "</tbody></table>";
+  "</tbody>" +
+  /* v7.7 — o rodapé institucional vive num <tfoot> da tabela do corpo.
+     Não é firula: `position: fixed` simplesmente não é repetido pelo motor
+     de impressão do Chrome — testei e o rodapé não saía em nenhuma folha.
+     Já o <tfoot> de uma tabela que atravessa várias páginas é redesenhado
+     pelo navegador no pé de CADA uma delas. Como o corpo do plano já é uma
+     tabela única que vai do começo ao fim do documento, o rodapé acompanha
+     todas as folhas sem eu precisar mexer na estrutura. */
+  mslRodapeTfoot(cfg) +
+  "</table>";
 
   var titulo = "PLANO MENSAL (" + String(pc.subject).toUpperCase() + ") " +
     esc(String(pc.gradeLevel).replace("Ensino Fundamental II ", "").replace(/[()]/g, "")) +
