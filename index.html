@@ -641,6 +641,20 @@ body.exporting .noprint { display: none !important; }
 .msl-sub:first-child { margin-top: 0; }
 .msl-etapa { margin-bottom: 6px; }
 .msl-min { font-weight: 700; }
+/* Tabela nos moldes do diário de classe oficial (v7.5). */
+.msl-diario { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+.msl-diario th, .msl-diario td { border: 1px solid #000; padding: 5px 7px; font-size: 12.5px;
+  vertical-align: top; text-align: left; hyphens: none; }
+.msl-diario th { background: #E7EFF9; font-weight: 700; font-size: 11.5px; }
+.msl-diario th:first-child, .msl-diario td:first-child { width: 21%; }
+.msl-diario th:nth-child(2), .msl-diario td:nth-child(2) { width: 17%; }
+.msl-diario .msl-curr { font-size: 11.5px; }
+@media (max-width: 620px) {
+  .msl-diario th, .msl-diario td { font-size: 11px; padding: 5px; }
+  .msl-diario th:first-child, .msl-diario td:first-child { width: 26%; }
+  .msl-diario th:nth-child(2), .msl-diario td:nth-child(2) { width: 22%; }
+}
+
 .msl-rub { margin-top: 7px; }
 .msl-rub td, .msl-rub th { border: 1px solid #000; padding: 4px 6px; font-size: 12px;
   vertical-align: top; }
@@ -1304,6 +1318,12 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
   .msl-etapa, .msl-sub, .msl-lista li, .msl-rub tr {
     break-inside: avoid; page-break-inside: avoid;
   }
+  /* v7.5 — a tabela do diário pode atravessar a quebra de página, mas a
+     LINHA não: partida ao meio, ela aparece na página seguinte com as
+     colunas vazias e o professor perde a correspondência entre os três
+     campos. O cabeçalho se repete no alto de cada página. */
+  .msl-diario tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .msl-diario thead { display: table-header-group; }
   .msl-sub { break-after: avoid-page; page-break-after: avoid; }
   /* Margem igual nos quatro lados, e o papel sem recuo próprio: quem define
      a margem é a página, não o cartão. */
@@ -3351,9 +3371,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "7.3";
-var APP_VERSAO_DATA = "31/08/2026";
-var APP_VERSAO_NOTA = "Identidade do município, botões maiores e Histórico novo";
+var APP_VERSAO = "7.5";
+var APP_VERSAO_DATA = "01/09/2026";
+var APP_VERSAO_NOTA = "Plano e Registro nos campos do diário oficial";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -7133,29 +7153,36 @@ function habilidadesTermometro(subject, encounters, count, lessons, previstoManu
 
   var diasPorConteudo = count > 0 ? (encounters / count) : null;
   var porDia = count > 0 ? (count / encounters) : null;
-  var enc = encounters + (encounters === 1 ? " aula registrada" : " aulas registradas");
+  /* v7.4 — a unidade passa a se chamar ENTRADA em todo o termômetro.
+     "Aula" é palavra ambígua aqui: pode ser o horário de 45 minutos ou o dia
+     em que o professor entra na turma. A conta sempre foi pela segunda, mas
+     o texto dizia "aulas registradas", e ler "9 aulas registradas" ao lado
+     de "22 aulas previstas" fazia parecer erro de cálculo.
+     Entrada é o dia em que ele entra na turma — valendo 1 tenha esse dia
+     dois ou três horários seguidos, porque o conteúdo anda por dia, não por
+     horário. É exatamente o critério do diário. */
+  var enc = encounters + (encounters === 1 ? " entrada" : " entradas");
 
   var status, label, colorVar, bgVar;
   if (count === 0) {
     status = "vazio"; colorVar = "var(--t4)"; bgVar = "var(--bg3)";
-    label = "Você entra " + encounters + (encounters === 1 ? " vez" : " vezes") +
-      " nesta turma no mês — " + enc + ". O equilíbrio fica entre " +
-      piso + " e " + teto + " conteúdos: um por entrada.";
+    label = "São " + enc + " nesta turma no mês. O equilíbrio fica entre " +
+      piso + " e " + teto + " conteúdos — um por entrada.";
   } else if (count < piso) {
     status = "baixo"; colorVar = "var(--amb)"; bgVar = "var(--ambBg)";
     label = count + " conteúdo(s) para " + enc + " — cerca de " + diasPorConteudo.toFixed(1) +
       " entradas em cada um. Sobra espaço: cabe mais " + (piso - count) + ".";
   } else if (count <= teto) {
     status = "bom"; colorVar = "var(--grn)"; bgVar = "var(--grnBg)";
-    label = count + " conteúdo(s) para " + enc + (count === teto ? " — fecha certinho." :
+    label = count + " conteúdo(s) para " + enc + (count === teto ? " — um por entrada, fecha certinho." :
       " — cerca de " + diasPorConteudo.toFixed(1) + " entrada(s) em cada um. Cabe no mês.");
   } else if (count <= apertado) {
     status = "apertado"; colorVar = "var(--amb)"; bgVar = "var(--ambBg)";
     label = count + " conteúdo(s) para " + enc + " — daria " + porDia.toFixed(1) +
       " por entrada. Cabe (os dias de dois ou três horários absorvem), mas fica corrido.";
   } else {
-    status = "alto"; colorVar = "var(--red)"; bgVar = "var(--redBg)";
-    label = count + " conteúdo(s) para " + enc + " e " + aulasMes + " aulas previstas — " +
+    status = "alto"; colorVar = "var(--verm)"; bgVar = "var(--vermBg)";
+    label = count + " conteúdo(s) para " + enc + " — " +
       (count - apertado) + " não teria(m) onde entrar. Reduza ou deixe parte para o mês seguinte.";
   }
 
@@ -7261,28 +7288,49 @@ function habilidadesGaugeHtml(carga, count, subject, grade, month) {
 
   return '<div class="card-soft" style="padding:11px 13px;margin-top:11px;background:' + t.bgVar + '">' +
     '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;flex-wrap:wrap;gap:6px">' +
-      '<div style="font-size:10.5px;font-weight:700;color:var(--t3)">CONTE&Uacute;DOS &times; AULAS REGISTRADAS</div>' +
+      '<div style="font-size:10.5px;font-weight:700;color:var(--t3)">CONTE&Uacute;DOS &times; ENTRADAS NA TURMA</div>' +
       '<div style="font-size:10.5px;font-weight:800;color:' + t.colorVar + '">' + count + " / " + t.encounters +
         (t.manual ? " &#9998;" : "") + "</div>" +
     "</div>" +
-    '<div style="position:relative;height:7px;border-radius:99px;background:var(--border);overflow:hidden">' +
-      '<div style="position:absolute;left:0;top:0;height:100%;width:' + zBaixo + '%;background:var(--ambBg)"></div>' +
-      '<div style="position:absolute;left:' + zBaixo + '%;top:0;height:100%;width:' + zBom + '%;background:var(--grnBg)"></div>' +
-      '<div style="position:absolute;left:' + (zBaixo + zBom) + '%;top:0;height:100%;width:' + zCorrido + '%;background:var(--ambBg)"></div>' +
-      '<div style="position:absolute;left:' + (zBaixo + zBom + zCorrido) + '%;top:0;height:100%;width:' + zAlto + '%;background:var(--redBg)"></div>' +
+    /* v7.4 — a régua, dita antes de qualquer coisa e mesmo com zero
+       habilidades escolhidas: quantas vezes ele entra na turma por semana,
+       quantas no mês e qual a faixa que cabe. É a pergunta que ele fez com
+       todas as letras — "quantas entradas eu faço numa semana em Língua
+       Portuguesa no nono ano" — e a resposta muda a cada turma. */
+    (function() {
+      var porSem = grade ? entradasSemanais(subject, grade) : 0;
+      if (!porSem) return "";
+      var dias = (carga && carga.days) ? String(carga.days) : "";
+      return '<div style="font-size:11px;color:var(--t2);margin-bottom:8px;line-height:1.5">' +
+        "<strong>" + porSem + (porSem === 1 ? " entrada" : " entradas") + " por semana</strong>" +
+        (dias ? ' <span style="color:var(--t4)">(' + esc(dias) + ")</span>" : "") +
+        " &middot; <strong>" + t.encounters + "</strong> em " + esc(month || "") +
+        " &middot; cabe entre <strong>" + t.idealMin + " e " + t.idealMax + "</strong> conte&uacute;dos" +
+      "</div>";
+    })() +
+    /* v7.4 — as faixas eram pintadas com os tons de fundo (--ambBg, --grnBg)
+       e, sobre um cartão que já usa esses mesmos tons, praticamente sumiam.
+       Agora usam a cor cheia com opacidade, e a barra engrossou de 7 para
+       10px: dá para ver de relance em qual faixa a escolha caiu. */
+    '<div style="position:relative;height:10px;border-radius:99px;background:var(--border);overflow:hidden">' +
+      '<div style="position:absolute;left:0;top:0;height:100%;width:' + zBaixo + '%;background:var(--amb);opacity:.38"></div>' +
+      '<div style="position:absolute;left:' + zBaixo + '%;top:0;height:100%;width:' + zBom + '%;background:var(--grn);opacity:.55"></div>' +
+      '<div style="position:absolute;left:' + (zBaixo + zBom) + '%;top:0;height:100%;width:' + zCorrido + '%;background:var(--amb);opacity:.38"></div>' +
+      '<div style="position:absolute;left:' + (zBaixo + zBom + zCorrido) + '%;top:0;height:100%;width:' + zAlto + '%;background:var(--verm);opacity:.42"></div>' +
     "</div>" +
-    '<div style="position:relative;height:15px;margin-top:-11px">' +
-      '<div title="Um conte&uacute;do por dia de aula" style="position:absolute;left:' + tetoPct +
-        '%;top:0;width:1px;height:13px;background:var(--t4);opacity:.55"></div>' +
-      '<div style="position:absolute;left:' + markerPct + '%;top:-2px;width:3px;height:15px;background:' +
-        t.colorVar + ';border-radius:1.5px;transform:translateX(-1.5px)"></div>' +
+    '<div style="position:relative;height:18px;margin-top:-14px">' +
+      '<div title="Um conte&uacute;do por entrada" style="position:absolute;left:' + tetoPct +
+        '%;top:0;width:1px;height:16px;background:var(--t4);opacity:.6"></div>' +
+      '<div style="position:absolute;left:' + markerPct + '%;top:-2px;width:4px;height:18px;background:' +
+        t.colorVar + ';border-radius:2px;transform:translateX(-2px);box-shadow:0 0 0 2px var(--bg2)"></div>' +
     "</div>" +
     '<div style="font-size:10.5px;color:' + t.colorVar + ';font-weight:600;margin-top:4px;line-height:1.45">' + esc(t.label) + "</div>" +
     '<div style="font-size:9.5px;color:var(--t4);margin-top:5px;line-height:1.5">' +
-      "Conta por <strong>aula registrada</strong> (uma por entrada na turma), n&atilde;o por hor&aacute;rio: " +
-      "dois ou tr&ecirc;s hor&aacute;rios seguidos s&atilde;o uma entrada s&oacute;, como no di&aacute;rio. " +
-      "Este m&ecirc;s: <strong>" + t.encounters + " aulas registradas</strong> e <strong>" + t.lessons +
-      " aulas previstas</strong>." +
+      "A conta &eacute; por <strong>entrada</strong>, n&atilde;o por hor&aacute;rio. Um dia em que voc&ecirc; entra na turma " +
+      "vale <strong>1 conte&uacute;do</strong>, tenha ele dois ou tr&ecirc;s hor&aacute;rios de 45 min seguidos &mdash; " +
+      "hor&aacute;rios seguidos s&atilde;o a mesma aula esticada, e &eacute; assim que o di&aacute;rio registra. " +
+      "Em " + esc(month || "este m&ecirc;s") + ": <strong>" + t.encounters + " entradas</strong> e <strong>" +
+      t.lessons + " hor&aacute;rios</strong>." +
     "</div>" +
     (grade ? (function() {
       /* Sua m&eacute;dia de cabe&ccedil;a (entradas x 4 semanas) contra o m&ecirc;s real. */
@@ -7297,14 +7345,14 @@ function habilidadesGaugeHtml(carga, count, subject, grade, month) {
           '\')" style="color:var(--acc)">voltar ao calend&aacute;rio</a></div>';
       } else if (media && media !== t.encounters) {
         linha = '<div style="font-size:9.5px;color:var(--t4);margin-top:5px;line-height:1.5">' +
-          "Sua m&eacute;dia &eacute; <strong>" + media + "</strong> (" + porSemana +
+          "Pela sua m&eacute;dia dariam <strong>" + media + "</strong> (" + porSemana +
           (porSemana === 1 ? " entrada" : " entradas") + " &times; 4 semanas). " +
-          (motivo ? esc(motivo) + " " : "") + "Por isso d&aacute; <strong>" + t.encounters + "</strong> aqui." +
+          (motivo ? esc(motivo) + " " : "") + "Neste m&ecirc;s s&atilde;o <strong>" + t.encounters + "</strong>." +
           "</div>";
       }
       return linha +
         '<div style="display:flex;align-items:center;gap:7px;margin-top:8px;flex-wrap:wrap">' +
-          '<span style="font-size:9.5px;color:var(--t4)">Conte&uacute;dos deste m&ecirc;s nesta turma:</span>' +
+          '<span style="font-size:9.5px;color:var(--t4)">Entradas deste m&ecirc;s nesta turma:</span>' +
           '<input type="number" min="1" max="40" inputmode="numeric" value="' + t.encounters +
             '" style="width:60px;padding:4px 7px;border:1px solid var(--border);border-radius:7px;' +
             'background:var(--bg2);color:var(--t1);font-family:inherit;font-size:11px;font-weight:700" ' +
@@ -10487,6 +10535,17 @@ function viewGen() {
          só a identificação, antes de qualquer escolha. */
       '<div style="margin-top:14px">' + matrizPeriodoHtml(subject, grade, month) + "</div>" +
 
+      /* v7.4 — o termômetro volta a ficar sempre à vista.
+         Na v6.3 o bloco de busca de habilidades foi recolhido para liberar
+         tela, e o termômetro foi junto sem eu perceber: ele morava dentro
+         daquele bloco. Como o caminho normal passou a ser marcar direto na
+         matriz, o professor deixou de ver a régua justamente enquanto
+         escolhia — que é o único momento em que ela serve.
+         Agora ele fica aqui, entre a matriz e a busca, e aparece desde o
+         zero: antes de marcar a primeira habilidade já diz quantas entradas
+         a turma tem no mês e quantos conteúdos cabem. */
+      habilidadesGaugeHtml(carga, estimateConteudoCount(f.forcedSkills), subject, grade, month) +
+
       /* v6.3 — este bloco vinha sempre aberto, ocupando 39% da tela de criar,
          logo abaixo do quadro da matriz, que ocupava outros 24%. Desde a v5.5
          os dois selecionam habilidade: eram 63% da tela fazendo a mesma coisa,
@@ -10537,7 +10596,6 @@ function viewGen() {
               }).join("") +
             "</div>"
           : "") +
-        habilidadesGaugeHtml(carga, estimateConteudoCount(f.forcedSkills), subject, grade, month) +
       "</div>";
       })() +
 
@@ -11328,6 +11386,47 @@ function calendarioPlanejamentoHtml(mesAtual) {
    "D11 · SAEB / Matriz Santa Luzia" dentro do próprio texto. Como a coluna
    Currículo deixou de existir, o sufixo é retirado na exibição — sem mexer
    no que está gravado, para o professor não perder nada que digitou. */
+/* Os dois campos de código do diário oficial (v7.5).
+   O print do TrendEducar mostra que "Objetivos | Habilidades" e "Currículo"
+   são os dois campos de busca por CÓDIGO ("informe o código da habilidade
+   ou objetivo e clique na lupa") — não são campos de texto livre.
+   Como os códigos do professor vêm de duas famílias, a separação natural é:
+     · Objetivos | Habilidades → os códigos da BNCC (EF…)
+     · Currículo               → os do documento curricular da rede
+                                 (LP9…, LI6…, D… do Acerta Brasil/SAEB)
+   Quando uma das famílias não aparece na linha, o campo fica com "—" em vez
+   de repetir o código do outro: é melhor o professor ver o vazio e decidir
+   do que transcrever um código no campo errado. */
+function ehCodigoBNCC(codigo) {
+  return /^EF\d/i.test(String(codigo || ""));
+}
+/* O campo "Objetivos | Habilidades" nunca fica vazio: se a linha não tem
+   código EF… (acontece quando a habilidade veio só da matriz municipal),
+   ele recebe o código que existe. Melhor repetir o mesmo código nos dois
+   campos, que é o que o professor faria à mão, do que deixar em branco o
+   campo obrigatório do diário. */
+function codigosBNCC(codigos) {
+  var so = A(codigos).filter(ehCodigoBNCC);
+  return so.length ? so : A(codigos).filter(Boolean);
+}
+function codigosDoCurriculo(codigos) {
+  return A(codigos).filter(function(c){ return c && !ehCodigoBNCC(c); });
+}
+/* Nome do documento de onde veio o código, para a legenda da seção. */
+var CURRICULO_DA_FONTE = {
+  "Matriz Santa Luzia": "Matriz de Refer\u00eancia de Santa Luzia",
+  "Acerta Brasil / SAEB": "Acerta Brasil / SAEB",
+  "BNCC": "BNCC"
+};
+function documentosDosCodigos(skills) {
+  var vistos = [];
+  A(skills).forEach(function(sk) {
+    var nome = CURRICULO_DA_FONTE[sk.fonte] || (sk.fonte || "BNCC");
+    if (vistos.indexOf(nome) < 0) vistos.push(nome);
+  });
+  return vistos;
+}
+
 function semCurriculo(txt) {
   return String(txt == null ? "" : txt)
     .replace(/\s*·\s*(BNCC|SAEB[^,;·]*|Matriz[^,;·]*)/gi, "")
@@ -11458,17 +11557,25 @@ function viewDiario() {
     return f ? base + " — " + f : base;
   }
 
+  /* v7.5 — o registro passa a devolver os três campos do diário oficial
+     (TrendEducar): "Objetivos | Habilidades", "Currículo" e "Conteúdo,
+     Atividade, Rotina ou Experiência". Os dois primeiros são campos de
+     busca por código no sistema da rede, por isso a coluna Currículo
+     carrega o código do documento curricular municipal — não a palavra
+     "BNCC" repetida, que foi o que incomodou na v6.9. */
   if (hasMatch) {
     var mp = match[0];
     if (A(mp.content.knowledgeObjects).length) {
       pool = mp.content.knowledgeObjects.map(function(k) {
+        var cods = A(k.codes).filter(Boolean);
         return {
           conteudo: especificarConteudo(k.content, k.note),
-          habilidades: A(k.codes).filter(Boolean).join(", ")
+          habilidades: codigosBNCC(cods).join(", "),
+          curriculo: codigosDoCurriculo(cods).join(", ")
         };
       });
     } else if (A(mp.content.activities).length) {
-      pool = mp.content.activities.map(function(a){ return { conteudo:a.title, habilidades:"" }; });
+      pool = mp.content.activities.map(function(a){ return { conteudo:a.title, habilidades:"", curriculo:"" }; });
     }
     if (!pool.length) {
       pool = ["Introdução ao conteúdo e sondagem inicial",
@@ -11476,14 +11583,17 @@ function viewDiario() {
         "Atividade prática de aplicação e fixação",
         "Leitura, interpretação e produção orientada",
         "Revisão integradora e avaliação formativa"
-      ].map(function(t){ return { conteudo:t, habilidades:"" }; });
+      ].map(function(t){ return { conteudo:t, habilidades:"", curriculo:"" }; });
     }
   }
 
   /* Reserva de habilidades para os conteúdos que não trouxeram código
      próprio — mantém a coluna preenchida sem inventar associação. */
   var skillPool = hasMatch && A(match[0].content.bnccSkills).length
-    ? match[0].content.bnccSkills.map(function(s) { return { habilidades:s.code }; })
+    ? match[0].content.bnccSkills.map(function(s) {
+        return { habilidades: ehCodigoBNCC(s.code) ? s.code : "",
+                 curriculo: ehCodigoBNCC(s.code) ? "" : s.code };
+      })
     : [];
 
   /* Distribuição conteúdo × data: mesma lógica proporcional de
@@ -11498,7 +11608,7 @@ function viewDiario() {
   var body = rows.map(function(r) {
     if (r.type !== "aula") {
       return '<tr class="holiday"><td>' + String(r.day).padStart(2,"0") + "/" + String(CALENDAR.meses[d.month].num).padStart(2,"0") +
-        "</td><td>" + esc(DAYS_FULL[r.dow]) + '</td><td colspan="4">&#128683; ' + esc(r.label) + "</td></tr>";
+        "</td><td>" + esc(DAYS_FULL[r.dow]) + '</td><td colspan="5">&#128683; ' + esc(r.label) + "</td></tr>";
     }
     n++;
     var rec = saved[r.iso] || {};
@@ -11511,15 +11621,16 @@ function viewDiario() {
        toda linha do diário sem dizer nada que o próprio código já não
        diga: EF09LP04 é BNCC pela forma como é escrito. O que interessa no
        diário é o conteúdo e o código da habilidade de onde ele veio. */
-    var sksAuto = "";
-    if (item && item.habilidades) {
-      sksAuto = item.habilidades;
+    var sksAuto = "", currAuto = "";
+    if (item && (item.habilidades || item.curriculo)) {
+      sksAuto = item.habilidades; currAuto = item.curriculo || "";
     } else if (skillPool.length) {
       var sksIdx = Math.min(skillPool.length - 1, Math.floor((n - 1) / (lessons.length / skillPool.length)));
       var alt = skillPool[sksIdx];
-      if (alt) sksAuto = alt.habilidades;
+      if (alt) { sksAuto = alt.habilidades; currAuto = alt.curriculo || ""; }
     }
     var sks = rec.skills !== undefined ? semCurriculo(rec.skills) : sksAuto;
+    var curr = rec.curriculo !== undefined ? rec.curriculo : currAuto;
     var contPh = hasMatch ? "" : " placeholder='Sem plano gerado — preencha manualmente ou gere um planejamento'";
     var sksPh = hasMatch ? "" : " placeholder='Sem plano gerado'";
     return "<tr><td style='white-space:nowrap;font-weight:600'>" + String(r.day).padStart(2,"0") + "/" +
@@ -11530,7 +11641,9 @@ function viewDiario() {
       "<td><textarea class='inp' style='min-height:52px;font-size:11.5px;padding:6px 8px'" + contPh + " " +
         "onchange=\"setDiary('" + key + "','" + r.iso + "','content',this.value,'" + sourcePlanId + "')\">" + esc(cont) + "</textarea></td>" +
       "<td><textarea class='inp' style='min-height:52px;font-size:11px;padding:6px 8px'" + sksPh + " " +
-        "onchange=\"setDiary('" + key + "','" + r.iso + "','skills',this.value,'" + sourcePlanId + "')\">" + esc(sks) + "</textarea></td></tr>";
+        "onchange=\"setDiary('" + key + "','" + r.iso + "','skills',this.value,'" + sourcePlanId + "')\">" + esc(sks) + "</textarea></td>" +
+      "<td><textarea class='inp' style='min-height:52px;font-size:11px;padding:6px 8px'" + sksPh + " " +
+        "onchange=\"setDiary('" + key + "','" + r.iso + "','curriculo',this.value,'" + sourcePlanId + "')\">" + esc(curr) + "</textarea></td></tr>";
   }).join("");
 
   return '<div class="wrap fade" style="padding:34px 18px 56px">' +
@@ -11570,11 +11683,13 @@ function viewDiario() {
       (lessons.length
         ? '<div class="tscroll"><table class="tb"><thead><tr><th style="width:66px">Data</th><th style="width:96px">Dia</th>' +
           '<th style="width:56px">Aulas</th><th style="width:52px">Entrada</th>' +
-          "<th>Conte&uacute;do Curricular (o que foi trabalhado)</th><th style='width:150px'>Habilidade</th></tr></thead><tbody>" +
+          "<th>Conte&uacute;do, Atividade, Rotina ou Experi&ecirc;ncia</th>" +
+          "<th style='width:120px'>Objetivos | Habilidades</th>" +
+          "<th style='width:110px'>Curr&iacute;culo</th></tr></thead><tbody>" +
           body + "<tr style='background:var(--acc3)'><td colspan='2'><strong>SUBTOTAL DO M&Ecirc;S</strong></td>" +
           "<td style='text-align:center'><strong>" + ch.monthlyLessons + "</strong></td><td></td>" +
-          "<td><strong>" + ch.encounters + " encontros letivos registrados</strong></td>" +
-          "<td style='font-size:10.5px'>Assinatura: ____________________</td></tr></tbody></table></div>"
+          "<td><strong>" + ch.encounters + " entradas registradas</strong></td>" +
+          "<td colspan='2' style='font-size:10.5px'>Assinatura: ____________________</td></tr></tbody></table></div>"
         : '<div class="card-soft" style="padding:30px;text-align:center;color:var(--t3);font-size:13px">' +
           "Nenhum dia letivo gerado para esta combina&ccedil;&atilde;o de disciplina, turma e m&ecirc;s.<br/>" +
           "<span style='font-size:11.5px;color:var(--t4)'>Verifique o hor&aacute;rio semanal em Ajustes.</span></div>") +
@@ -13673,11 +13788,33 @@ function planoModeloSL(pl) {
   }).join("") || "<em>Nenhuma habilidade selecionada.</em>";
 
   /* ---- Objetos de conhecimento e temas das aulas ---- */
-  var objs = A(c.knowledgeObjects).map(function(k) {
-    return '<div style="margin-bottom:5px"><strong>' + esc(k.content) + "</strong>" +
-      (A(k.codes).length ? ' <span class="msl-cod">(' + esc(A(k.codes).join(", ")) + ")</span>" : "") +
-      (k.note ? '<div class="msl-nota">' + esc(k.note) + "</div>" : "") + "</div>";
-  }).join("");
+  /* v7.5 — a seção passa a ter exatamente os três campos que o diário de
+     classe oficial pede, nesta ordem e com estes nomes:
+        Objetivos | Habilidades — Currículo — Conteúdo, Atividade, Rotina ou
+        Experiência
+     A intenção é prática: na hora de lançar no diário digital da rede, o
+     professor lê linha por linha e transcreve campo a campo, sem ter que
+     traduzir a nomenclatura do plano para a do sistema. */
+  var objs = A(c.knowledgeObjects).length
+    ? '<table class="msl-diario"><thead><tr>' +
+        "<th>Objetivos | Habilidades</th><th>Curr&iacute;culo</th>" +
+        "<th>Conte&uacute;do, Atividade, Rotina ou Experi&ecirc;ncia</th></tr></thead><tbody>" +
+        A(c.knowledgeObjects).map(function(k) {
+          var codigos = A(k.codes).filter(Boolean);
+          var bncc = codigosBNCC(codigos), curr = codigosDoCurriculo(codigos);
+          return "<tr>" +
+            '<td><span class="msl-cod">' + (bncc.length ? esc(bncc.join(", ")) : "&mdash;") + "</span>" +
+              (k.note ? '<div class="msl-nota">' + esc(k.note) + "</div>" : "") + "</td>" +
+            '<td class="msl-curr"><span class="msl-cod">' +
+              (curr.length ? esc(curr.join(", ")) : "&mdash;") + "</span></td>" +
+            "<td><strong>" + esc(k.content) + "</strong></td>" +
+          "</tr>";
+        }).join("") +
+      "</tbody></table>" +
+      '<div class="msl-nota" style="margin-top:4px">Campos na ordem do di&aacute;rio de classe: ' +
+        "c&oacute;digos da BNCC &agrave; esquerda, c&oacute;digos do documento curricular da rede no meio " +
+        "(" + esc(documentosDosCodigos(c.bnccSkills).join(" &middot; ")) + ").</div>"
+    : "";
   var seq = A(c.lessonSequence).map(function(l) {
     return "<li><strong>Aula " + esc(l.lesson) + " &mdash; " + esc(l.focus) + ":</strong> " +
       esc(l.description) + "</li>";
@@ -13790,7 +13927,7 @@ function planoModeloSL(pl) {
     mslFaixa("Competências Específicas") +
       mslLinha(mslLista(c.specificCompetencies)) +
     (socio ? mslFaixa("Competências Socioemocionais", true) + mslLinha(socio) : "") +
-    mslFaixa("Objetos de conhecimento e temas das aulas") +
+    mslFaixa("Objetos de conhecimento e temas das aulas &ndash; registro no di&aacute;rio") +
       mslLinha(objetos) +
     mslFaixa("Justificativa e contextualização", true) +
       mslLinha("<div>" + esc(c.context) + "</div>" +
