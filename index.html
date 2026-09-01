@@ -334,16 +334,19 @@ textarea.inp { resize: vertical; }
 @media (max-width: 820px) { .hp-grade { grid-template-columns: 1fr; } }
 
 .hp-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
-  padding: 15px 16px; cursor: pointer; display: flex; flex-direction: column; gap: 10px;
+  padding: 15px 16px; display: flex; flex-direction: column; gap: 10px;
   transition: border-color .15s, box-shadow .15s, transform .15s; box-shadow: var(--sh1); }
 .hp-card:hover { border-color: var(--acc); box-shadow: var(--sh2); transform: translateY(-1px); }
+.hp-card-abre { cursor: pointer; display: flex; flex-direction: column; gap: 8px; }
 .hp-card-tit { font-weight: 650; font-size: 14.5px; line-height: 1.35;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   min-height: 39px; }
 .hp-card-meta { font-size: 11.5px; color: var(--t4); display: flex; flex-wrap: wrap;
   align-items: center; gap: 7px; }
-.hp-card-acoes { display: flex; gap: 8px; margin-top: auto; padding-top: 4px; }
-.hp-card-acoes .btn { flex: 1; }
+.hp-card-acoes { display: flex; gap: 8px; margin-top: auto; padding-top: 6px;
+  align-items: center; border-top: 1px solid var(--border2); }
+.hp-card-acoes .hp-abrir { flex: 1; }
+.hp-card-acoes .hp-acao { flex: none; padding-left: 11px; padding-right: 11px; font-size: 12px; }
 
 /* ── Grades ── */
 .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -628,6 +631,7 @@ body.t-grafite #planPaper .msl-rub th,
 body.t-grafite #planPaper .msl-rub th strong { background: #E7EFF9; color: #16253A; }
 body.t-grafite #planPaper .msl-diario th,
 body.t-grafite #planPaper .msl-diario th strong { background: #E7EFF9; color: #16253A; }
+body.t-grafite #planPaper .msl-momento { background: #E7EFF9; color: #1F3864; }
 body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 
 .msl { font-family: 'Times New Roman', Georgia, serif; font-size: 13.5px; line-height: 1.5;
@@ -656,9 +660,16 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 .msl-lista li { margin-bottom: 3px; }
 .msl-cod { font-weight: 700; }
 .msl-nota { font-size: 12px; color: #444; }
+.msl-corrido { font-size: 12.5px; line-height: 1.55; }
+.msl-art { margin-bottom: 4px; font-size: 12.5px; line-height: 1.5; }
+.msl-art:last-child { margin-bottom: 0; }
 .msl-sub { font-weight: 700; margin: 7px 0 3px; font-size: 13px; }
 .msl-sub:first-child { margin-top: 0; }
-.msl-etapa { margin-bottom: 6px; }
+.msl-etapa { margin-bottom: 7px; }
+.msl-momento { display: inline-block; font-size: 9.5px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: #1F3864;
+  background: #E7EFF9; border-radius: 3px; padding: 1px 6px; margin-right: 6px;
+  vertical-align: 1px; }
 .msl-min { font-weight: 700; }
 
 /* Tabela nos moldes do diário de classe oficial (v7.5, larguras v7.6).
@@ -3442,9 +3453,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "7.7";
+var APP_VERSAO = "7.9";
 var APP_VERSAO_DATA = "01/09/2026";
-var APP_VERSAO_NOTA = "Timbre centralizado, rodapé em todas as folhas e contraste";
+var APP_VERSAO_NOTA = "Metodologia em sequência e plano mais enxuto";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -8424,7 +8435,8 @@ function generateLocal(cfg) {
     ];
 
     methodology = [{
-      order:1, title:"Abertura e sondagem dos conteúdos previstos", minutes:mm[0],
+      order:1, momento:"Abertura", title:"Abertura e sondagem dos conteúdos previstos",
+      minutes:mm[0],
       organization:"Coletiva, com a turma voltada ao quadro.",
       description: _variar(aberturas, _sem)
     }];
@@ -8456,9 +8468,14 @@ function generateLocal(cfg) {
         var f = k.fonte || "BNCC";
         if (fontesDaEtapa.indexOf(f) < 0) fontesDaEtapa.push(f);
       });
+      /* v7.9 — a etapa passa a declarar o MOMENTO DIDÁTICO a que pertence,
+         e não só o número do conteúdo. Assim a metodologia se lê como uma
+         sequência ("Desenvolvimento 2 de 5"), e não como uma pilha de
+         blocos soltos: quem confere o plano enxerga o percurso. */
       methodology.push({
         order: i + 2,
-        title: "Conteúdo " + (i + 1) + " — " + ct.text,
+        momento: "Desenvolvimento",
+        title: "Desenvolvimento " + (i + 1) + " de " + contents.length + " — " + ct.text,
         minutes: mm[i + 1],
         organization: _variarSeq(ORGANIZACOES_BLOCO, _sem, i),
         skills: codigosDaEtapa,
@@ -8471,7 +8488,8 @@ function generateLocal(cfg) {
 
     methodology.push({
       order: contents.length + 2,
-      title: "Fechamento: síntese separada por conteúdo", minutes: mm[contents.length + 1],
+      momento: "Fechamento",
+      title: "Fechamento — síntese separada por conteúdo", minutes: mm[contents.length + 1],
       organization:"Individual, com recolhimento dos registros.",
       description: _variar(fechamentos, _sem + 2)
     });
@@ -8496,24 +8514,24 @@ function generateLocal(cfg) {
          plano), e sem repetir o nome do conteúdo em todas elas — ele está
          no título do documento e nas Habilidades. Os códigos viram etiqueta
          da etapa, no campo skills. */
-      { order:1, title:"Acolhida e sondagem inicial", minutes:mins[0],
+      { order:1, momento:"Abertura", title:"Acolhida e sondagem inicial", minutes:mins[0],
         organization:"Coletiva, em roda ou com a turma voltada ao quadro.",
         skills: codigosDoPlano,
         description:'Pergunta disparadora sobre "' + theme + '", respondida oralmente ou no caderno.' },
-      { order:2, title:"Exposição dialogada e modelagem", minutes:mins[1],
+      { order:2, momento:"Desenvolvimento", title:"Exposição dialogada e modelagem", minutes:mins[1],
         organization:"Coletiva, com registro simultâneo no caderno.",
         skills: codigosDoPlano,
         description:"Apresentação dos conceitos centrais e resolução de um exemplo completo pelo professor em voz alta, explicitando o raciocínio." },
-      { order:3, title:isInfantil ? "Vivência lúdica orientada" : "Prática orientada em duplas", minutes:mins[2],
+      { order:3, momento:"Desenvolvimento", title:isInfantil ? "Vivência lúdica orientada" : "Prática orientada em duplas", minutes:mins[2],
         organization:isInfantil ? "Pequenos grupos, com mediação constante." : "Duplas produtivas (mais domínio junto a menos domínio).",
         skills: codigosDoPlano,
         description:isInfantil
           ? "Atividade lúdica e sensorial com manipulação de materiais concretos e mediação da professora a cada grupo."
           : "Tarefa graduada, do simples ao complexo, com o professor circulando e intervindo por dupla, sem entregar a resposta." },
-      { order:4, title:"Socialização e correção coletiva", minutes:mins[3],
+      { order:4, momento:"Sistematização", title:"Socialização e correção coletiva", minutes:mins[3],
         organization:"Coletiva, com mediação do professor.",
         description:"Duas ou três duplas apresentam suas soluções, incluindo as que erraram, e o professor sistematiza no quadro os consensos e os equívocos." },
-      { order:5, title:"Síntese e verificação de saída", minutes:mins[4],
+      { order:5, momento:"Fechamento", title:"Síntese e verificação de saída", minutes:mins[4],
         organization:"Individual, com recolhimento dos registros.",
         description:isInfantil
           ? "Roda final: cada criança relata o que aprendeu, com registro da professora."
@@ -11089,22 +11107,36 @@ function siglaDoComponente(subject) {
    reservadas e os botões ancorados no rodapé, para que os cartões vizinhos
    terminem na mesma altura mesmo com títulos de tamanhos diferentes. */
 function cartaoDoPlano(p) {
-  return '<div class="hp-card" onclick="openPlan(\'' + p.id + '\')">' +
-    '<div class="hp-card-tit">' + esc(p.content.title) + "</div>" +
-    '<div class="hp-card-meta">' +
-      seloTeste(p) +
-      "<span>" + esc(p.config.month) +
-      " &middot; " + new Date(p.createdAt).toLocaleDateString("pt-BR") +
-      (p.refinadoNa ? " &middot; refinado na v" + esc(p.refinadoNa) : "") + "</span>" +
-      (p.config.aee && p.config.aee.active
-        ? '<span class="badge badge-ok">AEE</span>' : "") +
+  /* v7.8 — o cartão tinha dois botões de largura cheia no rodapé, "Marcar
+     teste" e "Excluir", e a única forma de ABRIR o plano era tocar na área
+     livre do cartão. No celular, onde o cartão ocupa a tela inteira, o dedo
+     caía nos botões: em vez de abrir, o plano trocava de selo. O professor
+     tocava e "não acontecia nada" — na verdade acontecia a coisa errada.
+     Agora ABRIR é um botão explícito e principal. As duas ações secundárias
+     ficam pequenas e do lado, com rótulo curto, longe do caminho do dedo.
+     O corpo do cartão continua abrindo o plano, para quem já tinha o hábito. */
+  var turma = p.config.gradeLevel ? turmaCurta(p.config.gradeLevel) : "";
+  return '<div class="hp-card">' +
+    '<div class="hp-card-abre" onclick="openPlan(\'' + p.id + '\')">' +
+      '<div class="hp-card-tit">' + esc(p.content.title || "(sem tema)") + "</div>" +
+      '<div class="hp-card-meta">' +
+        seloTeste(p) +
+        "<span>" + esc(p.config.month) + (turma ? " &middot; " + esc(turma) : "") +
+        " &middot; " + new Date(p.createdAt).toLocaleDateString("pt-BR") +
+        (p.refinadoNa ? " &middot; refinado na v" + esc(p.refinadoNa) : "") + "</span>" +
+        (p.config.aee && p.config.aee.active
+          ? '<span class="badge badge-ok">AEE</span>' : "") +
+      "</div>" +
     "</div>" +
     '<div class="hp-card-acoes">' +
-      '<button class="btn btn-outline btn-sm" title="' +
+      '<button class="btn btn-primary btn-sm hp-abrir" ' +
+        'onclick="openPlan(\'' + p.id + '\')">Abrir plano</button>' +
+      '<button class="btn btn-ghost btn-sm hp-acao" title="' +
         (ehTeste(p) ? "Passar para definitivo" : "Marcar como teste") + '" ' +
         'onclick="event.stopPropagation();alternarTeste(\'' + p.id + '\')">' +
-        (ehTeste(p) ? "&#10003; Definitivo" : "Marcar teste") + "</button>" +
-      '<button class="btn btn-ghost btn-sm" style="color:var(--verm)" ' +
+        (ehTeste(p) ? "&#10003; Definitivo" : "Teste") + "</button>" +
+      '<button class="btn btn-ghost btn-sm hp-acao" style="color:var(--verm)" ' +
+        'title="Excluir este plano" ' +
         'onclick="event.stopPropagation();deletePlan(\'' + p.id + '\')">Excluir</button>' +
     "</div>" +
   "</div>";
@@ -13783,6 +13815,13 @@ function mslFaixa(titulo, alt) {
 function mslLinha(html) {
   return "<tr><td>" + (html || "&nbsp;") + "</td></tr>";
 }
+/* As dez competências gerais em linha corrida, numeradas (v7.9). */
+function competenciasGeraisEmLinha() {
+  return A(COMPETENCIAS_GERAIS_BNCC).map(function(t, i) {
+    return "<strong>" + (i + 1) + ".</strong> " + esc(t);
+  }).join(" &nbsp;&middot;&nbsp; ");
+}
+
 function mslLista(itens) {
   var a = A(itens).filter(Boolean);
   if (!a.length) return "";
@@ -13958,9 +13997,15 @@ function planoModeloSL(pl) {
      aqui é exclusivamente X, que responde à habilidade Y"). Como etiqueta
      ele ocupa três palavras, e a coordenação confere a amarração etapa ⇄
      habilidade correndo o olho pela coluna, sem ler o parágrafo. */
+  /* v7.9 — a metodologia ganha o momento didático como etiqueta à esquerda
+     de cada etapa. As etapas deixam de ser uma lista de parágrafos e passam
+     a mostrar o percurso: Abertura, Desenvolvimento, Sistematização,
+     Fechamento. É a organização que o plano da rede tem e a minha não
+     tinha — o conteúdo já estava certo, faltava a costura à vista. */
   var metod = A(c.methodology).map(function(m) {
     var cods = A(m.skills).filter(Boolean);
     return '<div class="msl-etapa">' +
+      (m.momento ? '<span class="msl-momento">' + esc(m.momento) + "</span>" : "") +
       '<span class="msl-min">' + esc(m.order) + ". " + esc(m.title) +
       (m.minutes ? " (" + esc(m.minutes) + " min)" : "") + ":</span> " +
       (cods.length ? '<span class="msl-cod">' + esc(cods.join(", ")) + "</span> " : "") +
@@ -14017,16 +14062,13 @@ function planoModeloSL(pl) {
   /* ---- Seções extras que o EducaPlan traz e o formulário não previa,
          mas que a coordenação valoriza: contextualização, transversais,
          socioemocionais, interdisciplinaridade, SAEB e AEE. ---- */
-  var transversais = A(c.crossCuttingThemes).length ? mslLista(c.crossCuttingThemes) : "";
-  var socio = A(c.socioemotional).length ? mslLista(c.socioemotional) : "";
+  var transversais = A(c.crossCuttingThemes).length ? A(c.crossCuttingThemes).join("; ") : "";
+  var socio = A(c.socioemotional).length ? A(c.socioemotional).join("; ") : "";
   var inter = A(c.interdisciplinarity).map(function(x) {
-    return "<li><strong>" + esc(x.subject) + ":</strong> " + esc(x.connection) + "</li>";
-  }).join("");
+    return x.subject + " (" + x.connection + ")";
+  }).join("; ");
   var saeb = A(c.saebDescriptors).map(function(d) {
     return "<li><span class='msl-cod'>" + esc(d.code) + "</span> &mdash; " + esc(d.description) + "</li>";
-  }).join("");
-  var comput = A(c.computacao).map(function(x) {
-    return "<li><strong>" + esc(x.eixo) + ":</strong> " + esc(x.desc) + "</li>";
   }).join("");
 
   var aee = "";
@@ -14039,6 +14081,21 @@ function planoModeloSL(pl) {
       (p2.assessment ? '<div class="msl-sub">Avaliação adaptada</div>' + esc(p2.assessment) : "");
   }
 
+  /* Bloco único de articulações (v7.9): uma linha por tipo, em texto
+     corrido. Em lista com marcador cada item virava uma linha de altura
+     cheia; aqui os três ou quatro itens de cada tipo cabem numa linha só. */
+  var artLinhas = [];
+  function artLinha(rot, txt) {
+    if (txt) artLinhas.push('<div class="msl-art"><strong>' + rot + ":</strong> " + esc(txt) + "</div>");
+  }
+  artLinha("Temas contemporâneos transversais", transversais);
+  artLinha("Socioemocionais", socio);
+  artLinha("Interdisciplinaridade", inter);
+  artLinha("BNCC Computação", A(c.computacao).map(function(x) {
+    return x.eixo + " (" + resumirObjeto(x.desc, 74) + ")";
+  }).join("; "));
+  var articulacoes = artLinhas.join("");
+
   var eixos = getAxes(pc.subject);
 
   var corpo = '<table class="msl-corpo"><tbody>' +
@@ -14050,13 +14107,14 @@ function planoModeloSL(pl) {
       mslLinha(habs) +
     (saeb ? mslFaixa("Descritores SAEB / Acerta Brasil", true) +
       mslLinha('<ul class="msl-lista">' + saeb + "</ul>") : "") +
-    (comput ? mslFaixa("BNCC Computação") +
-      mslLinha('<ul class="msl-lista">' + comput + "</ul>") : "") +
-    mslFaixa("Competências Gerais", true) +
-      mslLinha(mslLista(COMPETENCIAS_GERAIS_BNCC)) +
+    /* v7.9 — as dez competências gerais da BNCC ocupavam quase uma página
+       por extenso, sempre as mesmas, em todo plano de todo mês. Continuam
+       ali, porque a rede as pede, mas em linha corrida numerada: a mesma
+       informação numa fração do espaço. */
+    mslFaixa("Competências Gerais da BNCC", true) +
+      mslLinha('<div class="msl-corrido">' + competenciasGeraisEmLinha() + "</div>") +
     mslFaixa("Competências Específicas") +
       mslLinha(mslLista(c.specificCompetencies)) +
-    (socio ? mslFaixa("Competências Socioemocionais", true) + mslLinha(socio) : "") +
     mslFaixa("Objetos de conhecimento e temas das aulas &ndash; registro no di&aacute;rio") +
       mslLinha(objetos) +
     mslFaixa("Justificativa e contextualização", true) +
@@ -14067,15 +14125,19 @@ function planoModeloSL(pl) {
         (A(c.specificObjectives).length ? '<div class="msl-sub">Específicos</div>' + mslLista(c.specificObjectives) : "")) +
     mslFaixa("Metodologias", true) +
       mslLinha(metodologias) +
-    (transversais ? mslFaixa("Temas Contemporâneos Transversais") + mslLinha(transversais) : "") +
-    (inter ? mslFaixa("Interdisciplinaridade", true) +
-      mslLinha('<ul class="msl-lista">' + inter + "</ul>") : "") +
-    mslFaixa("Recursos") +
+    /* v7.9 — quatro faixas viraram uma. Temas transversais, socioemocionais,
+       interdisciplinaridade e computação são articulações do mesmo plano, e
+       cada uma ocupava um cabeçalho azul inteiro para duas ou três linhas
+       de conteúdo. Juntas numa faixa só, com subtítulo, o plano perde três
+       cabeçalhos e ganha leitura: o professor vê de uma vez com o que este
+       mês conversa. */
+    (articulacoes ? mslFaixa("Articulações do plano") + mslLinha(articulacoes) : "") +
+    mslFaixa("Recursos", true) +
       mslLinha(recursos) +
-    mslFaixa("Avaliação", true) +
+    mslFaixa("Avaliação") +
       mslLinha(avaliacao) +
-    (aee ? mslFaixa("Atendimento Educacional Especializado (AEE)") + mslLinha(aee) : "") +
-    mslFaixa("Referências", true) +
+    (aee ? mslFaixa("Atendimento Educacional Especializado (AEE)", true) + mslLinha(aee) : "") +
+    mslFaixa("Referências") +
       mslLinha(mslLista(referenciasDoPlano(pc, c.references))) +
   "</tbody>" +
   /* v7.7 — o rodapé institucional vive num <tfoot> da tabela do corpo.
