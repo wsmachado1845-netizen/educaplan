@@ -3453,9 +3453,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "8.0";
+var APP_VERSAO = "8.1";
 var APP_VERSAO_DATA = "01/09/2026";
-var APP_VERSAO_NOTA = "Sincronizar o Registro e atualizar todos os planos";
+var APP_VERSAO_NOTA = "Metodologia sem rotinas, avaliação geral e currículo uma vez";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -8662,26 +8662,25 @@ function generateLocal(cfg) {
 
   var assessment;
   if (multi) {
-    /* Avaliação discriminada: cada conteúdo tem instrumento e critério próprios */
-    assessment = [{ instrument:"Sondagem inicial por conteúdo (registro em colunas)",
-      skills:codes, type:"Diagnóstica",
-      criteria:"Verificar separadamente o repertório prévio de cada conteúdo previsto; sem atribuição de nota." }];
-    contents.forEach(function(ct, i) {
-      /* Também alterna o instrumento/critério entre os do perfil, para a
-         seção de Avaliação não repetir o mesmo critério em todos os itens. */
-      var a = null;
-      if (ct.profile && ct.profile.assess && ct.profile.assess.length) {
-        a = ct.profile.assess[Math.abs(_sem + _semente(ct.text) + i * 5) % ct.profile.assess.length];
-      }
-      assessment.push({
-        instrument:"Conteúdo " + (i+1) + " — " + (a ? fill(a[0], ct.text) : "Atividade dirigida sobre " + ct.text),
-        skills: ct.skills.map(function(k){ return k.code; }).join(", ") || codes,
-        type:"Formativa",
-        criteria: a ? fill(a[1], ct.text) : "Domínio específico de " + ct.text + ", observado na resolução da tarefa."
-      });
-    });
-    assessment.push({ instrument:"Quadro-síntese com os conteúdos separados", skills:codes, type:"Somativa",
-      criteria:"Correção conceitual em cada coluna e capacidade de distinguir o que pertence a cada conteúdo." });
+    /* v8.1 — a avaliação deixa de ter um instrumento POR CONTEÚDO.
+       Num plano de oito conteúdos saíam dez linhas dizendo praticamente a
+       mesma coisa — "Conteúdo 3 — Atividade dirigida sobre X", "Domínio
+       específico de X, observado na resolução da tarefa" — trocando só o
+       nome. Não é assim que se avalia um mês: os instrumentos são poucos e
+       atravessam todos os conteúdos.
+       Ficam quatro, no percurso diagnóstica → formativa → somativa. Quais
+       conteúdos cada um alcança já está na metodologia e no cronograma. */
+    assessment = [
+      { instrument:"Sondagem inicial dos conteúdos previstos", skills:codes, type:"Diagnóstica",
+        criteria:"Repertório prévio de cada conteúdo, registrado em colunas separadas; sem atribuição de nota." },
+      { instrument:"Observação e registro no caderno ao longo das aulas", skills:codes, type:"Formativa",
+        criteria:"Participação nas tarefas, uso da estratégia ensinada e organização do registro por conteúdo." },
+      { instrument: isLetras ? "Produção escrita do mês" : "Atividade avaliativa escrita",
+        skills:codes, type:"Somativa",
+        criteria:"Correção conceitual, adequação ao que foi solicitado e autonomia na resolução." },
+      { instrument:"Quadro-síntese com os conteúdos separados", skills:codes, type:"Somativa",
+        criteria:"Capacidade de distinguir o que pertence a cada conteúdo trabalhado no mês." }
+    ];
   } else assessment = prof
     ? prof.assess.map(function(a){ return { instrument:fill(a[0]), skills:codes, type:a[2], criteria:fill(a[1]) }; })
         .concat([{ instrument:"Bilhete de saída (síntese individual)", skills:codes, type:"Formativa",
@@ -14044,35 +14043,33 @@ function planoModeloSL(pl) {
              página sem dizer nada de novo. Nas repetições fica só o código,
              que é o que o diário pede mesmo. */
           var jaDescrito = {}, jaCurriculo = {};
+          /* Um nome só para o plano inteiro: o documento de onde vieram as
+             habilidades escolhidas. */
+          var nomeDoCurriculo = documentosDosCodigos(c.bnccSkills).join(" / ") || "BNCC";
           return A(c.knowledgeObjects).map(function(k) {
           var codigos = A(k.codes).filter(Boolean);
           var bncc = codigosBNCC(codigos), curr = codigosDoCurriculo(codigos);
           var chaveDesc = bncc.join(",");
           var mostrarDesc = k.note && !jaDescrito[chaveDesc];
           if (mostrarDesc) jaDescrito[chaveDesc] = 1;
-          /* v7.7 — o currículo costuma ser o mesmo em todas as linhas.
-             Escrito só na primeira vez em que aparece; nas seguintes fica a
-             aspa de repetição, que é como se preenche formulário à mão. */
-          var chaveCurr = curr.join(",");
-          var mostrarCurr = !!chaveCurr && !jaCurriculo[chaveCurr];
-          if (mostrarCurr) jaCurriculo[chaveCurr] = 1;
+          /* v8.1 — a coluna Currículo traz o NOME do documento curricular,
+             e só na primeira linha da tabela. O currículo é o mesmo do
+             começo ao fim do plano; repeti-lo em quinze linhas não informa
+             nada, e o campo do diário é preenchido uma vez. */
+          var mostrarCurr = !jaCurriculo.feito;
+          if (mostrarCurr) jaCurriculo.feito = 1;
           return "<tr>" +
             '<td><span class="msl-cod">' + (bncc.length ? esc(bncc.join(", ")) : "&mdash;") + "</span>" +
               (mostrarDesc ? '<div class="msl-nota">' + esc(k.note) + "</div>" : "") + "</td>" +
             '<td class="msl-curr">' +
-              (curr.length
-                ? (mostrarCurr
-                    ? '<span class="msl-cod">' + esc(curr.join(", ")) + "</span>"
-                    : '<span class="msl-idem" title="mesmo curriculo da linha acima">&Prime;</span>')
-                : "&mdash;") + "</td>" +
+              (mostrarCurr ? esc(nomeDoCurriculo) : "") + "</td>" +
             "<td><strong>" + esc(k.content) + "</strong></td>" +
           "</tr>";
           }).join("");
         })() +
       "</tbody></table>" +
-      '<div class="msl-nota" style="margin-top:4px">Campos na ordem do di&aacute;rio de classe: ' +
-        "c&oacute;digos da BNCC &agrave; esquerda, c&oacute;digos do documento curricular da rede no meio " +
-        "(" + esc(documentosDosCodigos(c.bnccSkills).join(" &middot; ")) + ").</div>"
+      '<div class="msl-nota" style="margin-top:4px">Campos na ordem do di&aacute;rio de classe. ' +
+        "O curr&iacute;culo vale para todo o plano e por isso &eacute; declarado uma vez, na primeira linha.</div>"
     : "";
   var seq = A(c.lessonSequence).map(function(l) {
     return "<li><strong>Aula " + esc(l.lesson) + " &mdash; " + esc(l.focus) + ":</strong> " +
@@ -14103,17 +14100,13 @@ function planoModeloSL(pl) {
       (m.organization ? ' <span class="msl-nota">[' + esc(m.organization) + "]</span>" : "") +
     "</div>";
   }).join("");
-  var ativs = A(c.activities).map(function(a) {
-    return '<div class="msl-etapa"><strong>' + esc(a.title) + "</strong>" +
-      (a.type ? ' <span class="msl-nota">(' + esc(a.type) + ")</span>" : "") +
-      "<div>" + esc(a.description) + "</div>" +
-      (A(a.steps).length ? mslLista(a.steps) : "") +
-      (a.support ? '<div class="msl-nota"><strong>Apoio:</strong> ' + esc(a.support) + "</div>" : "") +
-      (a.challenge ? '<div class="msl-nota"><strong>Desafio:</strong> ' + esc(a.challenge) + "</div>" : "") +
-    "</div>";
-  }).join("");
+  /* v8.1 — o bloco "Atividades" saiu da Metodologia.
+     Ele repetia, para cada conteúdo, a mesma rotina de quatro passos mais
+     Apoio e Desafio — a estrutura era idêntica em todos, só mudava o nome
+     do conteúdo. Isso engessa o plano: descreve a aula passo a passo como
+     se o professor fosse seguir um roteiro, quando a metodologia já diz o
+     que se faz em cada etapa. Fica a metodologia e a tarefa de casa. */
   var metodologias = metod +
-    (ativs ? '<div class="msl-sub">Atividades</div>' + ativs : "") +
     (c.homework ? '<div class="msl-sub">Tarefa de casa</div>' + esc(c.homework) : "");
 
   /* ---- Avaliação: instrumentos, rubrica e retomada ---- */
