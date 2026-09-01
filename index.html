@@ -3453,9 +3453,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "7.9";
+var APP_VERSAO = "8.0";
 var APP_VERSAO_DATA = "01/09/2026";
-var APP_VERSAO_NOTA = "Metodologia em sequência e plano mais enxuto";
+var APP_VERSAO_NOTA = "Sincronizar o Registro e atualizar todos os planos";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -11255,7 +11255,11 @@ function viewPlans() {
         (temFiltro
           ? '<button class="btn btn-ghost btn-sm" onclick="state.planDisc=\'\';state.planTurma=\'\';state.planMes=\'\';render()">Limpar filtros</button>'
           : "") +
-        (state.plans.length ? '<button class="btn btn-outline btn-sm" onclick="exportAll()">Baixar todos (.html)</button>' : "") +
+        (state.plans.length
+          ? '<button class="btn btn-outline btn-sm" title="Reescrever todos os planos definitivos com a reda&ccedil;&atilde;o da vers&atilde;o atual" ' +
+              'onclick="refinarTodosOsPlanos()">&#10022; Atualizar todos para a v' + APP_VERSAO + "</button>" +
+            '<button class="btn btn-outline btn-sm" onclick="exportAll()">Baixar todos (.html)</button>'
+          : "") +
       "</div>" +
     "</div>" +
 
@@ -11769,6 +11773,11 @@ function viewDiario() {
         " &middot; " + esc(d.grade) + '. O conte&uacute;do n&atilde;o &eacute; preenchido automaticamente &mdash; ' +
         '<a href="#" onclick="go(\'gen\');return false">gere um planejamento</a> ou preencha manualmente.</div>' : "") +
       '<div style="margin-top:13px;display:flex;gap:8px;flex-wrap:wrap">' +
+        /* v8.0 — o botão que faz o Registro reler o plano. Vem primeiro
+           porque é a ação que o professor procura depois de atualizar o
+           aplicativo ou de refinar um plano. */
+        '<button class="btn btn-primary btn-sm" title="Refazer as c&eacute;lulas deste m&ecirc;s a partir do plano salvo" ' +
+          'onclick="sincronizarRegistroComPlano(\'' + key + '\')">&#8635; Atualizar pelo plano</button>' +
         '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir Registro</button>' +
         '<button class="btn btn-ghost btn-sm" onclick="clearDiary(\'' + key + '\')">Limpar edi&ccedil;&otilde;es do m&ecirc;s</button>' +
       "</div>" +
@@ -13114,6 +13123,87 @@ function syncDiaryWithPlans() {
   if (touched) saveDiary();
   return touched;
 }
+/* =========================================================
+   SINCRONIZAR O REGISTRO COM O PLANO (v8.0)
+   ---------------------------------------------------------
+   O Registro monta cada linha a partir do plano salvo — mas só enquanto a
+   célula nunca foi tocada. Assim que o professor edita uma célula (ou o
+   app grava uma edição por ele), aquele valor passa a ter prioridade sobre
+   o plano, para sempre. É o comportamento certo: ninguém quer ver o texto
+   que digitou ser sobrescrito por uma atualização.
+   O efeito colateral aparece quando o PLANO melhora — como agora, com a
+   redação nova do gerador: o Registro continua mostrando o texto antigo,
+   porque tecnicamente aquilo virou "edição do professor".
+   Este botão é a saída explícita: apaga as edições guardadas daquele mês e
+   deixa o Registro voltar a ler o plano atual. Grava uma versão de
+   segurança antes, porque isso descarta o que estava escrito.
+   ========================================================= */
+function sincronizarRegistroComPlano(key) {
+  var partes = String(key).split("|");
+  var subject = partes[0], grade = partes[1], month = partes[2];
+  var registros = state.diary[key] ? Object.keys(state.diary[key]).length : 0;
+
+  if (!temPlanoPara(subject, grade, month) &&
+      !state.plans.some(function(p) {
+        return normSubj(p.config.subject) === normSubj(subject) &&
+               normGrade(p.config.gradeLevel) === normGrade(grade);
+      })) {
+    toast("Não há plano salvo para " + subject + " · " + turmaCurta(grade) +
+      ". Gere o planejamento primeiro.");
+    return;
+  }
+  if (!registros) {
+    render();
+    toast("O Registro de " + month + " já está lendo direto do plano — nada guardado por cima.");
+    return;
+  }
+  if (!confirm("Atualizar o Registro de " + month + " pelo plano salvo?\n\n" +
+      registros + " data(s) com texto guardado voltam a ser preenchidas pelo plano atual.\n" +
+      "O que você digitou à mão nessas datas será substituído.\n\n" +
+      "Uma versão de segurança é guardada antes — dá para voltar em Ajustes → Backup e Versões.")) return;
+
+  pushSnapshot("Antes de sincronizar o Registro de " + month, true);
+  delete state.diary[key];
+  saveDiary();
+  render();
+  toast(registros + " data(s) atualizada(s) pelo plano.");
+}
+
+/* Refinar todos os planos salvos de uma vez (v8.0).
+   Refinar um por um funcionava, mas com dezoito planos no histórico não é
+   razoável pedir dezoito confirmações. Aqui o professor aceita uma vez e o
+   app percorre os definitivos. As escolhas dele — habilidades, objetos,
+   título — atravessam intactas em cada um, como no Refinar individual. */
+function refinarTodosOsPlanos() {
+  var alvos = state.plans.filter(function(p) { return p && p.config && !ehTeste(p); });
+  if (!alvos.length) { toast("Nenhum plano definitivo para atualizar."); return; }
+  if (!confirm("Atualizar os " + alvos.length + " planos definitivos com a redação da versão " +
+      APP_VERSAO + "?\n\nAs habilidades e os conteúdos que você escolheu continuam os mesmos " +
+      "em todos.\nUma versão de segurança é guardada antes.")) return;
+
+  pushSnapshot("Antes de atualizar " + alvos.length + " plano(s) para a v" + APP_VERSAO, true);
+  var feitos = 0, antes = 0, depois = 0;
+  alvos.forEach(function(pl) {
+    var a = _tamanhoProsa(pl.content || {});
+    var novo = refinarConteudo(pl);
+    if (!novo) return;
+    antes += a; depois += _tamanhoProsa(novo);
+    pl.content = novo;
+    pl.refinadoEm = new Date().toISOString();
+    pl.refinadoNa = APP_VERSAO;
+    feitos++;
+  });
+  savePlans();
+  if (state.activePlan) {
+    var atual = state.plans.filter(function(p){ return p.id === state.activePlan.id; })[0];
+    if (atual) state.activePlan = atual;
+  }
+  render();
+  var corte = antes > 0 ? Math.round(100 * (antes - depois) / antes) : 0;
+  toast(feitos + " plano(s) atualizado(s) para a v" + APP_VERSAO +
+    (corte > 0 ? " — texto " + corte + "% mais enxuto." : "."));
+}
+
 function clearDiary(key) {
   if (!confirm("Limpar as edições do registro deste mês? O conteúdo volta ao sugerido automaticamente.")) return;
   delete state.diary[key];
