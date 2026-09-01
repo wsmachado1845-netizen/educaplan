@@ -708,6 +708,11 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 .ad-cel::placeholder { color: var(--t4); font-weight: 400; }
 .ad-total { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
 .ad-prev { color: var(--t4); font-variant-numeric: tabular-nums; }
+/* v8.4 — o mês em andamento. A contagem dele ainda vai crescer até o fim do
+   mês, então não se lê como as colunas fechadas ao lado. */
+.ad-tab th.ad-agora { color: var(--acc); }
+.ad-tab th.ad-agora::after { content: " •"; }
+.ad-cel.agora { background: var(--acc3); }
 @media (max-width: 620px) { .ad-cel { min-width: 38px; font-size: 13px; padding: 12px 1px; } }
 
 .msl-corrido { font-size: 12.5px; line-height: 1.55; }
@@ -3818,9 +3823,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "8.3";
+var APP_VERSAO = "8.4";
 var APP_VERSAO_DATA = "01/09/2026";
-var APP_VERSAO_NOTA = "Habilidades separadas por mês, e não pelo período inteiro";
+var APP_VERSAO_NOTA = "Aulas dadas só até o mês corrente, com a folha conferida";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -11781,6 +11786,75 @@ function definirAulasDadas(subject, grade, month, valor) {
   saveAulasDadas();
   render();
 }
+/* ---------- Meses que já aconteceram (v8.4) ----------
+   O quadro nascia com os onze meses letivos, Dezembro inclusive. Dava para
+   digitar aula dada em Novembro estando em setembro, e o rodapé somava
+   "previstas" de meses que ainda nem começaram. Contagem de aula dada é
+   registro do que passou: o quadro para no mês corrente. O ano inteiro
+   continua a um toque, para quem quiser olhar o que vem pela frente. */
+function mesAtualDoCalendario() {
+  var n = new Date().getMonth() + 1;
+  for (var i = 0; i < MONTHS_FULL.length; i++) {
+    var mi = CALENDAR.meses[MONTHS_FULL[i]];
+    if (mi && mi.num === n) return MONTHS_FULL[i];
+  }
+  return null;
+}
+function mesesAteHoje() {
+  var n = new Date().getMonth() + 1;
+  var ate = MONTHS.filter(function(m) {
+    var mi = CALENDAR.meses[m];
+    return mi && mi.diasLetivos > 0 && mi.num <= n;
+  });
+  /* Antes do início do ano letivo não há mês nenhum para mostrar; nesse caso
+     vale o primeiro, senão a tela fica vazia sem explicação. */
+  return ate.length ? ate : MONTHS.slice(0, 1);
+}
+
+/* ---------- A folha de papel do professor (v8.4) ----------
+   Conferido número a número na foto ampliada, com o total escrito à mão
+   servindo de prova: onde a soma das parcelas bate com o total dele, a
+   leitura está certa. Duas correções vieram daí — 9º LP tinha 20 em Abril
+   (não 30; o total 97 confirma) e 9º PT tinha 6 em Abril (não 10; o total 16
+   confirma). O 6º B é o único em aberto: as parcelas somam 34 e o total
+   escrito diz 32. */
+var FOLHA_MAR_JUN_2026 = [
+  ["Língua Inglesa / Inglês", "Ensino Fundamental II (6º Ano A)", [8, 12, 8, 6]],
+  ["Língua Inglesa / Inglês", "Ensino Fundamental II (6º Ano B)", [8, 8, 10, 8]],
+  ["Língua Inglesa / Inglês", "Ensino Fundamental II (7º Ano)",   [8, 8, 7, 8]],
+  ["Língua Inglesa / Inglês", "Ensino Fundamental II (8º Ano)",   [4, 14, 8, 6]],
+  ["Língua Inglesa / Inglês", "Ensino Fundamental II (9º Ano)",   [6, 12, 8, 10]],
+  ["Língua Portuguesa",       "Ensino Fundamental II (7º Ano)",   [19, 21, 23, 25]],
+  ["Língua Portuguesa",       "Ensino Fundamental II (8º Ano)",   [29, 20, 22, 27]],
+  ["Língua Portuguesa",       "Ensino Fundamental II (9º Ano)",   [30, 20, 21, 26]],
+  ["Produção de Texto",       "Ensino Fundamental II (9º Ano)",   [3, 6, 4, 3]]
+];
+var FOLHA_MESES = ["Março", "Abril", "Maio", "Junho"];
+
+function folhaJaLancada() {
+  return FOLHA_MAR_JUN_2026.some(function(l) {
+    return FOLHA_MESES.some(function(m){ return aulasDadasDe(l[0], l[1], m) !== null; });
+  });
+}
+
+function lancarFolhaDoProfessor() {
+  var total = 0;
+  FOLHA_MAR_JUN_2026.forEach(function(l){ l[2].forEach(function(n){ total += n; }); });
+  if (!confirm("Lançar de Março a Junho a contagem da sua folha de papel?\n\n" +
+      "São " + FOLHA_MAR_JUN_2026.length + " turmas, 4 meses, " + total + " aulas no total.\n" +
+      "O que você já tiver digitado nesses meses será substituído.\n\n" +
+      "Uma versão de segurança é guardada antes, e o botão \"Limpar contagem\" desfaz tudo.")) return;
+  pushSnapshot("Antes de lançar a folha de Março a Junho", true);
+  FOLHA_MAR_JUN_2026.forEach(function(l) {
+    var k = chaveAula(l[0], l[1]);
+    if (!state.aulasDadas[k]) state.aulasDadas[k] = {};
+    FOLHA_MESES.forEach(function(m, i){ state.aulasDadas[k][m] = l[2][i]; });
+  });
+  saveAulasDadas();
+  render();
+  toast("Folha lançada: " + total + " aulas de Março a Junho.");
+}
+
 function limparAulasDadas() {
   if (!confirm("Apagar toda a contagem de aulas dadas?\n\nUma versão de segurança é guardada antes.")) return;
   pushSnapshot("Antes de limpar as aulas dadas", true);
@@ -11791,7 +11865,9 @@ function limparAulasDadas() {
 }
 
 function viewAulasDadas() {
-  var meses = state.adMeses && state.adMeses.length ? state.adMeses : MONTHS;
+  var anoTodo = !!state.adAnoTodo;
+  var meses = anoTodo ? MONTHS : mesesAteHoje();
+  var mesCorrente = mesAtualDoCalendario();
   var combos = combinacoesQueLeciona();
   if (!combos.length) {
     return '<div class="wrap fade" style="padding:34px 18px 56px">' +
@@ -11816,14 +11892,23 @@ function viewAulasDadas() {
       if (dado !== null) { somaDado += dado; somaPrevLanc += prev; }
       somaPrev += prev;
       return "<td style='padding:0'>" +
-        "<input type='number' min='0' max='60' inputmode='numeric' class='ad-cel' " +
+        "<input type='number' min='0' max='60' inputmode='numeric' class='ad-cel" +
+          (m === mesCorrente ? " agora" : "") + "' " +
           "value='" + (dado === null ? "" : dado) + "' " +
           "placeholder='" + (prev || "") + "' " +
-          "title='" + esc(m) + " &mdash; previstas: " + prev + "' " +
+          "title='" + esc(m) + " &mdash; previstas: " + prev +
+            (m === mesCorrente ? " (m&ecirc;s em andamento)" : "") + "' " +
           "onchange=\"definirAulasDadas('" + esc(c.subject).replace(/'/g, "\\'") + "','" +
             esc(c.gradeLevel).replace(/'/g, "\\'") + "','" + esc(m) + "', this.value)\" /></td>";
     }).join("");
-    totalDado += somaDado; totalPrev += somaPrev; totalPrevLanc += somaPrevLanc;
+    /* A coluna da direita é sempre o previsto do ANO, não o dos meses visíveis
+       — senão ela mudaria de significado ao alternar a visão, e o professor
+       compararia o total dado com um alvo que encolheu junto. */
+    var somaPrevAno = MONTHS.reduce(function(acc, m) {
+      var c2 = cargaHoraria(c.subject, c.gradeLevel, m);
+      return acc + (c2.configured ? c2.monthlyLessons : 0);
+    }, 0);
+    totalDado += somaDado; totalPrev += somaPrevAno; totalPrevLanc += somaPrevLanc;
     var pct = somaPrevLanc ? Math.round(100 * somaDado / somaPrevLanc) : 0;
     var cor = !somaDado ? "var(--t4)" : (pct >= 90 ? "var(--grn)" : (pct >= 70 ? "var(--amb)" : "var(--verm)"));
     return "<tr><th class='ad-turma'>" +
@@ -11832,7 +11917,7 @@ function viewAulasDadas() {
         "<span>" + esc(c.conhecida ? turmaCurta(c.gradeLevel) : c.gradeCurto.replace(/\s+U$/, "")) + "</span>" +
       "</th>" + celulas +
       "<td class='ad-total' style='color:" + cor + "'>" + somaDado + "</td>" +
-      "<td class='ad-prev'>" + somaPrev + "</td></tr>";
+      "<td class='ad-prev'>" + somaPrevAno + "</td></tr>";
   }).join("");
 
   var pctGeral = totalPrevLanc ? Math.round(100 * totalDado / totalPrevLanc) : 0;
@@ -11867,6 +11952,13 @@ function viewAulasDadas() {
         "No ano inteiro est&atilde;o previstas " + totalPrev + " aulas." +
       "</div>" +
       '<div style="font-size:11.5px;color:var(--t4);margin-top:7px;line-height:1.55">' +
+        (anoTodo
+          ? "Voc&ecirc; est&aacute; vendo <strong>o ano inteiro</strong>, meses que ainda n&atilde;o aconteceram inclusive."
+          : "O quadro vai at&eacute; <strong>" + esc(mesCorrente || "o m&ecirc;s corrente") +
+            "</strong>, o m&ecirc;s em que estamos. M&ecirc;s que ainda n&atilde;o aconteceu n&atilde;o tem aula dada para lan&ccedil;ar &mdash; " +
+            "as colunas seguintes aparecem sozinhas conforme o ano anda.") +
+      "</div>" +
+      '<div style="font-size:11.5px;color:var(--t4);margin-top:7px;line-height:1.55">' +
         "As previstas vêm do seu hor&aacute;rio semanal cruzado com o calend&aacute;rio. " +
         "Na pr&aacute;tica quase nunca batem &mdash; falta professor, cai energia, entra evento. " +
         "A diferen&ccedil;a aqui &eacute; informa&ccedil;&atilde;o para o fechamento do bimestre, n&atilde;o cobran&ccedil;a." +
@@ -11875,12 +11967,20 @@ function viewAulasDadas() {
 
     '<div class="tscroll"><table class="tb ad-tab"><thead><tr>' +
       "<th class='ad-turma'>Turma</th>" +
-      meses.map(function(m){ return "<th>" + esc(m.slice(0,3)) + "</th>"; }).join("") +
+      meses.map(function(m) {
+        return "<th" + (m === mesCorrente ? " class='ad-agora' title='M&ecirc;s em andamento'" : "") + ">" +
+          esc(m.slice(0, 3)) + "</th>";
+      }).join("") +
       "<th title='Soma do que voc&ecirc; lan&ccedil;ou'>Dadas</th>" +
       "<th title='Previstas no ano inteiro pelo seu hor&aacute;rio'>Prev. ano</th></tr></thead><tbody>" +
       linhas + "</tbody></table></div>" +
 
     '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">' +
+      '<button class="btn btn-outline btn-sm" onclick="state.adAnoTodo=' + (anoTodo ? "false" : "true") + ';render()">' +
+        (anoTodo ? "Mostrar s&oacute; at&eacute; " + esc(mesCorrente || "hoje") : "Ver o ano inteiro") + "</button>" +
+      (folhaJaLancada() ? "" :
+        '<button class="btn btn-outline btn-sm" onclick="lancarFolhaDoProfessor()">' +
+        "Lan&ccedil;ar a folha de Mar&ccedil;o a Junho</button>") +
       '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir quadro</button>' +
       '<button class="btn btn-ghost btn-sm" style="color:var(--verm)" onclick="limparAulasDadas()">Limpar contagem</button>' +
     "</div>" +
