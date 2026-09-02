@@ -290,11 +290,14 @@ textarea.inp { resize: vertical; }
 /* Pendências do mês: fila que quebra sozinha no computador e duas colunas
    no celular, para não virar uma torre de sete linhas. */
 .falta-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.falta-chip { justify-content: center; }
+.falta-chip { justify-content: center; gap: 6px; }
+/* v8.7 — o "+" na frente do rótulo. É o sinal que separa, num relance, um
+   botão que CRIA de uma etiqueta que identifica. */
+.falta-mais { font-size: 15px; font-weight: 800; line-height: 1; opacity: .85; }
 .so-sm { display: none; }
 @media (max-width: 620px) {
   .falta-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .falta-chip { padding: 10px 8px; font-size: 12.5px; }
+  .falta-chip { padding: 10px 8px; font-size: 12px; }
   .so-sm { display: inline; }
 }
 
@@ -3864,9 +3867,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "8.6";
+var APP_VERSAO = "8.7";
 var APP_VERSAO_DATA = "02/09/2026";
-var APP_VERSAO_NOTA = "Carga horária prevista e aulas dadas em sala, lado a lado";
+var APP_VERSAO_NOTA = "Histórico abre o plano; o que falta planejar desceu para o fim";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -11527,12 +11530,16 @@ function painelDoQueFalta(month, fDisc, fTurma) {
       '<span style="margin-left:auto;font-size:11.5px;color:var(--t4)">' +
         feitos + " de " + total + " turmas com plano</span>" +
     "</div>" +
-    '<div style="height:6px;border-radius:3px;background:var(--bg3);overflow:hidden;margin-bottom:' +
-      (completo ? "0" : "12px") + '">' +
+    '<div style="height:6px;border-radius:3px;background:' + 'var(--bg3)' + ';overflow:hidden;margin-bottom:' +
+      (completo ? "0" : "9px") + '">' +
       '<div style="height:100%;width:' + pct + '%;background:' + cor + '"></div></div>' +
     (completo
       ? ""
-      : '<div class="falta-chips">' +
+      : '<div style="font-size:11.5px;color:var(--t4);margin-bottom:9px;line-height:1.5">' +
+          "Estes bot&otilde;es <strong>abrem a tela de criar</strong> j&aacute; preenchida. " +
+          "Os planos que voc&ecirc; j&aacute; fez aparecem como cart&otilde;es no Hist&oacute;rico." +
+        "</div>" +
+        '<div class="falta-chips">' +
           faltando.map(function(c) {
             var turma = c.conhecida ? turmaCurta(c.gradeLevel) : c.gradeCurto.replace(/\s+U$/, "");
             return '<button class="btn btn-sm falta-chip" style="background:' + fundo + ';color:' + cor +
@@ -11548,9 +11555,16 @@ function painelDoQueFalta(month, fDisc, fTurma) {
                  Os dois rótulos são completos, e só um deles aparece — se o
                  texto fosse partido em pedaços, o espaçamento do botão
                  abriria um vão entre a disciplina e o "·". */
-              '<span class="hide-sm">' + esc(c.subject.replace(" / Inglês", "")) +
+              /* v8.7 — o rótulo passou a começar pelo verbo.
+                 Escrito só "PT · 9º Ano", o botão era idêntico a uma etiqueta
+                 de turma. No Histórico, onde o professor vai justamente para
+                 ABRIR um plano, ele tocava aqui e caía na tela de criar, com
+                 os campos já preenchidos — parecia que o plano tinha sumido.
+                 O "+ Criar" à frente resolve antes do toque. */
+              '<span class="falta-mais">+</span>' +
+              '<span class="hide-sm">Criar &middot; ' + esc(c.subject.replace(" / Inglês", "")) +
                 " &middot; " + esc(turma) + "</span>" +
-              '<span class="so-sm">' + esc(subjAbbrev(c.subject)) +
+              '<span class="so-sm">Criar &middot; ' + esc(subjAbbrev(c.subject)) +
                 " &middot; " + esc(turma) + "</span>" +
             "</button>";
           }).join("") +
@@ -11731,14 +11745,23 @@ function viewPlans() {
   var temFiltro = fDisc || fTurma || fMes;
 
   /* v7.2 — o painel de pendências do mês. Sem seleção de mês, mostra o mês
-     corrente; com o seletor de Mês em uso, acompanha a escolha. */
+     corrente; com o seletor de Mês em uso, acompanha a escolha.
+
+     v8.7 — ele desceu para o FIM da tela. Estava no alto, acima dos planos
+     salvos, e no celular era a primeira coisa à mão: o professor entrava no
+     Histórico para abrir um plano, tocava numa das pastilhas de pendência —
+     que só diziam "PT · 9º Ano", iguaizinhas a uma etiqueta de turma — e caía
+     na tela de Criar Planejamento com os campos preenchidos. Parecia que o
+     plano tinha desaparecido.
+     Esta tela existe para ENCONTRAR o que já foi feito; criar o que falta é
+     assunto do Painel, onde o mesmo aviso continua no alto. Aqui ele fica no
+     rodapé, como fechamento. */
   var mesAlvo = fMes || mesCorrenteLetivo();
   var faltasHtml = painelDoQueFalta(mesAlvo, fDisc, fTurma);
 
   return '<div class="wrap fade" style="padding:34px 18px 56px">' +
     pageHead("Histórico de Planos",
       nDef + " definitivo(s)" + (nTestes ? " e " + nTestes + " de teste" : "") + " neste navegador", "home") +
-    faltasHtml +
 
     '<div class="card" style="padding:16px 18px;margin-bottom:16px">' +
       '<div class="g3">' +
@@ -11771,6 +11794,18 @@ function viewPlans() {
             (nTestes === 1 ? "Excluir o plano de teste" : "Excluir os " + nTestes + " planos de teste") + "</button>" +
         "</div>"
       : "") +
+
+    /* v8.7 — um título antes da lista. Sem ele, o professor que rolava a tela
+       não tinha como saber onde terminam os controles e onde começam os
+       planos que ele fez. */
+    '<div style="display:flex;align-items:baseline;gap:10px;margin:4px 0 14px">' +
+      '<span style="font-size:12.5px;font-weight:800;letter-spacing:.06em;' +
+        'text-transform:uppercase;color:var(--t3)">Planos salvos</span>' +
+      '<span style="font-size:11.5px;color:var(--t4)">' + list.length +
+        (list.length === 1 ? " plano" : " planos") +
+        (temFiltro ? " com os filtros de cima" : "") + "</span>" +
+      '<span style="flex:1;height:1px;background:var(--border2)"></span>' +
+    "</div>" +
 
     (list.length
       ? mesesNaLista.map(function(mes) {
@@ -11812,6 +11847,9 @@ function viewPlans() {
             (temFiltro ? '<div style="margin-top:11px"><button class="btn btn-outline btn-sm" ' +
               'onclick="state.planDisc=\'\';state.planTurma=\'\';state.planMes=\'\';render()">Limpar filtros</button></div>' : "")
           : "Nenhum plano salvo ainda.") + "</div>") +
+
+    /* O aviso de pendências fecha a tela, depois dos planos salvos. */
+    '<div style="margin-top:26px">' + faltasHtml + "</div>" +
   "</div>";
 }
 
