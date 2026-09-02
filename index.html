@@ -338,14 +338,30 @@ textarea.inp { resize: vertical; }
   transition: border-color .15s, box-shadow .15s, transform .15s; box-shadow: var(--sh1); }
 .hp-card:hover { border-color: var(--acc); box-shadow: var(--sh2); transform: translateY(-1px); }
 .hp-card-abre { cursor: pointer; display: flex; flex-direction: column; gap: 8px; }
+
+/* v8.5 — a identificação do plano, sempre no mesmo lugar e no mesmo tamanho.
+   O selo é fixo em 44px: é o que padroniza a leitura de uma lista com nove
+   turmas, porque o olho encontra a cor e a sigla na mesma coluna em todos
+   os cartões, sem depender do texto ao lado. */
+.hp-topo { display: flex; align-items: center; gap: 11px; }
+.hp-ic { width: 44px; height: 44px; border-radius: 13px; flex: none; color: var(--accTexto);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; letter-spacing: .02em; }
+.hp-id { min-width: 0; flex: 1; }
+.hp-turma { font-family: var(--serif); font-size: 17px; font-weight: 700; line-height: 1.2;
+  color: var(--t1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hp-disc { font-size: 11.5px; color: var(--t4); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hp-selos { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; flex: none; }
+
 .hp-card-tit { font-weight: 650; font-size: 14.5px; line-height: 1.35;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  min-height: 39px; }
+  min-height: 39px; padding-top: 2px; border-top: 1px solid var(--border2); }
 .hp-card-meta { font-size: 11.5px; color: var(--t4); display: flex; flex-wrap: wrap;
   align-items: center; gap: 7px; }
 .hp-card-acoes { display: flex; gap: 8px; margin-top: auto; padding-top: 6px;
-  align-items: center; border-top: 1px solid var(--border2); }
-.hp-card-acoes .hp-abrir { flex: 1; }
+  align-items: center; border-top: 1px solid var(--border2); flex-wrap: wrap; }
+.hp-card-acoes .hp-abrir { flex: 1; min-width: 92px; }
 .hp-card-acoes .hp-acao { flex: none; padding-left: 11px; padding-right: 11px; font-size: 12px; }
 
 /* ── Grades ── */
@@ -3823,9 +3839,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "8.4";
-var APP_VERSAO_DATA = "01/09/2026";
-var APP_VERSAO_NOTA = "Aulas dadas só até o mês corrente, com a folha conferida";
+var APP_VERSAO = "8.5";
+var APP_VERSAO_DATA = "02/09/2026";
+var APP_VERSAO_NOTA = "PDF que funciona no celular e cartões de turma padronizados";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -10335,7 +10351,8 @@ function viewPlanAnosIniciais(pl, c, pc, cfg) {
          plano recém-gerado e para os que já estão no histórico. */
       '<button class="btn btn-outline btn-sm" title="Reescrever o texto deste plano sem repeti&ccedil;&atilde;o, mantendo as habilidades escolhidas" ' +
         'onclick="refinarPlanoAtual()">&#10022; Refinar</button>' +
-      '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / PDF</button>' +
+      '<button class="btn btn-primary btn-sm" title="Abre o plano em outra aba, pronto para Imprimir ou Salvar como PDF" ' +
+        'onclick="verEmPdf()">Ver em PDF</button>' +
       '<button class="btn btn-outline btn-sm" onclick="downloadDoc()">Baixar Word</button>' +
       '<button class="btn btn-outline btn-sm" title="' +
         (ehTeste(pl) ? "Passar este plano para definitivo" : "Marcar este plano como teste") + '" ' +
@@ -10587,7 +10604,8 @@ function viewPlanOficial(pl, c, pc, cfg) {
          plano recém-gerado e para os que já estão no histórico. */
       '<button class="btn btn-outline btn-sm" title="Reescrever o texto deste plano sem repeti&ccedil;&atilde;o, mantendo as habilidades escolhidas" ' +
         'onclick="refinarPlanoAtual()">&#10022; Refinar</button>' +
-      '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / PDF</button>' +
+      '<button class="btn btn-primary btn-sm" title="Abre o plano em outra aba, pronto para Imprimir ou Salvar como PDF" ' +
+        'onclick="verEmPdf()">Ver em PDF</button>' +
       '<button class="btn btn-outline btn-sm" onclick="downloadDoc()">Baixar Word</button>' +
       '<button class="btn btn-outline btn-sm" title="' +
         (ehTeste(pl) ? "Passar este plano para definitivo" : "Marcar este plano como teste") + '" ' +
@@ -11364,7 +11382,8 @@ function viewPlan() {
          plano recém-gerado e para os que já estão no histórico. */
       '<button class="btn btn-outline btn-sm" title="Reescrever o texto deste plano sem repeti&ccedil;&atilde;o, mantendo as habilidades escolhidas" ' +
         'onclick="refinarPlanoAtual()">&#10022; Refinar</button>' +
-      '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / PDF</button>' +
+      '<button class="btn btn-primary btn-sm" title="Abre o plano em outra aba, pronto para Imprimir ou Salvar como PDF" ' +
+        'onclick="verEmPdf()">Ver em PDF</button>' +
       '<button class="btn btn-outline btn-sm" onclick="downloadDoc()">Baixar Word</button>' +
       '<button class="btn btn-outline btn-sm" title="' +
         (ehTeste(pl) ? "Passar este plano para definitivo" : "Marcar este plano como teste") + '" ' +
@@ -11546,22 +11565,44 @@ function cartaoDoPlano(p) {
      Agora ABRIR é um botão explícito e principal. As duas ações secundárias
      ficam pequenas e do lado, com rótulo curto, longe do caminho do dedo.
      O corpo do cartão continua abrindo o plano, para quem já tinha o hábito. */
+  /* v8.5 — o cartão passou a se apresentar sozinho.
+     Antes, cada disciplina+turma ganhava uma faixa de cabeçalho acima dos
+     seus cartões. Com um plano por turma — que é o caso normal do mês — a
+     tela virava cabeçalho, cartão, cabeçalho, cartão: nove planos davam uma
+     rolagem enorme no celular, e "6º Ano A" aparecia duas vezes, na faixa e
+     dentro do cartão. Fora que o selo da disciplina tinha 30px na faixa e
+     sumia ao lado do botão azul de largura cheia.
+     Agora a identificação mora no próprio cartão, sempre no mesmo lugar e no
+     mesmo tamanho: selo da disciplina (44px), turma em destaque e, embaixo,
+     a descrição — disciplina por extenso e mês. */
   var turma = p.config.gradeLevel ? turmaCurta(p.config.gradeLevel) : "";
+  var sc = siglaDoComponente(p.config.subject);
+  var ehAee = !!(p.config.aee && p.config.aee.active);
   return '<div class="hp-card">' +
     '<div class="hp-card-abre" onclick="openPlan(\'' + p.id + '\')">' +
-      '<div class="hp-card-tit">' + esc(p.content.title || "(sem tema)") + "</div>" +
-      '<div class="hp-card-meta">' +
-        seloTeste(p) +
-        "<span>" + esc(p.config.month) + (turma ? " &middot; " + esc(turma) : "") +
-        " &middot; " + new Date(p.createdAt).toLocaleDateString("pt-BR") +
-        (p.refinadoNa ? " &middot; refinado na v" + esc(p.refinadoNa) : "") + "</span>" +
-        (p.config.aee && p.config.aee.active
-          ? '<span class="badge badge-ok">AEE</span>' : "") +
+      '<div class="hp-topo">' +
+        '<span class="hp-ic" style="background:' + sc.cor + '">' + esc(sc.sigla) + "</span>" +
+        '<div class="hp-id">' +
+          '<div class="hp-turma">' + esc(turma || p.config.gradeLevel || "Turma") + "</div>" +
+          '<div class="hp-disc">' + esc(p.config.subject) + " &middot; " + esc(p.config.month) + "</div>" +
+        "</div>" +
+        (ehTeste(p) || ehAee
+          ? '<div class="hp-selos">' + seloTeste(p) +
+              (ehAee ? '<span class="badge badge-ok">AEE</span>' : "") + "</div>"
+          : "") +
       "</div>" +
+      '<div class="hp-card-tit">' + esc(p.content.title || "(sem tema)") + "</div>" +
+      '<div class="hp-card-meta"><span>Salvo em ' +
+        new Date(p.createdAt).toLocaleDateString("pt-BR") +
+        (p.refinadoNa ? " &middot; refinado na v" + esc(p.refinadoNa) : "") + "</span></div>" +
     "</div>" +
     '<div class="hp-card-acoes">' +
       '<button class="btn btn-primary btn-sm hp-abrir" ' +
-        'onclick="openPlan(\'' + p.id + '\')">Abrir plano</button>' +
+        'onclick="openPlan(\'' + p.id + '\')">Abrir</button>' +
+      /* v8.5 — o PDF direto da lista. Sem ele era preciso abrir o plano,
+         achar a barra de cima e só então exportar. */
+      '<button class="btn btn-outline btn-sm hp-acao" title="Abrir em outra aba para imprimir ou salvar em PDF" ' +
+        'onclick="event.stopPropagation();pdfDoPlano(\'' + p.id + '\')">PDF</button>' +
       '<button class="btn btn-ghost btn-sm hp-acao" title="' +
         (ehTeste(p) ? "Passar para definitivo" : "Marcar como teste") + '" ' +
         'onclick="event.stopPropagation();alternarTeste(\'' + p.id + '\')">' +
@@ -11728,20 +11769,16 @@ function viewPlans() {
               (faltam ? '<span class="hp-mes-falta">' +
                 (faltam === 1 ? "falta 1 turma" : "faltam " + faltam + " turmas") + "</span>" : "") +
             "</div>" +
-            chaves.map(function(chave) {
-              var primeiro = grupos[chave][0];
-              var sc = siglaDoComponente(primeiro.config.subject);
-              return '<div class="hp-bloco">' +
-                '<div class="hp-sub">' +
-                  '<span class="hp-sig" style="background:' + sc.cor + '">' + esc(sc.sigla) + "</span>" +
-                  '<span class="hp-sub-txt">' + esc(chave) + "</span>" +
-                  '<span class="hp-sub-n">' + grupos[chave].length + "</span>" +
-                "</div>" +
-                '<div class="hp-grade">' +
-                  grupos[chave].map(function(p){ return cartaoDoPlano(p); }).join("") +
-                "</div>" +
-              "</div>";
-            }).join("") +
+            /* v8.5 — a faixa de disciplina+turma saiu. A ordenação continua
+               agrupando por disciplina e turma, então os planos da mesma
+               turma seguem vizinhos; o que sumiu foi a repetição, já que
+               agora cada cartão diz de quem é. Uma grade só por mês também
+               permite duas colunas no tablet, o que a faixa impedia. */
+            '<div class="hp-grade">' +
+              chaves.map(function(chave) {
+                return grupos[chave].map(function(p){ return cartaoDoPlano(p); }).join("");
+              }).join("") +
+            "</div>" +
           "</div>";
         }).join("")
       : '<div class="card-soft" style="padding:36px;text-align:center;color:var(--t3);font-size:13px">' +
@@ -14984,6 +15021,86 @@ function planStandaloneHtml(pl) {
     '<meta name="ProgId" content="Word.Document"><title>' + esc(pl.content.title) + "</title>" +
     "<style>" + exportCss() + "</style></head><body>" + inner + "</body></html>";
 }
+/* ===========================================================
+   VER EM PDF (v8.5)
+
+   O botão "Imprimir / PDF" chamava window.print() na própria tela. No
+   computador isso abre a caixa de impressão e resolve. No celular, com o
+   EducaPlan INSTALADO como aplicativo, a janela roda em modo standalone —
+   sem barra de endereço e sem o menu do navegador — e o print() simplesmente
+   não faz nada. O professor tocava e não acontecia coisa alguma: o plano
+   existia, estava salvo, e mesmo assim não havia como tirar o PDF.
+
+   A saída é não depender do print() de dentro do aplicativo. O plano é
+   montado como uma página inteira e escrito numa ABA NOVA, que abre no
+   navegador de verdade, com menu e tudo. Lá o print() funciona, e quem não
+   quiser imprimir na hora usa Compartilhar → Imprimir → Salvar como PDF.
+
+   Duas precauções importam:
+   1) window.open precisa acontecer DENTRO do toque do professor. Por isso
+      nada de setTimeout antes dela — abrir a aba depois do gesto é o que o
+      bloqueador de pop-up barra.
+   2) Escrevemos com document.write numa janela em branco, e não por blob:.
+      Endereço blob: em aba nova é bloqueado em parte dos aparelhos Android;
+      a janela em branco é da mesma origem e sempre aceita.
+   =========================================================== */
+function verEmPdf() {
+  var pl = state.activePlan;
+  if (!pl) { toast("Abra um plano primeiro."); return; }
+  var html;
+  try { html = planStandaloneHtml(pl); } catch (e) { html = null; }
+  if (!html) { toast("Não consegui montar a página do plano."); return; }
+
+  var comPrint = html.replace("</body>",
+    "<div class='noprint' style=\"position:fixed;left:0;right:0;bottom:0;padding:12px;" +
+      "background:#163F73;color:#fff;font:600 14px/1.4 system-ui,sans-serif;text-align:center\">" +
+      "Use o menu do navegador &rarr; <strong>Imprimir</strong> &rarr; " +
+      "<strong>Salvar como PDF</strong>." +
+      "<button onclick=\"window.print()\" style=\"margin-left:12px;padding:9px 16px;border:0;" +
+      "border-radius:8px;background:#fff;color:#163F73;font:700 14px system-ui;cursor:pointer\">" +
+      "Imprimir agora</button></div>" +
+    "<style>@media print{.noprint{display:none!important}}</style>" +
+    "<script>window.addEventListener('load',function(){setTimeout(function(){" +
+      "try{window.print();}catch(e){}},400);});<\/script>" +
+    "</body>");
+
+  var w = null;
+  try { w = window.open("", "_blank"); } catch (e) { w = null; }
+  if (w && w.document) {
+    w.document.open();
+    w.document.write(comPrint);
+    w.document.close();
+    try { w.document.title = pl.content.title || "Plano de Aula"; } catch (e) {}
+    toast("Plano aberto em outra aba — use Imprimir e escolha \"Salvar como PDF\".");
+    return;
+  }
+
+  /* Aba bloqueada: o professor sai com o arquivo mesmo assim. O HTML abre em
+     qualquer celular e a opção de imprimir está no menu do navegador. */
+  baixarPlanoHtml(pl, html);
+}
+
+function baixarPlanoHtml(pl, html) {
+  var nome = (String(pl.content.title || "Plano_de_Aula")
+    .replace(/[^\wÀ-ÿ\s-]/g, "").slice(0, 58).trim() || "Plano_de_Aula") + ".html";
+  var blob = new Blob(["﻿" + (html || planStandaloneHtml(pl))], { type: "text/html;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = nome;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  toast("Baixei o plano como arquivo. Abra-o e use Imprimir → Salvar como PDF.");
+}
+
+/* Do Histórico direto para o PDF. openPlan() renderiza na hora, de forma
+   síncrona, então o papel do plano já está no DOM quando verEmPdf() procura
+   por ele — e continuamos dentro do mesmo toque, que é o que permite abrir
+   a aba nova. */
+function pdfDoPlano(id) {
+  openPlan(id);
+  verEmPdf();
+}
+
 function downloadDoc() {
   var pl = state.activePlan;
   if (!pl) return;
