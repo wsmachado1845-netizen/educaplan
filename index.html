@@ -729,6 +729,31 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 .ad-tab th.ad-agora { color: var(--acc); }
 .ad-tab th.ad-agora::after { content: " •"; }
 .ad-cel.agora { background: var(--acc3); }
+
+/* v8.6 — as duas contagens na mesma célula: o que foi dado (editável, em
+   cima) e o que o horário previa (fixo, embaixo). Antes a previsão era só
+   placeholder e sumia ao digitar — logo no momento em que comparar importa. */
+.ad-td { padding: 2px 0 4px !important; }
+.ad-prevmes { display: block; text-align: center; font-size: 9.5px; color: var(--t4);
+  font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 1px; }
+
+/* v8.6 — fechamento da carga horária: uma linha por turma, com a barra
+   mostrando quanto do ano já foi cumprido em sala. */
+.ch-linha { display: grid; grid-template-columns: 128px 1fr; gap: 5px 12px;
+  align-items: center; padding: 10px 0; border-top: 1px solid var(--border2); }
+.ch-linha:first-of-type { border-top: none; }
+.ch-turma { display: flex; align-items: center; gap: 8px; font-size: 12.5px;
+  font-weight: 700; color: var(--t2); min-width: 0; }
+.ch-turma span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch-barra { height: 8px; border-radius: 99px; background: var(--bg3); overflow: hidden; }
+.ch-preenche { height: 100%; border-radius: 99px; transition: width .2s; }
+.ch-nums { grid-column: 2; font-size: 11px; color: var(--t3);
+  font-variant-numeric: tabular-nums; }
+.ch-nums b { color: var(--t1); font-size: 12.5px; }
+@media (max-width: 560px) {
+  .ch-linha { grid-template-columns: 1fr; gap: 6px; }
+  .ch-nums { grid-column: 1; }
+}
 @media (max-width: 620px) { .ad-cel { min-width: 38px; font-size: 13px; padding: 12px 1px; } }
 
 .msl-corrido { font-size: 12.5px; line-height: 1.55; }
@@ -2525,7 +2550,7 @@ var NAV_ITEMS = [
   { id:"gen",      label:"Criar Planejamento",   short:"Criar",    icon:"criar" },
   { id:"plans",    label:"HistÃ³rico de Planos",  short:"Planos",   icon:"planos" },
   { id:"diario",   label:"Registro de Aulas",    short:"Registro", icon:"registro" },
-  { id:"aulasdadas", label:"Aulas Dadas",         short:"Dadas",    icon:"registro" },
+  { id:"aulasdadas", label:"Carga Horária",       short:"Carga",    icon:"registro" },
   { id:"settings", label:"Ajustes & Mais",       short:"Ajustes",  icon:"ajustes" }
 ];
 
@@ -3839,9 +3864,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "8.5";
+var APP_VERSAO = "8.6";
 var APP_VERSAO_DATA = "02/09/2026";
-var APP_VERSAO_NOTA = "PDF que funciona no celular e cartões de turma padronizados";
+var APP_VERSAO_NOTA = "Carga horária prevista e aulas dadas em sala, lado a lado";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -11908,56 +11933,98 @@ function viewAulasDadas() {
   var combos = combinacoesQueLeciona();
   if (!combos.length) {
     return '<div class="wrap fade" style="padding:34px 18px 56px">' +
-      pageHead("Aulas Dadas", "Contagem do que foi efetivamente ministrado", "home") +
+      pageHead("Carga Horária e Aulas Dadas", "O que o horário prevê e o que foi dado em sala", "home") +
       '<div class="card-soft" style="padding:30px;text-align:center;color:var(--t3);font-size:13px">' +
       "Para montar o quadro eu preciso do seu hor&aacute;rio semanal &mdash; " +
       '<a href="#" onclick="go(\'settings\');return false">cadastre em Ajustes</a>.</div></div>';
   }
 
-  /* v8.2 — o percentual de cumprimento só considera os meses que o professor
-     já lançou. Comparar o que foi dado em quatro meses com o previsto do ano
-     inteiro daria um número assustador e falso (43% quando na verdade está em
-     dia). A coluna "Prev." continua mostrando o previsto de todos os meses,
-     porque ali a leitura é de planejamento anual, não de cumprimento. */
-  var totalDado = 0, totalPrev = 0, totalPrevLanc = 0;
+  /* ===========================================================
+     DUAS CONTAGENS, LADO A LADO (v8.6)
+
+     São coisas diferentes, e confundi-las é o que fazia o quadro mentir:
+
+     PREVISTAS — o horário semanal cruzado com o calendário. É a carga
+     horária, e é por ela que o diário oficial é preenchido. A supervisora
+     autorizou registrar assim.
+
+     DADAS — as aulas em que o professor efetivamente entrou em sala. Nem
+     sempre coincidem: adoeceu, houve reunião, a turma saiu para um evento.
+     É esta contagem que a supervisora confere depois.
+
+     A primeira não é meta da segunda, e a segunda não corrige a primeira.
+     Uma fecha o diário; a outra responde, no fim do ano, se a carga horária
+     foi cumprida em sala. Por isso as duas aparecem juntas em cada célula e
+     em cada linha, com a diferença explícita — em vez de um "percentual de
+     cumprimento" que sugeria cobrança onde não há.
+     =========================================================== */
+  var perLesson = state.cfg.lessonMinutes || 45;
+  var emHoras = function(aulas) {
+    var t = aulas * perLesson, h = Math.floor(t / 60), m = t % 60;
+    return m ? h + "h" + String(m).padStart(2, "0") : h + "h";
+  };
+
+  var totalDado = 0, totalPrevAno = 0, totalPrevDecorrido = 0, totalPrevLanc = 0;
+  var resumoTurmas = [];
   var linhas = combos.map(function(c) {
-    var somaDado = 0, somaPrev = 0, somaPrevLanc = 0;
+    var somaDado = 0, somaPrevVis = 0, somaPrevLanc = 0;
     var celulas = meses.map(function(m) {
       var dado = aulasDadasDe(c.subject, c.gradeLevel, m);
       var ch = cargaHoraria(c.subject, c.gradeLevel, m);
       var prev = ch.configured ? ch.monthlyLessons : 0;
+      /* A diferença só pode olhar os meses que o professor JÁ lançou. Medir
+         contra todos os meses decorridos faria o mês em branco contar como
+         aula não dada — o mesmo engano que a v8.2 corrigiu no percentual, e
+         que voltaria aqui pela porta dos fundos. */
       if (dado !== null) { somaDado += dado; somaPrevLanc += prev; }
-      somaPrev += prev;
-      return "<td style='padding:0'>" +
+      somaPrevVis += prev;
+      /* v8.6 — a previsão deixou de ser só placeholder. Como placeholder ela
+         sumia no instante em que o professor digitava, e era justamente aí
+         que a comparação passava a interessar. Agora fica escrita embaixo. */
+      return "<td class='ad-td'>" +
         "<input type='number' min='0' max='60' inputmode='numeric' class='ad-cel" +
           (m === mesCorrente ? " agora" : "") + "' " +
           "value='" + (dado === null ? "" : dado) + "' " +
-          "placeholder='" + (prev || "") + "' " +
-          "title='" + esc(m) + " &mdash; previstas: " + prev +
-            (m === mesCorrente ? " (m&ecirc;s em andamento)" : "") + "' " +
+          "placeholder='—' " +
+          "title='" + esc(m) + " &mdash; aulas dadas em sala (previstas pelo hor&aacute;rio: " + prev + ")" +
+            (m === mesCorrente ? ", m&ecirc;s em andamento" : "") + "' " +
           "onchange=\"definirAulasDadas('" + esc(c.subject).replace(/'/g, "\\'") + "','" +
-            esc(c.gradeLevel).replace(/'/g, "\\'") + "','" + esc(m) + "', this.value)\" /></td>";
+            esc(c.gradeLevel).replace(/'/g, "\\'") + "','" + esc(m) + "', this.value)\" />" +
+        "<span class='ad-prevmes' title='Previstas pelo hor&aacute;rio'>" + (prev || "–") + "</span>" +
+        "</td>";
     }).join("");
-    /* A coluna da direita é sempre o previsto do ANO, não o dos meses visíveis
-       — senão ela mudaria de significado ao alternar a visão, e o professor
-       compararia o total dado com um alvo que encolheu junto. */
-    var somaPrevAno = MONTHS.reduce(function(acc, m) {
+
+    /* O previsto do ANO não muda ao alternar a visão: é a carga horária
+       inteira da turma. O previsto DECORRIDO é o que já deveria ter sido
+       dado até o mês corrente — é com ele que a comparação faz sentido
+       agora, no meio do ano. */
+    var prevAno = 0, prevDecorrido = 0;
+    var decorridos = mesesAteHoje();
+    MONTHS.forEach(function(m) {
       var c2 = cargaHoraria(c.subject, c.gradeLevel, m);
-      return acc + (c2.configured ? c2.monthlyLessons : 0);
-    }, 0);
-    totalDado += somaDado; totalPrev += somaPrevAno; totalPrevLanc += somaPrevLanc;
-    var pct = somaPrevLanc ? Math.round(100 * somaDado / somaPrevLanc) : 0;
-    var cor = !somaDado ? "var(--t4)" : (pct >= 90 ? "var(--grn)" : (pct >= 70 ? "var(--amb)" : "var(--verm)"));
+      var n = c2.configured ? c2.monthlyLessons : 0;
+      prevAno += n;
+      if (decorridos.indexOf(m) >= 0) prevDecorrido += n;
+    });
+    totalDado += somaDado; totalPrevAno += prevAno;
+    totalPrevDecorrido += prevDecorrido; totalPrevLanc += somaPrevLanc;
+
+    var dif = somaDado - somaPrevLanc;
+    var corDif = !somaDado ? "var(--t4)" : (dif >= 0 ? "var(--grn)" : (dif >= -10 ? "var(--amb)" : "var(--verm)"));
+    resumoTurmas.push({ c: c, dado: somaDado, prevAno: prevAno, prevDecorrido: prevDecorrido });
+
     return "<tr><th class='ad-turma'>" +
         '<span class="hp-sig" style="background:' + siglaDoComponente(c.subject).cor + ';width:24px;height:24px;font-size:9.5px">' +
           esc(siglaDoComponente(c.subject).sigla) + "</span>" +
         "<span>" + esc(c.conhecida ? turmaCurta(c.gradeLevel) : c.gradeCurto.replace(/\s+U$/, "")) + "</span>" +
       "</th>" + celulas +
-      "<td class='ad-total' style='color:" + cor + "'>" + somaDado + "</td>" +
-      "<td class='ad-prev'>" + somaPrevAno + "</td></tr>";
+      "<td class='ad-total'>" + somaDado + "</td>" +
+      "<td class='ad-prev'>" + somaPrevVis + "</td>" +
+      "<td class='ad-total' style='color:" + corDif + "'>" +
+        (!somaDado ? "–" : (dif > 0 ? "+" : "") + dif) + "</td></tr>";
   }).join("");
 
-  var pctGeral = totalPrevLanc ? Math.round(100 * totalDado / totalPrevLanc) : 0;
+  var difGeral = totalDado - totalPrevLanc;
 
   /* quais meses já têm alguma contagem lançada — serve para o rótulo do cartão */
   var mesesLancados = meses.filter(function(m) {
@@ -11968,37 +12035,76 @@ function viewAulasDadas() {
     : esc(mesesLancados[0]) + " a " + esc(mesesLancados[mesesLancados.length - 1]) +
       " (" + mesesLancados.length + " meses)";
 
+  /* ---- Fechamento da carga horária, turma por turma ----
+     A conta que a coordenação faz no fim do ano: a carga horária do meu
+     horário, o que já foi dado em sala, e quanto falta. Em aulas e em horas,
+     porque a carga horária é cobrada em horas. */
+  var fechamentoHtml = resumoTurmas.map(function(r) {
+    var falta = r.prevAno - r.dado;
+    var pct = r.prevAno ? Math.round(100 * r.dado / r.prevAno) : 0;
+    var sc = siglaDoComponente(r.c.subject);
+    var cor = falta <= 0 ? "var(--grn)" : (pct >= 60 ? "var(--acc)" : "var(--t3)");
+    return '<div class="ch-linha">' +
+      '<div class="ch-turma">' +
+        '<span class="hp-sig" style="background:' + sc.cor + ';width:26px;height:26px;font-size:10px">' +
+          esc(sc.sigla) + "</span>" +
+        "<span>" + esc(r.c.conhecida ? turmaCurta(r.c.gradeLevel) : r.c.gradeCurto.replace(/\s+U$/, "")) + "</span>" +
+      "</div>" +
+      '<div class="ch-barra"><div class="ch-preenche" style="width:' +
+        Math.min(100, pct) + "%;background:" + cor + '"></div></div>' +
+      '<div class="ch-nums">' +
+        "<b>" + r.dado + "</b> de " + r.prevAno + " aulas &middot; " +
+        emHoras(r.dado) + " de " + emHoras(r.prevAno) +
+        (falta > 0 ? ' <span style="color:var(--t4)">&mdash; faltam ' + falta + "</span>"
+                   : ' <span style="color:var(--grn)">&mdash; fechou</span>') +
+      "</div>" +
+    "</div>";
+  }).join("");
+
   return '<div class="wrap fade" style="padding:34px 18px 56px">' +
-    pageHead("Aulas Dadas", "Contagem do que foi efetivamente ministrado, mês a mês", "home") +
+    pageHead("Carga Horária e Aulas Dadas",
+      "O que o horário prevê e o que foi dado em sala, lado a lado", "home") +
 
     '<div class="card" style="padding:16px 18px;margin-bottom:16px;border-left:4px solid var(--acc)">' +
       '<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:baseline">' +
-        '<div><div style="font-size:11px;color:var(--t4)">Total dado at&eacute; agora</div>' +
-          '<div style="font-family:var(--serif);font-size:26px;font-weight:700">' + totalDado + "</div></div>" +
-        '<div><div style="font-size:11px;color:var(--t4)">Previstas nesses meses</div>' +
-          '<div style="font-family:var(--serif);font-size:26px;font-weight:700;color:var(--t3)">' + totalPrevLanc + "</div></div>" +
-        '<div><div style="font-size:11px;color:var(--t4)">Cumprimento</div>' +
+        '<div><div style="font-size:11px;color:var(--t4)">Previstas nesses meses' +
+          " <span title='Vem do hor&aacute;rio semanal'>&#9432;</span></div>" +
+          '<div style="font-family:var(--serif);font-size:26px;font-weight:700;color:var(--t2)">' +
+            totalPrevLanc + "</div>" +
+          '<div style="font-size:10.5px;color:var(--t4)">' + emHoras(totalPrevLanc) + "</div></div>" +
+        '<div><div style="font-size:11px;color:var(--t4)">Dadas em sala</div>' +
+          '<div style="font-family:var(--serif);font-size:26px;font-weight:700">' + totalDado + "</div>" +
+          '<div style="font-size:10.5px;color:var(--t4)">' + emHoras(totalDado) + "</div></div>" +
+        '<div><div style="font-size:11px;color:var(--t4)">Diferen&ccedil;a</div>' +
           '<div style="font-family:var(--serif);font-size:26px;font-weight:700;color:' +
-            (pctGeral >= 90 ? "var(--grn)" : (pctGeral >= 70 ? "var(--amb)" : "var(--verm)")) + '">' +
-            pctGeral + "%</div></div>" +
+            (!totalDado ? "var(--t4)" : (difGeral >= 0 ? "var(--grn)" : "var(--amb)")) + '">' +
+            (!totalDado ? "–" : (difGeral > 0 ? "+" : "") + difGeral) + "</div>" +
+          '<div style="font-size:10.5px;color:var(--t4)">' +
+            (!totalDado ? "sem lan&ccedil;amento" : emHoras(Math.abs(difGeral))) + "</div></div>" +
       "</div>" +
-      '<div style="font-size:11.5px;color:var(--t4);margin-top:10px;line-height:1.55">' +
-        "Contagem parcial de <strong>" + rotuloPeriodo + "</strong>. " +
-        "O percentual compara s&oacute; os meses j&aacute; lan&ccedil;ados &mdash; " +
-        "os que ainda n&atilde;o foram preenchidos ficam de fora para n&atilde;o baixar o resultado sem motivo. " +
-        "No ano inteiro est&atilde;o previstas " + totalPrev + " aulas." +
+
+      '<div style="font-size:11.5px;color:var(--t3);margin-top:12px;line-height:1.6;' +
+        'border-top:1px solid var(--border2);padding-top:11px">' +
+        "<strong>S&atilde;o duas contagens diferentes, e as duas valem.</strong><br>" +
+        "&bull; <strong>Previstas</strong> &mdash; o seu hor&aacute;rio semanal cruzado com o calend&aacute;rio. " +
+        "&Eacute; a carga hor&aacute;ria, e &eacute; por ela que o di&aacute;rio oficial &eacute; preenchido.<br>" +
+        "&bull; <strong>Dadas em sala</strong> &mdash; as aulas em que voc&ecirc; realmente entrou. " +
+        "Nem sempre coincidem: adoeceu, teve reuni&atilde;o, a turma saiu para um evento." +
       "</div>" +
-      '<div style="font-size:11.5px;color:var(--t4);margin-top:7px;line-height:1.55">' +
+      '<div style="font-size:11.5px;color:var(--t4);margin-top:8px;line-height:1.55">' +
+        "Uma n&atilde;o &eacute; meta da outra. A diferen&ccedil;a n&atilde;o &eacute; erro nem cobran&ccedil;a &mdash; " +
+        "&eacute; o que a supervis&atilde;o confere ao lado do di&aacute;rio, e o que responde no fim do ano " +
+        "se a carga hor&aacute;ria foi cumprida em sala." +
+      "</div>" +
+      '<div style="font-size:11.5px;color:var(--t4);margin-top:8px;line-height:1.55">' +
+        "Lan&ccedil;ado at&eacute; agora: <strong>" + rotuloPeriodo + "</strong> &mdash; " +
+        "a compara&ccedil;&atilde;o acima olha s&oacute; esses meses. " +
+        "At&eacute; " + esc(mesCorrente || "hoje") + " o hor&aacute;rio previa <strong>" +
+        totalPrevDecorrido + " aulas</strong> (" + emHoras(totalPrevDecorrido) + "). " +
         (anoTodo
-          ? "Voc&ecirc; est&aacute; vendo <strong>o ano inteiro</strong>, meses que ainda n&atilde;o aconteceram inclusive."
+          ? "Voc&ecirc; est&aacute; vendo o ano inteiro, meses que ainda n&atilde;o aconteceram inclusive."
           : "O quadro vai at&eacute; <strong>" + esc(mesCorrente || "o m&ecirc;s corrente") +
-            "</strong>, o m&ecirc;s em que estamos. M&ecirc;s que ainda n&atilde;o aconteceu n&atilde;o tem aula dada para lan&ccedil;ar &mdash; " +
-            "as colunas seguintes aparecem sozinhas conforme o ano anda.") +
-      "</div>" +
-      '<div style="font-size:11.5px;color:var(--t4);margin-top:7px;line-height:1.55">' +
-        "As previstas vêm do seu hor&aacute;rio semanal cruzado com o calend&aacute;rio. " +
-        "Na pr&aacute;tica quase nunca batem &mdash; falta professor, cai energia, entra evento. " +
-        "A diferen&ccedil;a aqui &eacute; informa&ccedil;&atilde;o para o fechamento do bimestre, n&atilde;o cobran&ccedil;a." +
+            "</strong> &mdash; as colunas seguintes aparecem conforme o ano anda.") +
       "</div>" +
     "</div>" +
 
@@ -12008,9 +12114,25 @@ function viewAulasDadas() {
         return "<th" + (m === mesCorrente ? " class='ad-agora' title='M&ecirc;s em andamento'" : "") + ">" +
           esc(m.slice(0, 3)) + "</th>";
       }).join("") +
-      "<th title='Soma do que voc&ecirc; lan&ccedil;ou'>Dadas</th>" +
-      "<th title='Previstas no ano inteiro pelo seu hor&aacute;rio'>Prev. ano</th></tr></thead><tbody>" +
-      linhas + "</tbody></table></div>" +
+      "<th title='Aulas dadas em sala, somadas'>Dadas</th>" +
+      "<th title='Previstas pelo hor&aacute;rio nos meses da tabela'>Prev.</th>" +
+      "<th title='Dadas menos previstas at&eacute; o m&ecirc;s corrente'>Dif.</th>" +
+      "</tr></thead><tbody>" + linhas + "</tbody></table></div>" +
+    '<div style="font-size:11px;color:var(--t4);margin-top:8px;line-height:1.55">' +
+      "Em cada c&eacute;lula: o n&uacute;mero grande &eacute; o que voc&ecirc; <strong>deu em sala</strong>; " +
+      "o pequeno, embaixo, &eacute; o que o <strong>hor&aacute;rio previa</strong> para aquele m&ecirc;s." +
+    "</div>" +
+
+    '<div class="card" style="padding:16px 18px;margin:18px 0 0">' +
+      '<div style="font-size:12.5px;font-weight:700;color:var(--t2);margin-bottom:3px">' +
+        "Fechamento da carga hor&aacute;ria</div>" +
+      '<div style="font-size:11.5px;color:var(--t4);margin-bottom:13px;line-height:1.55">' +
+        "Quanto da carga hor&aacute;ria do ano j&aacute; foi cumprida em sala, turma por turma. " +
+        "No total: <strong>" + totalDado + " de " + totalPrevAno + " aulas</strong> (" +
+        emHoras(totalDado) + " de " + emHoras(totalPrevAno) + ")." +
+      "</div>" +
+      fechamentoHtml +
+    "</div>" +
 
     '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">' +
       '<button class="btn btn-outline btn-sm" onclick="state.adAnoTodo=' + (anoTodo ? "false" : "true") + ';render()">' +
@@ -12020,10 +12142,6 @@ function viewAulasDadas() {
         "Lan&ccedil;ar a folha de Mar&ccedil;o a Junho</button>") +
       '<button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir quadro</button>' +
       '<button class="btn btn-ghost btn-sm" style="color:var(--verm)" onclick="limparAulasDadas()">Limpar contagem</button>' +
-    "</div>" +
-    '<div style="font-size:11px;color:var(--t4);margin-top:10px;line-height:1.55">' +
-      "O n&uacute;mero cinza dentro da c&eacute;lula vazia &eacute; o previsto daquele m&ecirc;s. " +
-      "Digite por cima com o que foi dado de verdade." +
     "</div>" +
   "</div>";
 }
@@ -15328,7 +15446,7 @@ var SIDE_MENU = [
   ]},
   { group:"Rotina Escolar", items:[
     { id:"diario", label:"Registro de Aulas", icon:"registro" },
-    { id:"aulasdadas", label:"Aulas Dadas",   icon:"registro" },
+    { id:"aulasdadas", label:"Carga Horária", icon:"registro" },
     { id:"agenda", label:"Agenda Letiva",     icon:"agenda" },
     { id:"archive",label:"Arquivo Bimestral", icon:"arquivo" }
   ]},
