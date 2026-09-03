@@ -3932,9 +3932,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "8.9";
+var APP_VERSAO = "9.1";
 var APP_VERSAO_DATA = "03/09/2026";
-var APP_VERSAO_NOTA = "Conferência da Matriz: aponta código de outro ano e bloco repetido";
+var APP_VERSAO_NOTA = "Matriz de Inglês auditada inteira: 16 blocos, um único erro no documento";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -12235,6 +12235,60 @@ function conferirMatriz() {
   return linhas;
 }
 
+/* Texto pronto para o professor levar à coordenação — com os códigos, para
+   ninguém precisar reconferir a olho. */
+function copiarAchadoMatriz() {
+  var txt =
+    "MATRIZ DE REFERÊNCIA DE SANTA LUZIA — LÍNGUA INGLESA (6º AO 9º ANO)\n" +
+    "Santa Luzia-MA, abril de 2022 — apontamento sobre o 3º PERÍODO\n\n" +
+    "De: " + (state.cfg.teacherName || "professor(a)") + "\n" +
+    "Escola: " + (state.cfg.schoolName || "U. I. Deuris De Deus") + "\n\n" +
+    "ACHADO\n" +
+    "Na linha do 8º ANO do 3º Período constam nove habilidades do 9º ano:\n" +
+    "EF09LI01, EF09LI02, EF09LI03, EF09LI07, EF09LI09, EF09LI13, EF09LI14,\n" +
+    "EF09LI15, EF09LI18.\n" +
+    "São exatamente as mesmas nove da linha do 9º ANO logo abaixo, na mesma ordem.\n\n" +
+    "CONFERÊNCIA COMPLETA DO DOCUMENTO\n" +
+    "Conferi os 16 blocos (4 anos x 4 períodos), código a código:\n" +
+    "  1º Período: 6º=16, 7º=16, 8º=12, 9º=15 — todos coerentes\n" +
+    "  2º Período: 6º=20, 7º=16, 8º=14, 9º=14 — todos coerentes\n" +
+    "  3º Período: 6º=16, 7º=14, 8º=9 (ERRO), 9º=9\n" +
+    "  4º Período: 6º=16, 7º=11, 8º=12, 9º=8 — todos coerentes\n" +
+    "É o único bloco do documento com códigos de outro ano.\n\n" +
+    "HIPÓTESE\n" +
+    "Se o engano foi copiar a linha do 9º e não trocar o \"09\" por \"08\",\n" +
+    "a lista pretendida seria:\n" +
+    "EF08LI01, EF08LI02, EF08LI03, EF08LI07, EF08LI09, EF08LI13, EF08LI14,\n" +
+    "EF08LI15, EF08LI18.\n" +
+    "Todos esses códigos existem na BNCC do 8º ano. É apenas uma hipótese —\n" +
+    "quem confirma é a equipe que elaborou a matriz.\n\n" +
+    "OUTRO PONTO\n" +
+    "No 7º ANO do 3º Período está escrito \"EFEF07LI15\", com o EF dobrado.\n\n" +
+    "CONSEQUÊNCIA\n" +
+    "O 8º ano fica sem habilidade de Língua Inglesa do 8º ano para\n" +
+    "Agosto, Setembro e Outubro.\n\n" +
+    "Solicito a correção da página do 3º Período.";
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(function() {
+      toast("Texto copiado. Cole no WhatsApp ou no e-mail da coordenação.");
+    }, function(){ _mostrarAchado(txt); });
+  } else {
+    _mostrarAchado(txt);
+  }
+}
+function _mostrarAchado(txt) {
+  /* Sem permissão para a área de transferência, o texto aparece numa caixa
+     já selecionada — copiar à mão continua possível. */
+  var d = document.createElement("textarea");
+  d.value = txt;
+  d.style.cssText = "position:fixed;left:5%;top:12%;width:90%;height:60%;z-index:9999;" +
+    "padding:14px;font:13px/1.5 ui-monospace,monospace;border-radius:12px;border:2px solid #163F73";
+  document.body.appendChild(d);
+  d.focus(); d.select();
+  d.addEventListener("blur", function(){ d.remove(); });
+  toast("Selecione e copie o texto.");
+}
+
 function viewConferencia() {
   var linhas = conferirMatriz();
   if (!linhas.length) {
@@ -12260,9 +12314,17 @@ function viewConferencia() {
         (r.fora.length > 6 ? "…" : "") + "</div>");
     }
     if (r.gemeo) {
+      /* v9.0 — a redação mudou depois que o professor mandou a página do
+         documento. Eu tinha escrito "sinal de cópia colada na digitação",
+         apontando para quem passou a matriz para o aplicativo. Errado: a
+         página da Matriz de Referência traz, ela mesma, a lista do 9º ano na
+         linha do 8º. O aplicativo está fiel ao papel. O aviso agora diz isso,
+         porque a diferença decide para onde levar o problema — e não é para
+         dentro do aplicativo. */
       alertas.push('<div class="cm-alerta cm-grave">&#9888; <strong>Lista id&ecirc;ntica</strong> &agrave; do ' +
         esc(r.gemeo.turma) + ", " + r.gemeo.per + "º per&iacute;odo &mdash; mesma ordem, mesmos c&oacute;digos. " +
-        "Sinal de c&oacute;pia colada na digita&ccedil;&atilde;o.</div>");
+        "Se o documento da rede tamb&eacute;m estiver assim, o erro &eacute; da matriz, " +
+        "n&atilde;o do aplicativo: leve &agrave; coordena&ccedil;&atilde;o.</div>");
     }
     if (r.curta && !grave) {
       alertas.push('<div class="cm-alerta">' + r.n + " habilidade(s) para " + r.meses.length +
@@ -12314,8 +12376,39 @@ function viewConferencia() {
         "dois per&iacute;odos com a lista id&ecirc;ntica, e matriz curta para as aulas do per&iacute;odo." +
       "</div>" +
       '<div style="font-size:11.5px;color:var(--t4);margin-top:8px;line-height:1.55">' +
-        "Nada &eacute; corrigido por conta pr&oacute;pria: quem tem o documento &eacute; voc&ecirc;. " +
-        "O que estiver errado aqui, me diga &mdash; ou mande a foto da p&aacute;gina &mdash; que eu acerto." +
+        "Nada &eacute; corrigido por conta pr&oacute;pria. Um apontamento aqui n&atilde;o quer dizer " +
+        "que o aplicativo errou: pode ser que o pr&oacute;prio documento da rede esteja assim. " +
+        "Confira a p&aacute;gina antes de concluir &mdash; e, se o documento repetir o erro, " +
+        "quem resolve &eacute; a coordena&ccedil;&atilde;o." +
+      "</div>" +
+    "</div>" +
+
+    /* Achado confirmado contra o documento, em 03/09/2026. Fica escrito na
+       tela porque é o que o professor precisa mostrar à coordenação. */
+    '<div class="card" style="padding:16px 18px;margin-bottom:16px;border-left:4px solid var(--amb)">' +
+      '<div style="font-size:12.5px;font-weight:700;color:var(--t2);margin-bottom:6px">' +
+        "Confirmado contra o documento &mdash; L&iacute;ngua Inglesa, 3&ordm; Per&iacute;odo</div>" +
+      '<div style="font-size:11.5px;color:var(--t3);line-height:1.6">' +
+        "Conferi o documento inteiro &mdash; <strong>os 16 blocos</strong>, quatro anos por " +
+        "quatro per&iacute;odos, c&oacute;digo a c&oacute;digo. Todos batem com o que est&aacute; " +
+        "no aplicativo, na mesma ordem. <strong>Um s&oacute; bloco tem erro, e o erro &eacute; do " +
+        "documento</strong>: na linha do 8&ordm; ANO do 3&ordm; Per&iacute;odo est&atilde;o os nove " +
+        "c&oacute;digos <strong>EF09LI</strong>, iguaizinhos aos da linha do 9&ordm; ANO logo abaixo." +
+      "</div>" +
+      '<div style="font-size:11.5px;color:var(--t3);line-height:1.6;margin-top:8px">' +
+        "<strong>Hip&oacute;tese:</strong> se foi copiada a linha do 9&ordm; sem trocar o &quot;09&quot; " +
+        "por &quot;08&quot;, a lista pretendida seria EF08LI01, 02, 03, 07, 09, 13, 14, 15 e 18 &mdash; " +
+        "todos existem na BNCC do 8&ordm; ano. &Eacute; s&oacute; uma hip&oacute;tese: quem confirma &eacute; " +
+        "a equipe que elaborou a matriz." +
+      "</div>" +
+      '<div style="font-size:11.5px;color:var(--t3);line-height:1.6;margin-top:8px">' +
+        "Enquanto a coordena&ccedil;&atilde;o n&atilde;o responde, o plano do 8&ordm; ano em Agosto, " +
+        "Setembro e Outubro <strong>n&atilde;o usa</strong> as habilidades de 9&ordm; ano: " +
+        "ele segue pelo banco da BNCC do pr&oacute;prio 8&ordm; ano." +
+      "</div>" +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px">' +
+        '<button class="btn btn-outline btn-sm" onclick="copiarAchadoMatriz()">' +
+          "Copiar o texto para a coordena&ccedil;&atilde;o</button>" +
       "</div>" +
     "</div>" +
 
