@@ -363,6 +363,29 @@ textarea.inp { resize: vertical; }
 /* v8.8 — a descrição de uma linha: que plano é, de qual disciplina e turma. */
 .hp-resumo { font-size: 11.5px; color: var(--t3); line-height: 1.45; margin-top: -3px; }
 
+/* ── Conferência da Matriz (v8.9) ──
+   Uma linha por bloco (turma × período). O bloco com erro ganha a borda
+   vermelha à esquerda: numa lista de 36, é o que faz os quatro problemáticos
+   saltarem sem precisar ler. */
+.cm-linha { background: var(--bg2); border: 1px solid var(--border);
+  border-left: 4px solid var(--border2); border-radius: 12px;
+  padding: 13px 15px; margin-bottom: 10px; }
+.cm-linha.grave { border-left-color: var(--verm); }
+.cm-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.cm-id { min-width: 0; flex: 1; }
+.cm-turma { font-size: 13.5px; font-weight: 700; color: var(--t1); }
+.cm-sub { font-size: 11px; color: var(--t4); margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-n { flex: none; text-align: right; }
+.cm-n b { display: block; font-size: 18px; font-weight: 800; color: var(--t2);
+  font-variant-numeric: tabular-nums; line-height: 1; }
+.cm-n span { font-size: 9.5px; color: var(--t4); }
+.cm-alerta { font-size: 11.5px; color: var(--t3); line-height: 1.5;
+  background: var(--bg3); border-radius: 8px; padding: 8px 10px; margin-top: 6px; }
+.cm-alerta.cm-grave { background: var(--vermBg); color: var(--verm); }
+.cm-alerta.cm-grave strong { color: var(--verm); }
+.cm-ok { font-size: 11.5px; color: var(--grn); }
+
 /* ── Pastas mensais do Histórico (v8.8) ──
    O desenho é o de uma pasta de papel: a aba colorida em cima, o corpo
    embaixo. As cores da aba são as disciplinas que estão dentro, em faixas
@@ -2595,6 +2618,7 @@ var NAV_ITEMS = [
   { id:"plans",    label:"HistÃ³rico de Planos",  short:"Planos",   icon:"planos" },
   { id:"diario",   label:"Registro de Aulas",    short:"Registro", icon:"registro" },
   { id:"aulasdadas", label:"Carga Horária",       short:"Carga",    icon:"registro" },
+  { id:"conferencia", label:"Conferência da Matriz", short:"Matriz", icon:"cobertura" },
   { id:"settings", label:"Ajustes & Mais",       short:"Ajustes",  icon:"ajustes" }
 ];
 
@@ -3908,9 +3932,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "8.8";
-var APP_VERSAO_DATA = "02/09/2026";
-var APP_VERSAO_NOTA = "Pastas mensais com as cores das disciplinas na capa";
+var APP_VERSAO = "8.9";
+var APP_VERSAO_DATA = "03/09/2026";
+var APP_VERSAO_NOTA = "Conferência da Matriz: aponta código de outro ano e bloco repetido";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -8120,7 +8144,16 @@ function getSkills(subject, grade, theme) {
 function habilidadesCandidatasDoMes(cfg) {
   if (!cfg || !cfg.month) return [];
   var mz = matrizDoMes(cfg.subject, cfg.gradeLevel, cfg.month);
-  return A(mz.itens).map(function(a) {
+  /* v8.9 — habilidade de OUTRO ANO não entra sozinha num plano.
+     No 3º Período de Inglês do 8º ano, a matriz digitada guarda nove códigos
+     EF09LI — do 9º ano — e o gerador os usava sem perguntar: o plano do 8º
+     saía com habilidade de 9º ano e ninguém percebia. Aqui elas são
+     descartadas da escolha automática. Continuam visíveis no quadro da
+     matriz, com o aviso, porque é o que o documento da rede diz e a decisão
+     de usar ou não é do professor — mas ele decide, não o aplicativo. */
+  var itens = A(mz.itens).filter(function(a){ return !a.incoerente; });
+  if (!itens.length) return [];
+  return itens.map(function(a) {
     return { code: a.code, description: a.description, axis: a.axis,
       objeto: a.objeto, objetoCompleto: a.objeto,
       pct: (typeof a.pct === "number" ? a.pct : null),
@@ -12121,6 +12154,187 @@ function limparAulasDadas() {
   toast("Contagem apagada.");
 }
 
+/* =========================================================
+   CONFERÊNCIA DA MATRIZ (v8.9)
+   ---------------------------------------------------------
+   A matriz municipal foi digitada à mão, e digitação erra. O professor
+   percebeu sozinho: no 3º Período de Inglês do 8º ano só apareciam duas
+   habilidades no mês. A causa estava na origem — aquele bloco guarda os
+   nove códigos do 9º ano, colados por engano, e não os do 8º.
+
+   Esta tela existe para que isso não dependa mais de alguém reparar por
+   acaso. Ela põe lado a lado, para cada turma e período, o que a matriz
+   diz e o que o aplicativo consegue verificar sozinho:
+
+   — CÓDIGO DE OUTRO ANO. Todo código da BNCC traz o ano no nome: EF08LI é
+     8º ano. Se um bloco do 8º ano contém EF09LI, ou o documento tem um
+     engano, ou a digitação teve. Códigos de faixa (EF69LP, EF89LP, EF67LP)
+     valem para vários anos e não entram no teste.
+   — BLOCO REPETIDO. Dois períodos com exatamente a mesma lista, na mesma
+     ordem, é assinatura de cópia colada.
+   — MATRIZ CURTA. Poucas habilidades para o número de aulas do período.
+     Não é erro por si — algumas disciplinas são assim mesmo —, mas é onde
+     vale conferir com o papel.
+
+   O aplicativo NÃO corrige nada por conta própria: ele aponta, e quem
+   decide é o professor com o documento na mão.
+   ========================================================= */
+
+/* Assinatura de um bloco, para achar dois períodos idênticos. */
+function _assinaturaBloco(itens) {
+  return A(itens).map(function(a){ return a.code; }).join(",");
+}
+
+function conferirMatriz() {
+  var linhas = [], porAssinatura = {};
+  combinacoesQueLeciona().forEach(function(c) {
+    [1, 2, 3, 4].forEach(function(per) {
+      var meses = mesesDoMeuPeriodo(per);
+      if (!meses.length) return;
+      var mz = matrizDoPeriodo(c.subject, c.gradeLevel, meses[0]);
+      var itens = A(mz.itens);
+      var entradas = 0;
+      meses.forEach(function(m) {
+        var ch = cargaHoraria(c.subject, c.gradeLevel, m);
+        if (ch.configured) entradas += ch.encounters;
+      });
+      var fora = itens.filter(function(a){ return a.incoerente; });
+      var semDesc = itens.filter(function(a) {
+        return /não consta no documento/i.test(a.description || "");
+      }).length;
+      var porMes = itens.length / meses.length;
+      var entrPorMes = entradas / meses.length;
+      var reg = {
+        subject: c.subject, gradeLevel: c.gradeLevel,
+        turma: c.conhecida ? turmaCurta(c.gradeLevel) : c.gradeCurto.replace(/\s+U$/, ""),
+        per: per, periodoNome: mz.periodo, meses: meses,
+        n: itens.length, porMes: porMes, entrPorMes: entrPorMes,
+        fora: fora.map(function(a){ return a.code; }),
+        anoEsperado: anoFinalDaTurma(c.gradeLevel),
+        semDesc: semDesc,
+        curta: itens.length > 0 && entrPorMes > 0 && porMes < entrPorMes * 0.55,
+        gemeo: null,
+        assinatura: _assinaturaBloco(itens)
+      };
+      /* Duas turmas do MESMO ano e mesmo período têm a matriz igual porque
+         devem ter: 6º A e 6º B seguem o mesmo documento. Só é suspeito
+         quando a lista se repete entre anos ou períodos diferentes — foi
+         assim que o 3º Período do 8º ano apareceu com a lista do 9º. */
+      if (reg.assinatura) {
+        var anterior = porAssinatura[reg.assinatura];
+        if (anterior && (anterior.anoEsperado !== reg.anoEsperado || anterior.per !== reg.per)) {
+          reg.gemeo = anterior;
+          anterior.gemeo = reg;
+        } else if (!anterior) {
+          porAssinatura[reg.assinatura] = reg;
+        }
+      }
+      linhas.push(reg);
+    });
+  });
+  return linhas;
+}
+
+function viewConferencia() {
+  var linhas = conferirMatriz();
+  if (!linhas.length) {
+    return '<div class="wrap fade" style="padding:34px 18px 56px">' +
+      pageHead("Conferência da Matriz", "O que o aplicativo consegue verificar sozinho", "home") +
+      '<div class="card-soft" style="padding:30px;text-align:center;color:var(--t3);font-size:13px">' +
+      "Preciso do seu hor&aacute;rio semanal para saber quais turmas conferir &mdash; " +
+      '<a href="#" onclick="go(\'settings\');return false">cadastre em Ajustes</a>.</div></div>';
+  }
+
+  var comErro = linhas.filter(function(r){ return r.fora.length || r.gemeo; });
+  var curtas = linhas.filter(function(r){ return r.curta && !r.fora.length && !r.gemeo; });
+
+  var linhaHtml = function(r) {
+    var grave = r.fora.length || r.gemeo;
+    var sc = siglaDoComponente(r.subject);
+    var alertas = [];
+    if (r.fora.length) {
+      alertas.push('<div class="cm-alerta cm-grave">&#9888; <strong>' + r.fora.length +
+        " c&oacute;digo(s) s&atilde;o do " + (r.fora[0].match(/^EF(\d{2})/) ? Number(r.fora[0].match(/^EF(\d{2})/)[1]) + "º ano" : "outro ano") +
+        "</strong>, e esta turma &eacute; do " + r.anoEsperado + "º: " +
+        r.fora.slice(0, 6).map(function(x){ return esc(x); }).join(", ") +
+        (r.fora.length > 6 ? "…" : "") + "</div>");
+    }
+    if (r.gemeo) {
+      alertas.push('<div class="cm-alerta cm-grave">&#9888; <strong>Lista id&ecirc;ntica</strong> &agrave; do ' +
+        esc(r.gemeo.turma) + ", " + r.gemeo.per + "º per&iacute;odo &mdash; mesma ordem, mesmos c&oacute;digos. " +
+        "Sinal de c&oacute;pia colada na digita&ccedil;&atilde;o.</div>");
+    }
+    if (r.curta && !grave) {
+      alertas.push('<div class="cm-alerta">' + r.n + " habilidade(s) para " + r.meses.length +
+        " m&ecirc;s(es), com cerca de " + Math.round(r.entrPorMes) + " entradas por m&ecirc;s. " +
+        "Vale conferir no papel se n&atilde;o falta alguma.</div>");
+    }
+    if (r.semDesc) {
+      alertas.push('<div class="cm-alerta">' + r.semDesc +
+        " c&oacute;digo(s) sem descri&ccedil;&atilde;o no documento da matriz.</div>");
+    }
+    return '<div class="cm-linha' + (grave ? " grave" : "") + '">' +
+      '<div class="cm-topo">' +
+        '<span class="hp-sig" style="background:' + sc.cor + ';width:28px;height:28px;font-size:10px">' +
+          esc(sc.sigla) + "</span>" +
+        '<div class="cm-id">' +
+          '<div class="cm-turma">' + esc(r.turma) + " &middot; " + r.per + "º per&iacute;odo</div>" +
+          '<div class="cm-sub">' + esc(r.subject.replace(" / Inglês", "")) + " &middot; " +
+            esc(r.meses.join(", ")) + "</div>" +
+        "</div>" +
+        '<div class="cm-n"><b>' + r.n + "</b><span>hab.</span></div>" +
+      "</div>" +
+      (alertas.length
+        ? alertas.join("")
+        : '<div class="cm-ok">&#10003; sem inconsist&ecirc;ncia detect&aacute;vel &mdash; ' +
+          r.porMes.toFixed(1) + " por m&ecirc;s</div>") +
+    "</div>";
+  };
+
+  return '<div class="wrap fade" style="padding:34px 18px 56px">' +
+    pageHead("Conferência da Matriz", "O que o aplicativo consegue verificar sozinho", "home") +
+
+    '<div class="card" style="padding:16px 18px;margin-bottom:16px;border-left:4px solid ' +
+      (comErro.length ? "var(--verm)" : "var(--grn)") + '">' +
+      '<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:baseline">' +
+        '<div><div style="font-size:11px;color:var(--t4)">Blocos conferidos</div>' +
+          '<div style="font-family:var(--serif);font-size:26px;font-weight:700">' + linhas.length + "</div></div>" +
+        '<div><div style="font-size:11px;color:var(--t4)">Com erro apontado</div>' +
+          '<div style="font-family:var(--serif);font-size:26px;font-weight:700;color:' +
+            (comErro.length ? "var(--verm)" : "var(--grn)") + '">' + comErro.length + "</div></div>" +
+        '<div><div style="font-size:11px;color:var(--t4)">Para conferir no papel</div>' +
+          '<div style="font-family:var(--serif);font-size:26px;font-weight:700;color:var(--t3)">' +
+            curtas.length + "</div></div>" +
+      "</div>" +
+      '<div style="font-size:11.5px;color:var(--t3);margin-top:11px;line-height:1.6;' +
+        'border-top:1px solid var(--border2);padding-top:10px">' +
+        "Um bloco &eacute; a matriz de <strong>uma turma num per&iacute;odo</strong>. " +
+        "O aplicativo verifica tr&ecirc;s coisas sozinho: c&oacute;digo cujo ano n&atilde;o bate com a turma " +
+        "(EF08LI &eacute; 8&ordm; ano; EF69LP vale para v&aacute;rios e n&atilde;o entra no teste), " +
+        "dois per&iacute;odos com a lista id&ecirc;ntica, e matriz curta para as aulas do per&iacute;odo." +
+      "</div>" +
+      '<div style="font-size:11.5px;color:var(--t4);margin-top:8px;line-height:1.55">' +
+        "Nada &eacute; corrigido por conta pr&oacute;pria: quem tem o documento &eacute; voc&ecirc;. " +
+        "O que estiver errado aqui, me diga &mdash; ou mande a foto da p&aacute;gina &mdash; que eu acerto." +
+      "</div>" +
+    "</div>" +
+
+    (comErro.length
+      ? '<div style="font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;' +
+        'color:var(--verm);margin:18px 0 10px">Erros apontados</div>' +
+        comErro.map(linhaHtml).join("")
+      : "") +
+    (curtas.length
+      ? '<div style="font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;' +
+        'color:var(--t3);margin:22px 0 10px">Vale conferir no papel</div>' +
+        curtas.map(linhaHtml).join("")
+      : "") +
+    '<div style="font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;' +
+      'color:var(--t3);margin:22px 0 10px">Todos os blocos</div>' +
+    linhas.map(linhaHtml).join("") +
+  "</div>";
+}
+
 function viewAulasDadas() {
   var anoTodo = !!state.adAnoTodo;
   var meses = anoTodo ? MONTHS : mesesAteHoje();
@@ -15642,6 +15856,7 @@ var SIDE_MENU = [
   { group:"Rotina Escolar", items:[
     { id:"diario", label:"Registro de Aulas", icon:"registro" },
     { id:"aulasdadas", label:"Carga Horária", icon:"registro" },
+    { id:"conferencia", label:"Conferência da Matriz", icon:"cobertura" },
     { id:"agenda", label:"Agenda Letiva",     icon:"agenda" },
     { id:"archive",label:"Arquivo Bimestral", icon:"arquivo" }
   ]},
@@ -15748,6 +15963,7 @@ function render() {
   else if (state.view === "cobertura") html = viewCobertura();
   else if (state.view === "diario") html = viewDiario();
   else if (state.view === "aulasdadas") html = viewAulasDadas();
+  else if (state.view === "conferencia") html = viewConferencia();
   else if (state.view === "archive") html = viewArchive();
   else if (state.view === "agenda") html = viewAgenda();
   else if (state.view === "aee") html = viewAee();
