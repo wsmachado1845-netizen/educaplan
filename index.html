@@ -1925,6 +1925,97 @@ function eixoIngles(objeto, descricao) {
   return "Conhecimentos linguísticos";
 }
 
+/* =========================================================
+   CORREÇÕES DA MATRIZ (v9.2)
+   ---------------------------------------------------------
+   O documento da rede tem um erro, e o professor precisa planejar antes de
+   a coordenação responder. Até aqui o aplicativo só apontava: fiel ao papel,
+   e inútil para o 8º ano de Inglês, que ficava com habilidades do 9º.
+
+   A saída não é escolher entre uma coisa e outra — é guardar as duas. A
+   lista original do documento continua aqui, intacta, ao lado da corrigida.
+   O aplicativo trabalha com a corrigida, avisa em toda tela que ela é uma
+   correção local e ainda não foi confirmada pela rede, e permite voltar ao
+   documento com um toque.
+
+   A correção não é invenção. A linha do 9º ano no 3º Período seleciona as
+   posições 01, 02, 03, 07, 09, 13, 14, 15 e 18. A linha do 8º repete essas
+   mesmas nove posições — só que com o prefixo EF09 em vez de EF08. Trocando
+   o prefixo, os nove códigos existem na BNCC do 8º ano e todos têm
+   descrição e objeto de conhecimento na própria matriz municipal. É a
+   explicação mais simples que cabe nos fatos; ainda assim, é hipótese, e a
+   tela diz isso com todas as letras.
+   ========================================================= */
+var MTZ_CORRECOES = [
+  {
+    id: "li-8-3",
+    disciplina: "li",
+    chave: "8|3",
+    turma: "8º ano",
+    periodo: "3º Período (Agosto a Outubro)",
+    componente: "Língua Inglesa",
+    original: ["EF09LI01", "EF09LI02", "EF09LI03", "EF09LI07", "EF09LI09",
+               "EF09LI13", "EF09LI14", "EF09LI15", "EF09LI18"],
+    corrigido: ["EF08LI01", "EF08LI02", "EF08LI03", "EF08LI07", "EF08LI09",
+                "EF08LI13", "EF08LI14", "EF08LI15", "EF08LI18"],
+    motivo: "O documento traz aqui os nove códigos do 9º ano, idênticos aos da " +
+            "linha do 9º ANO logo abaixo. Mantidas as mesmas nove posições, com o " +
+            "prefixo do 8º ano.",
+    data: "03/09/2026",
+    confirmada: false
+  }
+];
+
+/* Ligada por padrão. Quem quiser ver a matriz exatamente como está no papel
+   desliga em Ajustes — o aplicativo não esconde o documento. */
+function correcoesAtivas() {
+  return !(state.cfg && state.cfg.correcoesMatriz === false);
+}
+
+function correcaoDe(disciplina, chave) {
+  if (!correcoesAtivas()) return null;
+  for (var i = 0; i < MTZ_CORRECOES.length; i++) {
+    var c = MTZ_CORRECOES[i];
+    if (c.disciplina === disciplina && c.chave === chave) return c;
+  }
+  return null;
+}
+
+/* Os códigos que a matriz entrega para um bloco — corrigidos, quando há
+   correção ativa para ele. */
+function codigosDaMatriz(disciplina, chave) {
+  var c = correcaoDe(disciplina, chave);
+  if (c) return c.corrigido.slice();
+  return A((disciplina === "li" ? MTZ_SL.li : MTZ_SL.lp)[chave]).slice();
+}
+
+function verOriginalDaMatriz(id) {
+  var c = null;
+  for (var i = 0; i < MTZ_CORRECOES.length; i++) if (MTZ_CORRECOES[i].id === id) c = MTZ_CORRECOES[i];
+  if (!c) return;
+  alert(
+    "MATRIZ DE REFERÊNCIA — " + c.componente + " — " + c.turma + " — " + c.periodo + "\n\n" +
+    "COMO ESTÁ NO DOCUMENTO (" + c.original.length + " códigos):\n" +
+    c.original.join(", ") + "\n\n" +
+    "COMO O APLICATIVO ESTÁ USANDO (" + c.corrigido.length + " códigos):\n" +
+    c.corrigido.join(", ") + "\n\n" +
+    "MOTIVO: " + c.motivo + "\n\n" +
+    "Correção local de " + c.data + ", ainda não confirmada pela rede.\n" +
+    "Para ver a matriz exatamente como está no papel, desligue a correção em\n" +
+    "Mais → Conferência da Matriz."
+  );
+}
+
+function alternarCorrecoesMatriz() {
+  if (!state.cfg) return;
+  state.cfg.correcoesMatriz = !correcoesAtivas();
+  saveCfg();
+  render();
+  toast(correcoesAtivas()
+    ? "Correção ligada — o 8º ano de Inglês usa as habilidades do 8º ano."
+    : "Correção desligada — a matriz aparece como está no documento, com os códigos do 9º.");
+}
+
 function matrizDoPeriodo(subject, grade, month) {
   var mi = CALENDAR.meses[month];
   var calPeriodo = mi ? mi.periodo : null;
@@ -1940,7 +2031,7 @@ function matrizDoPeriodo(subject, grade, month) {
 
     var brutos = [];
     if (ehIngles) {
-      A(MTZ_SL.li[chave]).forEach(function(c){ brutos.push(["Língua Inglesa", c]); });
+      A(codigosDaMatriz("li", chave)).forEach(function(c){ brutos.push(["Língua Inglesa", c]); });
     } else if (ehProducao || ehPortugues) {
       A(MTZ_SL.lp[chave]).forEach(function(par) {
         var eixo = par[0] || "";
@@ -2500,6 +2591,23 @@ function matrizPeriodoHtml(subject, grade, month) {
       (incoerentes.length > 4 ? "…" : "") + "). Est&aacute; assim no documento da matriz &mdash; " +
       "confira com a coordena&ccedil;&atilde;o antes de usar.</div>"
     : "";
+  /* v9.2 — quando o bloco está corrigido, o aviso aparece em toda geração de
+     plano. Correção silenciosa seria pior que o erro: o professor precisa
+     saber que o que está na tela não é o que está no papel. */
+  var _perNum = numeroDoPeriodo(month);
+  var _anoT = anoFinalDaTurma(grade);
+  var _corr = (_anoT && _perNum)
+    ? correcaoDe(String(subject).toLowerCase().indexOf("ingl") >= 0 ? "li" : "lp",
+                 _anoT + "|" + _perNum)
+    : null;
+  var correcaoHtml = _corr
+    ? '<div style="font-size:10.5px;color:var(--amb);background:var(--ambBg);border-radius:7px;' +
+      'padding:8px 10px;margin-bottom:8px;line-height:1.55">&#9998; <strong>Corrigido no aplicativo.</strong> ' +
+      esc(_corr.motivo) + " Os c&oacute;digos do documento eram " +
+      _corr.original.slice(0, 3).map(function(x){ return esc(x); }).join(", ") + "… " +
+      '<a href="#" onclick="verOriginalDaMatriz(\'' + _corr.id + '\');return false">ver a lista original</a>. ' +
+      "Aguardando confirma&ccedil;&atilde;o da coordena&ccedil;&atilde;o.</div>"
+    : "";
   var priorHtml = nPrior
     ? '<div style="font-size:10px;color:var(--t3);margin-bottom:8px">&#9733; <strong>' + nPrior +
       "</strong> priorizada(s) pelo MEC na recomposi&ccedil;&atilde;o das aprendizagens</div>"
@@ -2546,7 +2654,7 @@ function matrizPeriodoHtml(subject, grade, month) {
       '<div style="font-size:10.5px;color:var(--t4)">' + contagemHtml + "</div>" +
     "</div>" +
     reguaHtml + alternarHtml +
-    barra + mtzContadorHtml(subject, grade, month) + priorHtml + avisoHtml +
+    barra + mtzContadorHtml(subject, grade, month) + correcaoHtml + priorHtml + avisoHtml +
     '<div class="mtz-lista">' + lista + "</div>" + botaoMais + movidasHtml +
     '<div style="font-size:9.5px;color:var(--t4);margin-top:10px;line-height:1.5">' +
       "S&atilde;o as habilidades separadas pelos professores da rede para este per&iacute;odo &mdash; o que a escola " +
@@ -3932,9 +4040,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "9.1";
-var APP_VERSAO_DATA = "03/09/2026";
-var APP_VERSAO_NOTA = "Matriz de Inglês auditada inteira: 16 blocos, um único erro no documento";
+var APP_VERSAO = "9.2";
+var APP_VERSAO_DATA = "04/09/2026";
+var APP_VERSAO_NOTA = "Correção aplicada no 8º de Inglês, visível e reversível";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -12265,8 +12373,12 @@ function copiarAchadoMatriz() {
     "OUTRO PONTO\n" +
     "No 7º ANO do 3º Período está escrito \"EFEF07LI15\", com o EF dobrado.\n\n" +
     "CONSEQUÊNCIA\n" +
-    "O 8º ano fica sem habilidade de Língua Inglesa do 8º ano para\n" +
-    "Agosto, Setembro e Outubro.\n\n" +
+    "Sem correção, o 8º ano fica sem habilidade de Língua Inglesa do 8º ano\n" +
+    "para Agosto, Setembro e Outubro.\n\n" +
+    "PROVIDÊNCIA PROVISÓRIA\n" +
+    "Para não parar o planejamento, estou usando a lista da hipótese acima,\n" +
+    "registrada no aplicativo como correção local não confirmada.\n" +
+    "Assim que houver posição da coordenação, ajusto.\n\n" +
     "Solicito a correção da página do 3º Período.";
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(txt).then(function() {
@@ -12376,10 +12488,11 @@ function viewConferencia() {
         "dois per&iacute;odos com a lista id&ecirc;ntica, e matriz curta para as aulas do per&iacute;odo." +
       "</div>" +
       '<div style="font-size:11.5px;color:var(--t4);margin-top:8px;line-height:1.55">' +
-        "Nada &eacute; corrigido por conta pr&oacute;pria. Um apontamento aqui n&atilde;o quer dizer " +
-        "que o aplicativo errou: pode ser que o pr&oacute;prio documento da rede esteja assim. " +
-        "Confira a p&aacute;gina antes de concluir &mdash; e, se o documento repetir o erro, " +
-        "quem resolve &eacute; a coordena&ccedil;&atilde;o." +
+        "Um apontamento aqui n&atilde;o quer dizer que o aplicativo errou: pode ser que o " +
+        "pr&oacute;prio documento da rede esteja assim. Confira a p&aacute;gina antes de concluir " +
+        "&mdash; e, se o documento repetir o erro, quem resolve &eacute; a coordena&ccedil;&atilde;o. " +
+        "H&aacute; <strong>uma corre&ccedil;&atilde;o local</strong> em vigor, registrada logo abaixo; " +
+        "fora dela, o aplicativo n&atilde;o muda nada por conta pr&oacute;pria." +
       "</div>" +
     "</div>" +
 
@@ -12390,16 +12503,34 @@ function viewConferencia() {
         "Confirmado contra o documento &mdash; L&iacute;ngua Inglesa, 3&ordm; Per&iacute;odo</div>" +
       '<div style="font-size:11.5px;color:var(--t3);line-height:1.6">' +
         "Conferi o documento inteiro &mdash; <strong>os 16 blocos</strong>, quatro anos por " +
-        "quatro per&iacute;odos, c&oacute;digo a c&oacute;digo. Todos batem com o que est&aacute; " +
-        "no aplicativo, na mesma ordem. <strong>Um s&oacute; bloco tem erro, e o erro &eacute; do " +
-        "documento</strong>: na linha do 8&ordm; ANO do 3&ordm; Per&iacute;odo est&atilde;o os nove " +
-        "c&oacute;digos <strong>EF09LI</strong>, iguaizinhos aos da linha do 9&ordm; ANO logo abaixo." +
+        "quatro per&iacute;odos, c&oacute;digo a c&oacute;digo. A transcri&ccedil;&atilde;o para o " +
+        "aplicativo estava fiel em todos, na mesma ordem. <strong>Um s&oacute; bloco tem erro, e o " +
+        "erro &eacute; do documento</strong>: na linha do 8&ordm; ANO do 3&ordm; Per&iacute;odo " +
+        "est&atilde;o os nove c&oacute;digos <strong>EF09LI</strong>, iguaizinhos aos da linha do " +
+        "9&ordm; ANO logo abaixo." +
       "</div>" +
       '<div style="font-size:11.5px;color:var(--t3);line-height:1.6;margin-top:8px">' +
         "<strong>Hip&oacute;tese:</strong> se foi copiada a linha do 9&ordm; sem trocar o &quot;09&quot; " +
         "por &quot;08&quot;, a lista pretendida seria EF08LI01, 02, 03, 07, 09, 13, 14, 15 e 18 &mdash; " +
-        "todos existem na BNCC do 8&ordm; ano. &Eacute; s&oacute; uma hip&oacute;tese: quem confirma &eacute; " +
-        "a equipe que elaborou a matriz." +
+        "todos existem na BNCC do 8&ordm; ano, e todos t&ecirc;m descri&ccedil;&atilde;o e objeto de " +
+        "conhecimento na pr&oacute;pria matriz municipal." +
+      "</div>" +
+      '<div style="font-size:11.5px;color:var(--t2);line-height:1.6;margin-top:10px;' +
+        'background:var(--ambBg);border-radius:8px;padding:10px 12px">' +
+        "&#9998; <strong>" + (correcoesAtivas() ? "Correção aplicada" : "Correção disponível, mas desligada") +
+        ".</strong> " +
+        (correcoesAtivas()
+          ? "O aplicativo est&aacute; usando a lista corrigida no 8&ordm; ano do 3&ordm; Per&iacute;odo, " +
+            "para voc&ecirc; conseguir planejar Agosto, Setembro e Outubro. " +
+            "&Eacute; uma <strong>corre&ccedil;&atilde;o local, ainda n&atilde;o confirmada pela rede</strong>, " +
+            "e o aviso aparece em toda tela de planejamento daquela turma."
+          : "A matriz est&aacute; aparecendo exatamente como no documento, com os c&oacute;digos do 9&ordm; ano.") +
+      "</div>" +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px">' +
+        '<button class="btn btn-outline btn-sm" onclick="verOriginalDaMatriz(\'li-8-3\')">' +
+          "Ver documento e correção lado a lado</button>" +
+        '<button class="btn btn-ghost btn-sm" onclick="alternarCorrecoesMatriz()">' +
+          (correcoesAtivas() ? "Desligar a corre&ccedil;&atilde;o" : "Ligar a corre&ccedil;&atilde;o") + "</button>" +
       "</div>" +
       '<div style="font-size:11.5px;color:var(--t3);line-height:1.6;margin-top:8px">' +
         "Enquanto a coordena&ccedil;&atilde;o n&atilde;o responde, o plano do 8&ordm; ano em Agosto, " +
