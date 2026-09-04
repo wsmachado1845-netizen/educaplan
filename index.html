@@ -2251,6 +2251,33 @@ function distribuicaoDoPeriodo(subject, grade, month) {
 /* A matriz como ela deve aparecer NAQUELE MÊS. Mesmo formato de
    matrizDoPeriodo, com dois campos a mais: doPeriodo (a lista inteira, para
    quem quiser ver tudo) e retomadas. */
+/* Quantas habilidades distintas a matriz reserva para esta turma no ANO
+   inteiro — a soma dos quatro períodos, sem repetir código. É o número que
+   dá a dimensão real do que a rede pede, e que faltava na tela: o professor
+   via "9 no período" e não sabia se era pouco ou muito. */
+function habilidadesDoAnoDaTurma(subject, grade) {
+  var ano = anoFinalDaTurma(grade);
+  if (!ano) return 0;
+  var ehIngles = String(subject).toLowerCase().indexOf("ingl") >= 0;
+  var ehProducao = String(subject).toLowerCase().indexOf("produ") >= 0;
+  var vistos = {}, n = 0;
+  [1, 2, 3, 4].forEach(function(per) {
+    var chave = ano + "|" + per;
+    if (ehIngles) {
+      A(codigosDaMatriz("li", chave)).forEach(function(c) {
+        if (!vistos[c]) { vistos[c] = 1; n++; }
+      });
+    } else {
+      A(MTZ_SL.lp[chave]).forEach(function(par) {
+        var eixo = par[0] || "", ehPT = eixo.indexOf("Produção Textual") >= 0;
+        if (ehProducao !== ehPT) return;
+        if (!vistos[par[1]]) { vistos[par[1]] = 1; n++; }
+      });
+    }
+  });
+  return n;
+}
+
 function matrizDoMes(subject, grade, month) {
   var mz = matrizDoPeriodo(subject, grade, month);
   var d = distribuicaoDoPeriodo(subject, grade, month);
@@ -2264,6 +2291,46 @@ function matrizDoMes(subject, grade, month) {
     c.retomada = true;
     return c;
   });
+
+  /* ---------- Piso do mês (v9.3) ----------
+     A divisão reparte o período pelos meses e para por aí. Quando o período
+     é curto, sobra pouco: o 3º Período de Inglês do 8º ano tem 9 habilidades
+     para três meses, e Setembro ficava com DUAS — enquanto o termômetro diz
+     que cabem de 3 a 4 conteúdos naquelas 4 entradas. O professor abria o
+     mês e não tinha com o que montar o plano.
+
+     A correção não inventa habilidade: puxa de volta as do MESMO período,
+     dos meses vizinhos, marcadas como retomada. É o que acontece em sala —
+     uma habilidade de leitura trabalhada em agosto volta em setembro — e
+     mantém o mês dentro do que o calendário comporta. Só sobe até o piso do
+     termômetro; passar disso seria encher o mês por encher. */
+  var ch = cargaHoraria(subject, grade, month);
+  var t = habilidadesTermometro(subject, ch.configured ? ch.encounters : 0, 0,
+    ch.configured ? ch.monthlyLessons : 0, conteudosPrevistosDe(subject, grade));
+  var piso = (t && t.configured && t.idealMin) ? t.idealMin : 0;
+  if (piso && (novas.length + retom.length) < piso) {
+    var jaTem = {};
+    novas.concat(retom).forEach(function(a){ jaTem[a.code] = 1; });
+    /* Meses vizinhos primeiro: o que foi dado há pouco retoma melhor do que
+       o que ainda nem começou. */
+    var iMes = d.meses.indexOf(month);
+    var vizinhos = d.meses.slice().sort(function(a2, b2) {
+      return Math.abs(d.meses.indexOf(a2) - iMes) - Math.abs(d.meses.indexOf(b2) - iMes);
+    });
+    for (var vi = 0; vi < vizinhos.length && (novas.length + retom.length) < piso; vi++) {
+      var lista = d.porMes[vizinhos[vi]] || [];
+      for (var li = 0; li < lista.length && (novas.length + retom.length) < piso; li++) {
+        var cand = lista[li];
+        if (jaTem[cand.code]) continue;
+        jaTem[cand.code] = 1;
+        var copia = {};
+        for (var k2 in cand) if (Object.prototype.hasOwnProperty.call(cand, k2)) copia[k2] = cand[k2];
+        copia.retomada = true;
+        copia.retomadaDe = vizinhos[vi];
+        retom.push(copia);
+      }
+    }
+  }
   return { periodo: mz.periodo, faixa: mz.faixa, numero: mz.numero,
     itens: novas.concat(retom), doPeriodo: mz.itens, retomadas: retom,
     meses: d.meses, distrib: d, semDivisao: false };
@@ -2531,7 +2598,7 @@ function matrizPeriodoHtml(subject, grade, month) {
       return '<button class="mtz-cod' + (escolhida ? " sel" : (a.retomada ? " ret" : (a.prioritaria ? " pri" : ""))) +
         '" onclick="event.stopPropagation();alternarHabilidade(\'' +
         String(a.code).replace(/'/g, "\\'") + '\')" title="' +
-        (a.retomada ? "Retomada de " + esc(mesDaHabilidade(mMes, a.code) || "") + " &mdash; " : "") +
+        (a.retomada ? "Retomada de " + esc(a.retomadaDe || mesDaHabilidade(mMes, a.code) || "") + " &mdash; " : "") +
         (escolhida ? "Tirar do plano" : "Usar esta habilidade no plano") + '">' +
         (escolhida ? "&#10003; " : "") + esc(a.code) +
         (a.retomada ? "&#8635;" : (!escolhida && a.prioritaria ? "&#9733;" : "")) + "</button>";
@@ -2630,11 +2697,14 @@ function matrizPeriodoHtml(subject, grade, month) {
   }
 
   var nRet = A(mMes.retomadas).length;
+  var nAno = habilidadesDoAnoDaTurma(subject, grade);
   var contagemHtml = verTudo
-    ? m.itens.length + " habilidade" + (m.itens.length === 1 ? "" : "s") + " no per&iacute;odo"
+    ? m.itens.length + " habilidade" + (m.itens.length === 1 ? "" : "s") + " no per&iacute;odo" +
+      (nAno ? " &middot; " + nAno + " no ano" : "")
     : m.itens.length + " em " + esc(month) +
       (nRet ? " (" + (m.itens.length - nRet) + " nova(s) + " + nRet + " retomada)" : "") +
-      " &middot; " + A(mMes.doPeriodo).length + " no per&iacute;odo";
+      " &middot; " + A(mMes.doPeriodo).length + " no per&iacute;odo" +
+      (nAno ? " &middot; " + nAno + " no ano" : "");
 
   var alternarHtml = mMes.semDivisao ? "" :
     '<button class="mtz-alternar" onclick="state.mtzPeriodoTodo=' + (verTudo ? "false" : "true") + ';render()">' +
@@ -4040,9 +4110,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "9.2";
+var APP_VERSAO = "9.3";
 var APP_VERSAO_DATA = "04/09/2026";
-var APP_VERSAO_NOTA = "Correção aplicada no 8º de Inglês, visível e reversível";
+var APP_VERSAO_NOTA = "Nenhum mês abaixo do que comporta; contagem do ano à vista";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
