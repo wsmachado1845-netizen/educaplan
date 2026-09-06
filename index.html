@@ -211,8 +211,8 @@ a { color: var(--acc); }
 /* v7.3 — o raio dos cartões desceu de 20px para 16px e o dos blocos
    internos para 12px, a mesma família do botão. Raios diferentes na mesma
    tela são o que faz uma interface parecer remendada. */
-.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--sh1); }
-.card-soft { background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--sh1); }
+.card-soft { background: var(--bg3); border: 1px solid var(--border2); border-radius: 16px; }
 
 /* ── Botões (v7.3) ──
    Três mudanças, todas pedidas pelo uso no celular:
@@ -226,11 +226,16 @@ a { color: var(--acc); }
       "excluir" e virou a segunda cor da identidade, disponível como
       .btn-verm para o que precisa saltar. */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-family: var(--sans); font-weight: 650; font-size: 14px; border-radius: 12px;
+  font-family: var(--sans); font-weight: 650; font-size: 14px; border-radius: 14px;
   min-height: 46px; padding: 12px 20px; border: 1px solid transparent; cursor: pointer;
-  transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
+  transition: background .16s, border-color .16s, color .16s, box-shadow .16s, transform .12s;
   white-space: nowrap; line-height: 1.2; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
+/* v9.6 — o botão afunda um fio ao ser pressionado. É a única animação de
+   interação do aplicativo, e existe porque no celular, sem cursor, é ela que
+   confirma que o toque pegou. */
+.btn:not(:disabled):active { transform: translateY(1px) scale(.995); }
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } .btn:active { transform: none; } }
 .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--acc3), 0 0 0 4px var(--acc); }
 .btn-primary { background: var(--acc); color: var(--accTexto); }
 .btn-primary:hover:not(:disabled) { background: var(--acc2); }
@@ -241,7 +246,7 @@ a { color: var(--acc); }
 .btn-ghost { background: transparent; color: var(--t3); }
 .btn-ghost:hover:not(:disabled) { background: var(--bg3); color: var(--t1); }
 .btn-sm { min-height: 40px; padding: 9px 15px; font-size: 13px; border-radius: 10px; }
-.btn-lg { min-height: 54px; padding: 15px 28px; font-size: 15.5px; border-radius: 14px; }
+.btn-lg { min-height: 54px; padding: 15px 28px; font-size: 15.5px; border-radius: 17px; }
 .btn-block { width: 100%; }
 
 /* Grupo encaixado: os botões se tocam e formam uma peça só, com o
@@ -267,7 +272,7 @@ a { color: var(--acc); }
 label.lbl { display: block; font-size: 12px; font-weight: 600; color: var(--t3); margin-bottom: 5px; }
 /* Campo e botão na mesma linha precisam ter a mesma altura, senão a linha
    fica "escadinha" — é o detalhe que mais denuncia interface improvisada. */
-.inp { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+.inp { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
   min-height: 46px; padding: 12px 14px; font-size: 14px; font-family: var(--sans); color: var(--t1);
   outline: none; transition: border-color .15s, box-shadow .15s; }
 select.inp { cursor: pointer; }
@@ -336,7 +341,7 @@ textarea.inp { resize: vertical; }
   gap: 12px; justify-content: start; }
 @media (max-width: 820px) { .hp-grade { grid-template-columns: 1fr; } }
 
-.hp-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+.hp-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 18px;
   padding: 15px 16px; display: flex; flex-direction: column; gap: 10px;
   transition: border-color .15s, box-shadow .15s, transform .15s; box-shadow: var(--sh1); }
 .hp-card:hover { border-color: var(--acc); box-shadow: var(--sh2); transform: translateY(-1px); }
@@ -363,12 +368,69 @@ textarea.inp { resize: vertical; }
 /* v8.8 — a descrição de uma linha: que plano é, de qual disciplina e turma. */
 .hp-resumo { font-size: 11.5px; color: var(--t3); line-height: 1.45; margin-top: -3px; }
 
+/* ── O ano até aqui (v9.6) ──
+   Um gráfico de colunas, uma por mês letivo já decorrido, com a altura
+   proporcional às turmas que têm plano. A cor separa três estados: azul do
+   município para o mês completo, âmbar para o mês corrente (ainda dá tempo)
+   e vermelho para o mês que fechou devendo. As colunas sobem ao abrir a
+   tela — a animação aqui não é enfeite: ela chama o olho para a única parte
+   do painel que muda de um dia para o outro. */
+.ano-card { padding: 16px 18px; margin-bottom: 16px; border-radius: 18px; }
+.ano-topo { display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 13px; }
+.ano-tit { font-family: var(--serif); font-size: 17px; font-weight: 700; line-height: 1.2; }
+.ano-sub { font-size: 11.5px; color: var(--t4); margin-top: 3px; line-height: 1.5; }
+.ano-sub strong { color: var(--verm); }
+
+/* Onze meses precisam caber na largura de um celular sem virar rolagem
+   lateral — rolagem escondida é rolagem que ninguém acha. As colunas
+   encolhem até 26px, o suficiente para a barra e a abreviação. */
+.ano-barras { display: flex; gap: 5px; align-items: flex-end;
+  padding-bottom: 2px; }
+.ano-mes { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;
+  align-items: center; gap: 5px; padding: 6px 1px 7px; border: 0; border-radius: 12px;
+  background: transparent; cursor: pointer; font: inherit; color: inherit;
+  transition: background .16s; }
+.ano-mes:hover { background: var(--bg3); }
+.ano-mes:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+.ano-col { position: relative; width: 100%; max-width: 30px; height: 62px;
+  border-radius: 9px; background: var(--bg3); overflow: hidden; display: block; }
+.ano-fill { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 9px;
+  animation: anoSobe .55s cubic-bezier(.22,.9,.3,1) both; }
+@keyframes anoSobe { from { height: 0 !important; } }
+@media (prefers-reduced-motion: reduce) { .ano-fill { animation: none; } }
+.ano-mes.ok .ano-fill { background: linear-gradient(180deg, var(--acc), var(--acc2, var(--acc))); }
+.ano-mes.agora .ano-fill { background: var(--amb); }
+.ano-mes.atraso .ano-fill { background: var(--verm); }
+.ano-mes.agora .ano-col { box-shadow: inset 0 0 0 2px var(--amb); }
+.ano-nome { font-size: 9px; font-weight: 800; letter-spacing: .02em;
+  text-transform: uppercase; color: var(--t4); }
+.ano-num { font-size: 9.5px; font-weight: 700; color: var(--t3);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (min-width: 620px) {
+  .ano-barras { gap: 8px; }
+  .ano-col { max-width: 38px; height: 74px; }
+  .ano-nome { font-size: 10px; letter-spacing: .06em; }
+  .ano-num { font-size: 11px; }
+}
+.ano-mes.atraso .ano-num { color: var(--verm); }
+.ano-mes.ok .ano-num { color: var(--acc); }
+
+.ano-legenda { display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  margin-top: 11px; padding-top: 10px; border-top: 1px solid var(--border2);
+  font-size: 10px; color: var(--t4); }
+.ano-legenda span { display: inline-flex; align-items: center; gap: 5px; }
+.ano-legenda i { width: 8px; height: 8px; border-radius: 3px; display: inline-block; }
+.ano-legenda i.ok { background: var(--acc); }
+.ano-legenda i.agora { background: var(--amb); }
+.ano-legenda i.atraso { background: var(--verm); }
+
 /* ── Conferência da Matriz (v8.9) ──
    Uma linha por bloco (turma × período). O bloco com erro ganha a borda
    vermelha à esquerda: numa lista de 36, é o que faz os quatro problemáticos
    saltarem sem precisar ler. */
 .cm-linha { background: var(--bg2); border: 1px solid var(--border);
-  border-left: 4px solid var(--border2); border-radius: 12px;
+  border-left: 4px solid var(--border2); border-radius: 16px;
   padding: 13px 15px; margin-bottom: 10px; }
 .cm-linha.grave { border-left-color: var(--verm); }
 .cm-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -394,7 +456,7 @@ textarea.inp { resize: vertical; }
   gap: 12px; }
 @media (min-width: 900px) { .pasta-grade { grid-template-columns: repeat(auto-fill, minmax(190px, 230px)); } }
 .pasta { display: flex; flex-direction: column; padding: 0; overflow: hidden;
-  background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 18px;
   cursor: pointer; text-align: left; font: inherit; color: inherit;
   box-shadow: var(--sh1); transition: border-color .15s, box-shadow .15s, transform .15s; }
 .pasta:hover { border-color: var(--acc); box-shadow: var(--sh2); transform: translateY(-1px); }
@@ -417,7 +479,7 @@ textarea.inp { resize: vertical; }
 
 /* Cabeçalho de dentro da pasta aberta. */
 .pasta-cab { display: flex; flex-direction: column; overflow: hidden;
-  background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 18px;
   margin-bottom: 16px; box-shadow: var(--sh1); }
 .pasta-cab-fita { display: flex; height: 8px; }
 .pasta-cab-fita span { display: block; }
@@ -433,6 +495,10 @@ textarea.inp { resize: vertical; }
 
 /* ── Grades ── */
 .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+/* v9.6 — três temas agora (Sistema, Claro, Escuro). Numa grade de duas
+   colunas o terceiro ficava sozinho na linha de baixo, com o dobro da
+   largura dos outros — parecia mais importante do que é. */
+.g-temas { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
 .g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 15px; }
 .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
 .gauto { display: grid; grid-template-columns: repeat(auto-fill,minmax(255px,1fr)); gap: 14px; }
@@ -473,7 +539,7 @@ textarea.inp { resize: vertical; }
 .tool { display: flex; align-items: center; gap: 15px; padding: 18px 20px; cursor: pointer;
   transition: border-color .15s, transform .15s, box-shadow .15s; }
 .tool:hover { border-color: var(--acc); transform: translateY(-2px); box-shadow: var(--sh2); }
-.tool-ic { width: 52px; height: 52px; border-radius: 14px; background: var(--acc3); color: var(--acc);
+.tool-ic { width: 52px; height: 52px; border-radius: 17px; background: var(--acc3); color: var(--acc);
   display: flex; align-items: center; justify-content: center; font-size: 25px; flex-shrink: 0; }
 .tool-tx { flex: 1; min-width: 0; }
 .tool-tt { font-weight: 700; font-size: 15.5px; margin-bottom: 3px; line-height: 1.25; }
@@ -632,10 +698,14 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
    no celular. */
 .mtz-cod { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10.5px;
   font-weight: 700; background: var(--bg2); border: 1px solid var(--border2);
-  color: var(--t2); border-radius: 8px; min-height: 36px; padding: 8px 5px;
+  color: var(--t2); border-radius: 10px; min-height: 38px; padding: 8px 5px;
   display: flex; align-items: center; justify-content: center;
   letter-spacing: -.01em; white-space: nowrap; cursor: pointer; }
-@media (max-width: 620px) { .mtz-cod { min-height: 40px; } }
+/* v9.6 — 44px, o alvo de toque recomendado. Ficaram em 40 desde a v7.3, e
+   com a segunda seção da v9.5 o número dessas pastilhas dobrou na tela: o
+   que era um desconforto pequeno passou a ser o botão mais tocado do
+   aplicativo. */
+@media (max-width: 620px) { .mtz-cod { min-height: 44px; } }
 .mtz-cod.pri { background: var(--ambBg); border-color: var(--amb); color: var(--amb); }
 /* v5.5 — a pastilha deixou de ser enfeite: tocar nela poe a habilidade no
    plano. Antes o quadro da matriz so informava, e o professor nao tinha como
@@ -934,8 +1004,8 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 
 /* ── Busca de habilidade recolhida (v6.3) ── */
 .busca-abrir { display: flex; align-items: center; gap: 9px; width: 100%;
-  background: var(--bg2); border: 1px dashed var(--border); border-radius: 14px;
-  padding: 12px 14px; cursor: pointer; font-family: inherit; color: var(--acc);
+  background: var(--bg2); border: 1px dashed var(--border); border-radius: 16px;
+  min-height: 46px; padding: 13px 15px; cursor: pointer; font-family: inherit; color: var(--acc);
   font-size: 12.5px; font-weight: 700; text-align: left; }
 .busca-abrir:hover { border-color: var(--acc); background: var(--acc3); }
 .busca-dica { font-weight: 500; color: var(--t4); font-size: 10.5px; margin-left: auto;
@@ -965,8 +1035,10 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 .cob-obj { font-size: 12.5px; color: var(--t1); font-weight: 600; min-width: 0; }
 .cob-meses { font-size: 10px; color: var(--t4); }
 .cob-usar { border: 1px solid var(--acc); background: none; color: var(--acc);
-  border-radius: 9px; font-family: inherit; font-size: 12px; font-weight: 700;
-  min-height: 40px; padding: 10px 15px; margin-right: 10px; cursor: pointer; flex: none; }
+  border-radius: 11px; font-family: inherit; font-size: 12px; font-weight: 700;
+  min-height: 44px; padding: 12px 16px; margin-right: 10px; cursor: pointer; flex: none;
+  transition: background .15s, transform .12s; }
+.cob-usar:active { transform: translateY(1px); }
 .cob-usar:hover { background: var(--acc3); }
 .cob-desc { grid-column: 1 / -1; font-size: 11px; color: var(--t3); line-height: 1.55;
   padding: 0 12px 10px; text-align: justify; }
@@ -3046,7 +3118,7 @@ var DEFAULT_CONFIG = {
       ]
     }
   },
-  "theme": "terracota",
+  "theme": "auto",
   "apiKey": "",
   "model": "claude-sonnet-5",
   "lessonMinutes": 45,
@@ -4179,9 +4251,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "9.5";
+var APP_VERSAO = "9.6";
 var APP_VERSAO_DATA = "05/09/2026";
-var APP_VERSAO_NOTA = "Todas as habilidades do período na tela do mês";
+var APP_VERSAO_NOTA = "Tema do sistema, o ano em gráfico e o visual mais arredondado";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -7700,6 +7772,10 @@ function weekGridHtml() {
 
 /* Dois temas: Claro e Escuro, cada um com seu par tipográfico */
 var THEMES = [
+  { id:"auto", name:"Sistema", sub:"Acompanha o aparelho",
+    desc:"Claro de dia, escuro quando o celular ou o computador estiver no modo escuro. Muda sozinho.",
+    titleFont:"Georgia", bodyFont:"Segoe UI",
+    sw:["#FFFFFF","#12467F","#24272C"] },
   { id:"terracota", name:"Claro", sub:"Identidade de Santa Luzia",
     desc:"Azul institucional, branco e vermelho — as cores do município, as mesmas dos documentos da Secretaria.",
     titleFont:"Georgia", bodyFont:"Segoe UI",
@@ -7715,21 +7791,78 @@ function themeById(id) {
   return THEMES[0];
 }
 
-function applyTheme() {
+/* ---------- Tema do sistema (v9.6) ----------
+   Antes só havia Claro e Escuro, escolhidos à mão. Quem deixa o celular
+   virar escuro à noite tinha de vir aqui trocar — e trocar de volta de
+   manhã. Agora existe uma terceira opção, "Sistema", que é a padrão: o
+   aplicativo segue o aparelho. As duas opções manuais continuam, para quem
+   prefere fixar.
+
+   O valor guardado passa a ser "auto"; "terracota" e "grafite" seguem
+   valendo como escolha fixa, então nada do que já estava salvo se perde. */
+function sistemaPrefereEscuro() {
+  try {
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  } catch (e) { return false; }
+}
+
+/* O tema que efetivamente vai para a tela. */
+function temaEfetivo() {
   var t = state.cfg.theme;
-  /* Compatibilidade com versões anteriores (light/dark/sepia) */
-  if (t === "light" || !t) t = "terracota";
+  if (t === "light") t = "terracota";
   if (t === "dark") t = "grafite";
   if (t === "sepia") t = "terracota";
-  state.cfg.theme = t;
+  if (!t) t = "auto";
+  if (t === "auto") return sistemaPrefereEscuro() ? "grafite" : "terracota";
+  return t;
+}
+
+function applyTheme() {
+  /* v9.6 — quem nunca tocou no seletor de tema fica com "Sistema". A marca
+     temaEscolhido só é gravada quando o professor escolhe de fato, em
+     Ajustes; sem ela, o valor que está guardado veio do padrão antigo e não
+     de uma decisão dele. Migrar isso é o que faz o modo do sistema valer
+     para quem já usava o aplicativo, sem passar por cima de quem fixou. */
+  if (!state.cfg.temaEscolhido && state.cfg.theme !== "auto") {
+    state.cfg.theme = "auto";
+    state.cfg.temaEscolhido = false;
+    try { saveCfg(); } catch (e) {}
+  }
+  var guardado = state.cfg.theme;
+  if (guardado === "light") guardado = "terracota";
+  if (guardado === "dark") guardado = "grafite";
+  if (guardado === "sepia") guardado = "terracota";
+  if (!guardado) guardado = "auto";
+  state.cfg.theme = guardado;
+
+  var t = temaEfetivo();
   var b = document.body;
-  THEMES.forEach(function(x){ b.classList.remove("t-" + x.id); });
+  THEMES.forEach(function(x){ if (x.id !== "auto") b.classList.remove("t-" + x.id); });
   b.classList.add("t-" + t);
+  b.setAttribute("data-tema-modo", guardado);
+  /* A barra de status do celular acompanha o fundo do aplicativo. */
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", t === "grafite" ? "#12161B" : "#12467F");
+}
+
+/* Enquanto o modo for "Sistema", mudar o aparelho muda o aplicativo na hora,
+   sem precisar fechar e abrir. */
+function ouvirTemaDoSistema() {
+  try {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var aoMudar = function() {
+      if ((state.cfg.theme || "auto") !== "auto") return;
+      applyTheme();
+      render();
+    };
+    if (mq.addEventListener) mq.addEventListener("change", aoMudar);
+    else if (mq.addListener) mq.addListener(aoMudar);
+  } catch (e) {}
 }
 
 /* Fontes do tema atual, para uso nas exportações (Word/PDF) */
 function docFonts() {
-  var t = state.cfg.theme;
+  var t = temaEfetivo();
   if (t === "grafite") return { serif:"'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif",
     sans:"'Trebuchet MS','Segoe UI',Tahoma,sans-serif" };
   return { serif:"Georgia,'Times New Roman',serif", sans:"'Segoe UI',Calibri,Arial,sans-serif" };
@@ -7904,6 +8037,91 @@ function situacaoDoMes(month) {
     faltando: faltando,
     pct: combos.length ? Math.round(100 * feitos.length / combos.length) : 0
   };
+}
+
+/* =========================================================
+   O ANO INTEIRO EM PENDÊNCIAS (v9.6)
+   ---------------------------------------------------------
+   O painel do que falta olhava um mês só — o corrente, ou o do filtro. Em
+   setembro, portanto, Agosto sumia da vista: o professor não tinha onde ver
+   que tinha ficado para trás, e um mês fechado sem plano não avisa sozinho.
+
+   Esta faixa mostra os meses letivos já decorridos, cada um com quantas
+   turmas têm plano. O mês incompleto e já passado aparece em vermelho —
+   é dívida, não pendência do dia. O mês corrente fica em âmbar, porque
+   ainda dá tempo. Os que vêm pela frente não entram: cobrar plano de
+   novembro em setembro é ruído.
+   ========================================================= */
+function situacaoDoAno() {
+  var hoje = new Date().getMonth() + 1;
+  var linhas = [];
+  MONTHS.forEach(function(m) {
+    var mi = CALENDAR.meses[m];
+    if (!mi || !mi.diasLetivos) return;
+    if (mi.num > hoje) return;
+    var sit = situacaoDoMes(m);
+    if (!sit.total) return;
+    linhas.push({
+      mes: m, num: mi.num, corrente: mi.num === hoje,
+      feitos: sit.feitos.length, total: sit.total,
+      faltando: sit.faltando, pct: sit.pct
+    });
+  });
+  return linhas;
+}
+
+function faixaDoAnoHtml() {
+  var linhas = situacaoDoAno();
+  if (!linhas.length) return "";
+  var atrasados = linhas.filter(function(l){ return !l.corrente && l.faltando.length; });
+  var completos = linhas.filter(function(l){ return !l.faltando.length; }).length;
+
+  return '<div class="card ano-card">' +
+    '<div class="ano-topo">' +
+      '<div>' +
+        '<div class="ano-tit">O ano at&eacute; aqui</div>' +
+        '<div class="ano-sub">' +
+          (atrasados.length
+            ? "<strong>" + atrasados.length + (atrasados.length === 1 ? " m&ecirc;s fechou" : " meses fecharam") +
+              " com turma sem plano</strong>"
+            : "Todos os meses fechados est&atilde;o completos") +
+          " &middot; " + completos + " de " + linhas.length + " em dia" +
+        "</div>" +
+      "</div>" +
+    "</div>" +
+    '<div class="ano-barras">' +
+      linhas.map(function(l) {
+        var estado = l.faltando.length ? (l.corrente ? "agora" : "atraso") : "ok";
+        return '<button class="ano-mes ' + estado + '" ' +
+          'onclick="verMesNoHistorico(' + jsStr(l.mes) + ')" ' +
+          'title="' + esc(l.mes) + ": " + l.feitos + " de " + l.total + " turmas com plano" +
+            (l.faltando.length
+              ? " &mdash; falta " + l.faltando.slice(0, 4).map(function(c) {
+                  return esc(subjAbbrev(c.subject) + " " + (c.conhecida ? turmaCurta(c.gradeLevel) : c.gradeCurto));
+                }).join(", ") + (l.faltando.length > 4 ? "…" : "")
+              : "") + '">' +
+          '<span class="ano-col"><span class="ano-fill" style="height:' +
+            Math.max(6, l.pct) + '%"></span></span>' +
+          '<span class="ano-nome">' + esc(l.mes.slice(0, 3)) + "</span>" +
+          '<span class="ano-num">' + l.feitos + "/" + l.total + "</span>" +
+        "</button>";
+      }).join("") +
+    "</div>" +
+    '<div class="ano-legenda">' +
+      '<span><i class="ok"></i>completo</span>' +
+      '<span><i class="agora"></i>m&ecirc;s corrente</span>' +
+      '<span><i class="atraso"></i>fechou incompleto</span>' +
+      '<span style="margin-left:auto;opacity:.8">toque num m&ecirc;s para abrir a pasta</span>' +
+    "</div>" +
+  "</div>";
+}
+
+/* Do gráfico para a pasta daquele mês, no Histórico. */
+function verMesNoHistorico(mes) {
+  state.planMes = "";
+  state.pastaAberta = mes;
+  go("plans");
+  window.scrollTo(0, 0);
 }
 
 /* Abre o Criar Planejamento já com componente, turma e mês preenchidos —
@@ -11366,7 +11584,7 @@ function viewHome() {
      leitura. No notebook eles se distribuem em duas colunas — antes o painel
      virava uma tira estreita no meio da tela, com metade do monitor vazia. */
   return '<div class="wrap fade pn-wrap">' +
-    banner + backupReminderHtml() + avisoDoQueFaltaNoPainel() +
+    banner + backupReminderHtml() + avisoDoQueFaltaNoPainel() + faixaDoAnoHtml() +
     '<div class="pn-grid">' +
       '<div class="pn-a-pil">' + pilulas + "</div>" +
       '<div class="pn-a-cob">' + coberturaHtml + "</div>" +
@@ -13682,12 +13900,12 @@ function viewSettings() {
       '<div class="aj-body">' +
       '<p style="font-size:11.5px;color:var(--t4);margin:0 0 14px">' +
         "Cada tema tem seu par tipogr&aacute;fico pr&oacute;prio, aplicado tamb&eacute;m ao PDF e ao arquivo Word exportados.</p>" +
-      '<div class="g2">' +
+      '<div class="g-temas">' +
         THEMES.map(function(t) {
-          var on = c.theme === t.id;
+          var on = (c.theme || "auto") === t.id;
           return '<div onclick="setTheme(\'' + t.id + '\')" style="cursor:pointer;border:2px solid ' +
-            (on ? "var(--acc)" : "var(--border)") + ';border-radius:14px;padding:13px;background:var(--bg2);' +
-            "transition:all .15s\">" +
+            (on ? "var(--acc)" : "var(--border)") + ';border-radius:18px;padding:13px;background:var(--bg2);' +
+            "transition:border-color .15s, box-shadow .15s\">" +
             '<div style="display:flex;gap:4px;margin-bottom:9px">' +
               t.sw.map(function(cl) {
                 return '<span style="width:20px;height:20px;border-radius:5px;background:' + cl +
@@ -13700,7 +13918,11 @@ function viewSettings() {
               '">' + t.name + "</div>" +
             '<div style="font-size:10px;color:var(--t4);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">' +
               t.sub + "</div>" +
-            '<div style="font-size:11px;color:var(--t3);line-height:1.45;margin-bottom:8px">' + t.desc + "</div>" +
+            '<div style="font-size:11px;color:var(--t3);line-height:1.45;margin-bottom:8px">' + t.desc +
+              (t.id === "auto"
+                ? ' <strong style="color:var(--acc)">Agora: ' +
+                  (sistemaPrefereEscuro() ? "escuro" : "claro") + ".</strong>"
+                : "") + "</div>" +
             '<div style="font-size:10px;color:var(--t4);border-top:1px solid var(--border2);padding-top:7px;line-height:1.5">' +
               "T&iacute;tulos: <strong>" + t.titleFont + "</strong><br/>Corpo: <strong>" + t.bodyFont + "</strong></div>" +
           "</div>";
@@ -15101,7 +15323,7 @@ function resetSchedule() {
    com texto justificado e páginas preenchidas de ponta a ponta. */
 function exportCss() {
   var f = docFonts();
-  var t = state.cfg.theme;
+  var t = temaEfetivo();
   var acc  = t === "grafite" ? "#8A6A18" : "#163F73";
   var line = "#D7E3EE";
   var soft = "#F5F8FC";
@@ -16144,10 +16366,12 @@ function toggleTheme() {
 }
 function setTheme(id) {
   state.cfg.theme = id;
+  state.cfg.temaEscolhido = true;
   saveCfg();
   applyTheme();
   render();
-  toast("Tema aplicado: " + themeById(id).name);
+  toast("Tema aplicado: " + themeById(id).name +
+    (id === "auto" ? " (" + (sistemaPrefereEscuro() ? "escuro" : "claro") + " agora)" : ""));
 }
 
 /* ---------- Render ---------- */
@@ -16366,6 +16590,7 @@ function render() {
 })();
 
 applyTheme();
+ouvirTemaDoSistema();
 if (!state.agendaMonth || !CALENDAR.meses[state.agendaMonth]) {
   state.agendaMonth = MONTHS_FULL[new Date().getMonth()] || "Março";
 }
