@@ -658,6 +658,17 @@ table.tb tr.holiday td { background: var(--redBg); color: var(--red); font-style
 .mtz-mes-chip.on b { color: var(--accTexto); }
 @media (max-width: 620px) { .mtz-mes-chip { min-height: 46px; padding: 9px 13px; } }
 
+/* v9.5 — a segunda seção: o resto do período, no mesmo lugar. Mais discreta
+   que a do mês (é sugestão, não indicação), mas inteiramente utilizável. */
+.mtz-resto-cab { display: flex; align-items: center; gap: 9px; margin: 16px 0 2px;
+  padding-top: 12px; border-top: 1px dashed var(--border2); }
+.mtz-resto-cab span { font-size: 10px; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--t4); }
+.mtz-resto-cab b { font-size: 10px; font-weight: 800; color: var(--t3);
+  background: var(--bg3); border-radius: 99px; padding: 2px 8px; }
+.mtz-resto-cab::after { content: ""; flex: 1; height: 1px; background: var(--border2); }
+.mtz-resto { opacity: .92; }
+
 .mtz-alternar { display: inline-block; margin: 8px 0 2px; padding: 7px 12px;
   min-height: 38px; border-radius: 8px; cursor: pointer; font-size: 10.5px; font-weight: 700;
   background: transparent; border: 1px solid var(--border2); color: var(--acc); }
@@ -2565,7 +2576,30 @@ function matrizPeriodoHtml(subject, grade, month) {
   A(state.form && state.form.forcedSkills).forEach(function(k){ selecionadas[k.code] = 1; });
   var nEscolhidas = m.itens.filter(function(a){ return selecionadas[a.code]; }).length;
 
-  var grupos = agruparMatriz(m.itens);
+  /* ===========================================================
+     O MÊS NÃO ESCONDE O PERÍODO (v9.5)
+
+     A divisão por mês foi pedida e é útil: ela diz o que trabalhar agora.
+     Só que eu a transformei em barreira. Setembro do 8º ano de Inglês
+     mostrava duas habilidades e as outras sete do período ficavam atrás de
+     um botão — o professor abria o mês e concluía, com razão, que não tinha
+     com o que planejar. Nenhum remendo na contagem resolve isso: o problema
+     era a lista estar curta, não o número estar errado.
+
+     Agora a tela mostra TUDO o que o período oferece, em duas partes: as do
+     mês em cima, sugeridas pela divisão, e as demais logo abaixo, sob um
+     título próprio. Nada a mais de toque, nada escondido. A divisão por mês
+     continua orientando; deixou é de restringir.
+     =========================================================== */
+  var itensDoMes = m.itens;
+  var itensRestantes = [];
+  if (!verTudo) {
+    var noMes = {};
+    m.itens.forEach(function(a){ noMes[a.code] = 1; });
+    itensRestantes = A(mMes.doPeriodo).filter(function(a){ return !noMes[a.code]; });
+  }
+
+  var grupos = agruparMatriz(itensDoMes);
   /* Os itens vêm ordenados por diagnóstico da turma, não por eixo — então os
      grupos chegavam intercalados e o mesmo eixo aparecia duas vezes na tela.
      Aqui eles são reagrupados por eixo, mantendo dentro de cada eixo a ordem
@@ -2584,49 +2618,69 @@ function matrizPeriodoHtml(subject, grade, month) {
   var mostrarTodos = !!state.mtzTudo || grupos.length <= LIMITE + 1;
   var visiveis = mostrarTodos ? grupos : grupos.slice(0, LIMITE);
   var eixoAtual = "";
-  var lista = visiveis.map(function(g, i) {
-    var cab = "";
-    if (g.eixo !== eixoAtual) {
-      eixoAtual = g.eixo;
-      var totalEixo = 0;
-      grupos.forEach(function(x){ if (x.eixo === g.eixo) totalEixo += x.itens.length; });
-      cab = '<div class="mtz-eixo"><b>' + esc(g.eixo) + "</b><i>" + totalEixo + "</i></div>";
-    }
-    var aberto = !!(state.mtzAberto && state.mtzAberto[i]);
-    var cods = g.itens.map(function(a) {
-      var escolhida = !!selecionadas[a.code];
-      return '<button class="mtz-cod' + (escolhida ? " sel" : (a.retomada ? " ret" : (a.prioritaria ? " pri" : ""))) +
-        '" onclick="event.stopPropagation();alternarHabilidade(\'' +
-        String(a.code).replace(/'/g, "\\'") + '\')" title="' +
-        (a.retomada ? "Retomada de " + esc(a.retomadaDe || mesDaHabilidade(mMes, a.code) || "") + " &mdash; " : "") +
-        (escolhida ? "Tirar do plano" : "Usar esta habilidade no plano") + '">' +
-        (escolhida ? "&#10003; " : "") + esc(a.code) +
-        (a.retomada ? "&#8635;" : (!escolhida && a.prioritaria ? "&#9733;" : "")) + "</button>";
-    }).join("");
+  /* v9.5 — o desenho de uma linha virou função, para servir às duas seções:
+     as habilidades do mês e as demais do período. Antes era um map anônimo e
+     a segunda lista teria de repetir tudo. */
+  var _desenharLinhas = function(gruposLista, base) {
+    var eixoLocal = "";
+    return gruposLista.map(function(g, gi) {
+      var i = base + gi;
+      var cab = "";
+      if (g.eixo !== eixoLocal) {
+        eixoLocal = g.eixo;
+        var totalEixo = 0;
+        gruposLista.forEach(function(x){ if (x.eixo === g.eixo) totalEixo += x.itens.length; });
+        cab = '<div class="mtz-eixo"><b>' + esc(g.eixo) + "</b><i>" + totalEixo + "</i></div>";
+      }
+      var aberto = !!(state.mtzAberto && state.mtzAberto[i]);
+      var cods = g.itens.map(function(a) {
+        var escolhida = !!selecionadas[a.code];
+        return '<button class="mtz-cod' + (escolhida ? " sel" : (a.retomada ? " ret" : (a.prioritaria ? " pri" : ""))) +
+          '" onclick="event.stopPropagation();alternarHabilidade(\'' +
+          String(a.code).replace(/'/g, "\\'") + '\')" title="' +
+          (a.retomada ? "Retomada de " + esc(a.retomadaDe || mesDaHabilidade(mMes, a.code) || "") + " &mdash; " : "") +
+          (escolhida ? "Tirar do plano" : "Usar esta habilidade no plano") + '">' +
+          (escolhida ? "&#10003; " : "") + esc(a.code) +
+          (a.retomada ? "&#8635;" : (!escolhida && a.prioritaria ? "&#9733;" : "")) + "</button>";
+      }).join("");
     /* v8.3 — com a lista aberta, cada habilidade ganha o seletor de mês. É
        aqui que a divisão automática deixa de mandar: o que ele escolher fica
        guardado e passa por cima do cálculo. */
-    var descs = aberto
-      ? '<div class="mtz-desc">' + g.itens.map(function(a) {
-          return "<div><b>" + esc(a.code) + "</b> &mdash; " + esc(a.description) +
-            (typeof a.pct === "number" ? " <em>(" + a.pct + "% na turma)</em>" : "") +
-            (mMes.semDivisao || a.retomada ? "" : seletorDeMesHtml(mMes, subject, grade, a, month)) +
-            "</div>";
-        }).join("") + "</div>"
-      : "";
-    var pior = null;
-    g.itens.forEach(function(a){ if (typeof a.pct === "number" && (pior === null || a.pct < pior)) pior = a.pct; });
-    return cab +
-      '<div class="mtz-linha" onclick="mtzAlternarGrupo(' + i + ')" title="' + esc(g.objeto) + '">' +
-        '<div class="mtz-lin-topo">' +
-          '<div class="mtz-lin-obj">' + esc(resumirObjeto(g.objeto)) + "</div>" +
-          '<div class="mtz-lin-n">' + (pior !== null ? pior + "% &middot; " : "") +
-            g.itens.length + (aberto ? " &#9652;" : " &#9662;") + "</div>" +
-        "</div>" +
-        '<div class="mtz-cods">' + cods + "</div>" +
-        descs +
-      "</div>";
-  }).join("");
+      var descs = aberto
+        ? '<div class="mtz-desc">' + g.itens.map(function(a) {
+            return "<div><b>" + esc(a.code) + "</b> &mdash; " + esc(a.description) +
+              (typeof a.pct === "number" ? " <em>(" + a.pct + "% na turma)</em>" : "") +
+              (mMes.semDivisao || a.retomada ? "" : seletorDeMesHtml(mMes, subject, grade, a, month)) +
+              "</div>";
+          }).join("") + "</div>"
+        : "";
+      var pior = null;
+      g.itens.forEach(function(a){ if (typeof a.pct === "number" && (pior === null || a.pct < pior)) pior = a.pct; });
+      return cab +
+        '<div class="mtz-linha" onclick="mtzAlternarGrupo(' + i + ')" title="' + esc(g.objeto) + '">' +
+          '<div class="mtz-lin-topo">' +
+            '<div class="mtz-lin-obj">' + esc(resumirObjeto(g.objeto)) + "</div>" +
+            '<div class="mtz-lin-n">' + (pior !== null ? pior + "% &middot; " : "") +
+              g.itens.length + (aberto ? " &#9652;" : " &#9662;") + "</div>" +
+          "</div>" +
+          '<div class="mtz-cods">' + cods + "</div>" +
+          descs +
+        "</div>";
+    }).join("");
+  };
+
+  var lista = _desenharLinhas(visiveis, 0);
+
+  /* A segunda seção: o resto do período, disponível no mesmo lugar. */
+  var gruposResto = agruparMatriz(itensRestantes);
+  var listaResto = gruposResto.length
+    ? '<div class="mtz-resto-cab">' +
+        "<span>Tamb&eacute;m dispon&iacute;veis neste per&iacute;odo</span>" +
+        "<b>" + itensRestantes.length + "</b>" +
+      "</div>" +
+      '<div class="mtz-resto">' + _desenharLinhas(gruposResto, 1000) + "</div>"
+    : "";
+
   var restam = grupos.length - visiveis.length;
   var botaoMais = (restam > 0 || (state.mtzTudo && grupos.length > LIMITE + 1))
     ? '<button class="mtz-mais" onclick="mtzVerTodas()">' +
@@ -2687,23 +2741,36 @@ function matrizPeriodoHtml(subject, grade, month) {
   if (!mMes.semDivisao && mMes.distrib && mMes.distrib.meses.length > 1) {
     reguaHtml = '<div class="mtz-regua">' +
       mMes.distrib.meses.map(function(mm) {
-        var n = (mMes.distrib.porMes[mm] || []).length;
-        var r = (mMes.distrib.retomadaPorMes[mm] || []).length;
+        /* v9.4 — a pastilha mostrava só as habilidades NOVAS do mês. Com o
+           piso da v9.3 acrescentando retomadas, a régua dizia "SET 2"
+           enquanto a linha de cima dizia "3 em Setembro" e a lista trazia
+           três. Dois números discordando na mesma tela é pior do que um
+           número errado: o professor olha a pastilha, vê 2, e conclui que
+           nada mudou. Agora ela conta o que o mês realmente entrega, e o
+           toque abre a conta separada. */
+        var mzM = matrizDoMes(subject, grade, mm);
+        var total = A(mzM.itens).length;
+        var r = A(mzM.retomadas).length;
+        var n = total - r;
         return '<button class="mtz-mes-chip' + (mm === month ? " on" : "") + '" ' +
           'onclick="irParaMesDoPlano(' + jsStr(mm) + ')" ' +
-          'title="' + esc(mm) + ": " + n + " nova(s)" + (r ? " e " + r + " de retomada" : "") + '">' +
-          esc(mm.slice(0, 3)) + "<b>" + n + "</b></button>";
+          'title="' + esc(mm) + ": " + total + " no total &mdash; " + n + " nova(s)" +
+            (r ? " e " + r + " de retomada" : "") + '">' +
+          esc(mm.slice(0, 3)) + "<b>" + total + "</b>" +
+          (r ? '<i style="font-style:normal;opacity:.7;font-size:9.5px">+' + r + "&#8635;</i>" : "") +
+          "</button>";
       }).join("") + "</div>";
   }
 
   var nRet = A(mMes.retomadas).length;
   var nAno = habilidadesDoAnoDaTurma(subject, grade);
+  var nNaTela = m.itens.length + itensRestantes.length;
   var contagemHtml = verTudo
     ? m.itens.length + " habilidade" + (m.itens.length === 1 ? "" : "s") + " no per&iacute;odo" +
       (nAno ? " &middot; " + nAno + " no ano" : "")
-    : m.itens.length + " em " + esc(month) +
-      (nRet ? " (" + (m.itens.length - nRet) + " nova(s) + " + nRet + " retomada)" : "") +
-      " &middot; " + A(mMes.doPeriodo).length + " no per&iacute;odo" +
+    : "<strong>" + nNaTela + " dispon&iacute;veis</strong> &middot; " +
+      m.itens.length + " sugerida(s) para " + esc(month) +
+      (nRet ? ", " + nRet + " de retomada" : "") +
       (nAno ? " &middot; " + nAno + " no ano" : "");
 
   var alternarHtml = mMes.semDivisao ? "" :
@@ -2725,13 +2792,15 @@ function matrizPeriodoHtml(subject, grade, month) {
     "</div>" +
     reguaHtml + alternarHtml +
     barra + mtzContadorHtml(subject, grade, month) + correcaoHtml + priorHtml + avisoHtml +
-    '<div class="mtz-lista">' + lista + "</div>" + botaoMais + movidasHtml +
+    '<div class="mtz-lista">' + lista + "</div>" + botaoMais + listaResto + movidasHtml +
     '<div style="font-size:9.5px;color:var(--t4);margin-top:10px;line-height:1.5">' +
       "S&atilde;o as habilidades separadas pelos professores da rede para este per&iacute;odo &mdash; o que a escola " +
       "chama de bimestre e o calend&aacute;rio trata como trimestre (" + esc(m.faixa || "três meses") + "). " +
       (mMes.semDivisao ? "" :
-        "O aplicativo <strong>reparte esse per&iacute;odo entre os meses</strong>, pesando quantas aulas cada m&ecirc;s " +
-        "tem e misturando os eixos; abra uma linha para <strong>mudar a habilidade de m&ecirc;s</strong>. " +
+        "O aplicativo <strong>sugere</strong> quais cabem em cada m&ecirc;s, pesando quantas aulas o m&ecirc;s " +
+        "tem e misturando os eixos &mdash; mas <strong>todas as do per&iacute;odo ficam nesta tela</strong>, " +
+        "nas duas se&ccedil;&otilde;es acima, e voc&ecirc; usa qualquer uma. " +
+        "Abra uma linha para <strong>mudar a habilidade de m&ecirc;s</strong>. " +
         (nRet ? "As marcadas com &#8635; s&atilde;o <strong>retomada</strong> do m&ecirc;s anterior. " : "")) +
       "Agrupadas por <strong>objeto de conhecimento</strong>. " +
       "<strong>Toque num c&oacute;digo para us&aacute;-lo no plano</strong> (fica verde com &#10003;); " +
@@ -4110,9 +4179,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "9.3";
-var APP_VERSAO_DATA = "04/09/2026";
-var APP_VERSAO_NOTA = "Nenhum mês abaixo do que comporta; contagem do ano à vista";
+var APP_VERSAO = "9.5";
+var APP_VERSAO_DATA = "05/09/2026";
+var APP_VERSAO_NOTA = "Todas as habilidades do período na tela do mês";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
