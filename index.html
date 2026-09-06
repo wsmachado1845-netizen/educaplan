@@ -4251,9 +4251,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "9.6";
-var APP_VERSAO_DATA = "05/09/2026";
-var APP_VERSAO_NOTA = "Tema do sistema, o ano em gráfico e o visual mais arredondado";
+var APP_VERSAO = "9.8";
+var APP_VERSAO_DATA = "06/09/2026";
+var APP_VERSAO_NOTA = "Fevereiro corrigido e o backup passa a levar as Aulas Dadas";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -4653,9 +4653,31 @@ function getLocalUpdatedAt() {
   return m && m.updatedAt ? m.updatedAt : null;
 }
 
+/* v9.8 — o backup levava só quatro coisas: ajustes, planos, registro e
+   usuário. Ficavam de fora as AULAS DADAS (a tabela digitada mês a mês, que
+   veio da folha de papel) e a DIVISÃO MANUAL DE HABILIDADES POR MÊS (quando o
+   professor move uma habilidade de um mês para outro). Nenhuma das duas era
+   exportada, sincronizada com o Drive ou guardada nas versões de segurança —
+   quem trocasse de aparelho perdia os dois, sem aviso.
+   O version sobe para 3. Backups antigos (version 2) continuam importando
+   normalmente: os campos novos simplesmente não vêm, e o que já existe no
+   aparelho é preservado em vez de ser zerado. */
 function buildBackupPayload() {
-  return { version:2, exportedAt:new Date().toISOString(),
-    config:state.cfg, plans:state.plans, diary:state.diary, user:state.user };
+  return { version:3, exportedAt:new Date().toISOString(),
+    config:state.cfg, plans:state.plans, diary:state.diary, user:state.user,
+    aulasDadas:state.aulasDadas, habMes:state.habMes };
+}
+/* Aplica os campos novos de um backup, seja de arquivo, do Drive ou de uma
+   versão de segurança. Ausente ≠ vazio: um backup antigo não apaga o que o
+   aparelho já tem. */
+function aplicarExtrasDoBackup(d) {
+  if (!d) return;
+  if (d.aulasDadas && typeof d.aulasDadas === "object") {
+    state.aulasDadas = d.aulasDadas; saveAulasDadas();
+  }
+  if (d.habMes && typeof d.habMes === "object") {
+    state.habMes = d.habMes; saveHabMes();
+  }
 }
 
 function driveConfigure(clientId) {
@@ -4891,6 +4913,7 @@ function driveSyncNow(reason) {
         if (remote.config) { state.cfg = remote.config; saveCfg(); }
         if (Array.isArray(remote.plans)) { state.plans = remote.plans; savePlans(); }
         if (remote.diary) { state.diary = remote.diary; saveDiary(); }
+        aplicarExtrasDoBackup(remote);
         _applyingRemoteData = false;
         try { localStorage.setItem(K_SYNCMETA, JSON.stringify({ updatedAt:remoteAt })); } catch(e) {}
         applyTheme();
@@ -4962,7 +4985,9 @@ function pushSnapshot(reason, force) {
       data: {
         config: state.cfg,
         plans: state.plans,
-        diary: state.diary
+        diary: state.diary,
+        aulasDadas: state.aulasDadas,
+        habMes: state.habMes
       }
     });
     while (list.length > MAX_SNAPSHOTS) list.shift();
@@ -5024,6 +5049,7 @@ function restoreSnapshot(ts) {
   if (snap.data.config) { state.cfg = snap.data.config; saveCfg(); }
   if (Array.isArray(snap.data.plans)) { state.plans = snap.data.plans; savePlans(); }
   if (snap.data.diary) { state.diary = snap.data.diary; saveDiary(); }
+  aplicarExtrasDoBackup(snap.data);
   applyTheme();
   render();
   toast("Versão restaurada.");
@@ -7888,6 +7914,28 @@ function iso(y, m, d) {
 }
 
 /* Retorna as datas do mês para a disciplina/turma, marcando aula e não-aula */
+/* =========================================================
+   LIMITES DO ANO LETIVO (v9.8)
+   ---------------------------------------------------------
+   O app varria todo dia útil do mês e só pulava feriado e recesso. Ele não
+   sabia QUANDO o ano letivo começa e termina — e por isso contava aula em
+   Fevereiro nos dias 4, 6, 11 e 13, antes de a escola abrir. Resultado: o
+   quadro de Carga Horária previa 89 aulas para um mês que tem 5 dias
+   letivos, e Fevereiro aparecia devendo aula que nunca existiu.
+
+   As duas datas abaixo não são chute — cada uma é conferida contra a
+   contagem de dias letivos que o próprio calendário do município declara:
+     • Dezembro até 18/12 → 14 dias úteis, e o calendário declara 14.
+     • Fevereiro a partir de 23/02 → 5 dias úteis, e o calendário declara 5.
+       (o 19/02 que aparece no quadro de planejamento é a data do ENCONTRO
+       de planejamento com a coordenação, não a volta às aulas.)
+   ========================================================= */
+var ANO_LETIVO = { inicio:"2026-02-23", fim:"2026-12-18" };
+function foraDoAnoLetivo(ds) {
+  if (ds < ANO_LETIVO.inicio) return "Antes do início do ano letivo (23/02)";
+  if (ds > ANO_LETIVO.fim) return "Depois do fim do ano letivo (18/12)";
+  return null;
+}
 function getLessonDates(subject, grade, monthName) {
   var mi = CALENDAR.meses[monthName];
   if (!mi) return [];
@@ -7901,6 +7949,8 @@ function getLessonDates(subject, grade, monthName) {
     var dow = dt.getDay();
     if (dow === 0 || dow === 6) continue;
     var ds = iso(year, mi.num, d);
+    var fora = foraDoAnoLetivo(ds);
+    if (fora) { rows.push({ iso:ds, day:d, dow:dow, type:"forano", label:fora, aulas:0 }); continue; }
     var hol = isHoliday(ds), rec = isRecess(ds);
     if (hol) { rows.push({ iso:ds, day:d, dow:dow, type:"feriado", label:hol.label, aulas:0 }); continue; }
     if (rec) { rows.push({ iso:ds, day:d, dow:dow, type:"recesso", label:rec.label, aulas:0 }); continue; }
@@ -14919,8 +14969,50 @@ function purgeDiaryByPlan(planId) {
    existir essa marcação), caem no critério por disciplina+turma+mês. Roda ao
    abrir o app e sempre depois de excluir um plano, garantindo que o Registro
    de Aulas nunca mostre resquício de planejamento já excluído ou movido. */
+/* v9.7 — a validação acima pergunta "ainda existe um plano para esta
+   disciplina/turma/mês?". Ela não pergunta se o CONTEÚDO guardado na célula
+   pertence mesmo a essa disciplina. Foi essa a brecha do registro
+   contaminado: uma célula de Português do 9º ano guardava códigos EF06LI
+   (Inglês do 6º), e como havia plano de Português do 9º naquele mês, a
+   célula passava na checagem e ficava lá para sempre.
+
+   Agora o próprio código denuncia a origem: as duas letras do meio dizem o
+   componente (LP, LI) e os dois números dizem o ano (06, 09, 69, 89). Uma
+   célula cujo código aponta para outro componente, ou para um ano isolado
+   que não é o da turma, é resíduo — não conteúdo. Faixas como EF69 e EF89
+   são intervalos legítimos e nunca são acusadas. */
+var COMPONENTE_DA_DISCIPLINA = {
+  "Língua Portuguesa": "LP",
+  "Produção de Texto": "LP",
+  "Língua Inglesa / Inglês": "LI"
+};
+function codigoEstranhoAoRegistro(codigo, subj, grade) {
+  var m = String(codigo || "").match(/^EF(\d{2})([A-Z]{2})\d{2}$/);
+  if (!m) return false;
+  var ano = m[1], comp = m[2];
+  /* CO (computação) e demais componentes transversais entram em qualquer
+     disciplina por desenho — não são resíduo. */
+  var esperado = COMPONENTE_DA_DISCIPLINA[subj];
+  if (esperado && comp !== esperado && comp !== "CO") return true;
+  /* Só faixas de um ano só (01..09) são comparáveis com a turma. */
+  if (/^0\d$/.test(ano)) {
+    var mg = String(grade || "").match(/(\d)º/);
+    if (mg && ano !== "0" + mg[1]) return true;
+  }
+  return false;
+}
+function celulaContaminada(rec, subj, grade) {
+  if (!rec) return false;
+  var txt = [rec.skills, rec.curriculo, rec.content].join(" ");
+  var cods = txt.match(/EF\d{2}[A-Z]{2}\d{2}/g) || [];
+  for (var i = 0; i < cods.length; i++) {
+    if (codigoEstranhoAoRegistro(cods[i], subj, grade)) return true;
+  }
+  return false;
+}
+
 function syncDiaryWithPlans() {
-  var touched = 0;
+  var touched = 0, contaminadas = 0;
   Object.keys(state.diary).forEach(function(key) {
     var parts = key.split("|");
     var subj = parts[0], grade = parts[1], month = parts[2];
@@ -14931,6 +15023,10 @@ function syncDiaryWithPlans() {
         : state.plans.some(function(p) {
             return normSubj(p.config.subject) === normSubj(subj) && normGrade(p.config.gradeLevel) === normGrade(grade) && p.config.month === month;
           });
+      if (stillValid && celulaContaminada(rec, subj, grade)) {
+        stillValid = false;
+        contaminadas++;
+      }
       if (!stillValid) {
         delete state.diary[key][iso];
         touched++;
@@ -14939,6 +15035,7 @@ function syncDiaryWithPlans() {
     if (!Object.keys(state.diary[key]).length) delete state.diary[key];
   });
   if (touched) saveDiary();
+  syncDiaryWithPlans.ultimaContaminacao = contaminadas;
   return touched;
 }
 /* =========================================================
@@ -16301,6 +16398,7 @@ function importBackup(input) {
       if (Array.isArray(d.plans)) { state.plans = d.plans; savePlans(); }
       if (d.diary) { state.diary = d.diary; saveDiary(); }
       if (d.user) { state.user = d.user; lsSet(K_USER, d.user); }
+      aplicarExtrasDoBackup(d);
       applyTheme();
       render();
       toast("Backup importado com sucesso.");
