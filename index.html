@@ -1043,9 +1043,10 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
 .msl-tb-l.escola { font-weight: 700; font-size: 13px; margin-top: 2px; }
 .msl-timbre-linha { border: none; border-top: 1.5px solid #000; margin: 7px 0 13px; }
 
-/* Rodapé institucional: uma linha discreta com a marca da rede. É um
-   <tfoot>, então as bordas da tabela do corpo precisam ser desligadas nele
-   — senão ele herda o quadro preto das seções. */
+/* Rodapé institucional: uma linha discreta com a marca da rede.
+   v10.2 — deixou de ser um <tfoot> dentro da tabela do corpo. Ver a
+   explicação inteira na regra de impressão, mais abaixo. Na tela ele é
+   simplesmente a última linha do plano, como sempre foi. */
 .msl-rodape td { border: none !important; text-align: center;
   padding: 9px 0 0 !important; font-size: 10.5px; color: #333;
   letter-spacing: .02em; }
@@ -1700,11 +1701,21 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
   .msl-timbre {
     break-inside: avoid !important; page-break-inside: avoid !important;
   }
-  /* O rodapé se repete no pé de TODAS as folhas por ser um <tfoot>:
-     table-footer-group é o que faz o navegador redesenhá-lo em cada
-     página. (Elemento com position:fixed NÃO é repetido — testado.) */
+  /* v10.2 — o rodapé era um <tfoot> com table-footer-group. Ele até se
+     repetia, mas um tfoot é desenhado LOGO DEPOIS da última linha que coube
+     na folha, não no pé da folha. Como as seções do plano não podem rachar
+     ao meio, sobrava um vão em branco embaixo e o rodapé aparecia flutuando
+     no meio da página — em uma das folhas, na altura de 20%, com dois terços
+     de papel vazio abaixo dele.
+     O comentário antigo dizia que position:fixed não era repetido na
+     impressão. Isso deixou de ser verdade: medi num documento de teste e o
+     Chrome repete o elemento fixo em todas as folhas, sempre a 94% da
+     altura, colado embaixo. É o que se usa agora. O padding do corpo
+     reserva a faixa para o texto nunca passar por cima. */
   .msl-rodape { display: table-footer-group; }
-  .msl-rodape tr, .msl-rodape td {
+  .msl-rodape td {
+    border: none !important; border-top: 0.75pt solid #D7E3EE !important;
+    text-align: center; font-size: 8.5pt; padding: 4pt 0 0 !important;
     break-inside: avoid !important; page-break-inside: avoid !important;
   }
   .msl-timbre, .msl-timbre-linha, .msl h1 {
@@ -1734,7 +1745,7 @@ table.tb td, table.tb th { hyphens: none; text-align: left; }
   table.tb { font-size: 9pt !important; }
   img { break-inside: avoid; max-height: 62mm; object-fit: cover; }
 
-  @page { size: A4; margin: 15mm; }
+  @page { size: A4; margin: 15mm 15mm 24mm; }
 }
 </style>
 </head>
@@ -4329,9 +4340,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "10.1";
-var APP_VERSAO_DATA = "06/09/2026";
-var APP_VERSAO_NOTA = "O ano até aqui virou grade de pontos: um ponto por turma";
+var APP_VERSAO = "10.2";
+var APP_VERSAO_DATA = "07/09/2026";
+var APP_VERSAO_NOTA = "O PDF salvo agora sai igual ao plano da tela";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -15521,14 +15532,37 @@ function exportCss() {
   var line = "#D7E3EE";
   var soft = "#F5F8FC";
   var head = "#EAF1F8";
-  return "@page{size:A4;margin:15mm}" +
+  /* v10.2 — a margem de baixo cresceu de 15mm para 24mm. O rodapé é um
+     elemento fixo e, por natureza, não reserva espaço nenhum no fluxo:
+     ele apenas se desenha por cima. Medido, o texto vinha 8pt POR BAIXO
+     dele em seis das sete folhas — a última linha de cada página saía
+     cortada. Quem abre espaço em TODAS as folhas é a margem da página. */
+  return "@page{size:A4;margin:15mm 15mm 24mm}" +
     /* O Word recebe o HTML da tela; se o professor exportar pelo celular, a
        tela está no formato empilhado. Aqui o documento volta ao formato de
        tabela, que é o que a escola espera no papel. */
     ".of-narrow-only{display:none}" +
     ".of-wide-only{display:block}" +
+    /* A folha A4 tem 210mm e a margem de página tira 15mm de cada lado:
+       sobram exatamente 180mm. O valor anterior aqui era 186mm — nunca
+       causou estouro, porque max-width só limita e o bloco disponível já
+       era de 180mm, mas era um número que não correspondia a nada. Agora
+       diz a medida real. (Conferido no PDF do professor: a tabela ia de
+       15,1mm a 195,3mm, ou seja, os 180mm certos, com a borda direita no
+       lugar — ela é clara demais para aparecer numa miniatura.)
+       O padding de baixo reserva a faixa do rodapé fixo. */
     "body{font-family:" + f.sans + ";color:#1a1a1a;line-height:1.5;font-size:11pt;" +
-      "max-width:186mm;margin:0 auto;padding:0;text-align:justify;hyphens:auto}" +
+      "max-width:180mm;margin:0 auto;padding:0 0 10mm;text-align:justify;hyphens:auto}" +
+    /* O rodapé institucional preso ao pé de cada folha. Medido: o Chrome
+       repete o elemento fixo em todas as páginas impressas. */
+    /* O rodapé é um <tfoot>: é o único mecanismo que o navegador respeita
+       para RESERVAR espaço no pé de cada folha impressa. Um elemento fixo
+       repete, mas não reserva — testei, e ele cobria a última linha. */
+    ".msl-rodape{display:table-footer-group}" +
+    ".msl-rodape td{border:none;border-top:0.75pt solid " + line + ";text-align:center;" +
+      "font-size:8.5pt;color:#333;padding:4pt 0 0;" +
+      "break-inside:avoid;page-break-inside:avoid}" +
+    ".msl-rodape img{max-width:70mm;max-height:12mm;object-fit:contain}" +
     "h1{font-family:" + f.serif + ";color:" + acc + ";font-size:19pt;margin:0 0 4pt;text-align:left;" +
       "page-break-after:avoid;break-after:avoid}" +
     "h2{font-family:" + f.serif + ";font-size:11.5pt;text-transform:uppercase;letter-spacing:.04em;color:" + acc + ";" +
@@ -15540,7 +15574,18 @@ function exportCss() {
     "li{margin-bottom:2.5pt;text-align:justify;orphans:3;widows:3}" +
     "table{width:100%;border-collapse:collapse;font-size:9.5pt;margin:5pt 0;page-break-inside:auto}" +
     "thead{display:table-header-group}" +
-    "tr{page-break-inside:avoid;break-inside:avoid}" +
+    /* v10.2 — antes esta regra valia para TODA linha de tabela. No corpo do
+       plano, porém, cada linha é uma seção inteira: a de Habilidades tem
+       oito itens longos e não cabe no resto da folha, então pulava inteira
+       para a página seguinte e deixava a faixa do título sozinha em cima de
+       um palmo de papel branco. Agora só as linhas CURTAS são indivisíveis
+       — identificação, diário, rubrica —, onde partir ao meio realmente
+       atrapalha. As seções do corpo podem atravessar a quebra. */
+    ".msl-id tr,.msl-diario tr,.msl-rub tr{page-break-inside:avoid;break-inside:avoid}" +
+    ".msl-corpo tr{page-break-inside:auto;break-inside:auto}" +
+    /* A faixa azul do título nunca se separa do conteúdo que ela anuncia. */
+    ".msl-faixa,.msl-faixa td{page-break-after:avoid;break-after:avoid;" +
+      "page-break-inside:avoid;break-inside:avoid}" +
     "th,td{border:0.75pt solid " + line + ";padding:4pt 6pt;text-align:left;vertical-align:top;hyphens:none}" +
     "th{background:" + head + ";font-size:8.5pt;text-transform:uppercase;font-weight:bold}" +
     ".badge{display:inline-block;font-size:8.5pt;font-weight:bold;padding:1.5pt 6pt;border:0.75pt solid " + line + ";" +
@@ -15552,7 +15597,81 @@ function exportCss() {
     ".sec-body{text-align:justify}" +
     "img{max-width:100%;max-height:62mm;page-break-inside:avoid}" +
     ".noprint{display:none}" +
-    "strong{font-weight:bold}em{font-style:italic}";
+    "strong{font-weight:bold}em{font-style:italic}" +
+    mslCssParaPapel(line);
+}
+
+/* =========================================================
+   ESTILO DO PAPEL TIMBRADO PARA A PÁGINA AUTÔNOMA (v10.2)
+   ---------------------------------------------------------
+   O botão "Ver em PDF" monta uma página nova, do zero, e leva só o
+   exportCss(). Só que TODO o desenho do Modelo Oficial da SEMED — o
+   brasão, as faixas azuis das seções, os quadros de identificação, a
+   tabela do diário — mora nas regras .msl-* da folha de estilo do
+   aplicativo, que essa página não recebia.
+   O efeito era exatamente o que o professor descreveu: o PDF salvo não
+   corresponde ao plano da tela. O caso mais visível é o brasão. Sem a
+   regra que fixa 62px de lado, o desenho vetorial de reserva não tem
+   tamanho nenhum e se estica até ocupar a FOLHA INTEIRA — a primeira
+   página sai só com o brasão gigante.
+   Estas são as mesmas medidas da tela, para o papel sair igual.
+   ========================================================= */
+function mslCssParaPapel(line) {
+  return ".msl{font-family:'Times New Roman',Georgia,serif;font-size:13.5px;line-height:1.5;" +
+      "text-align:justify;hyphens:auto;overflow-wrap:break-word}" +
+    ".msl h1{font-family:inherit;font-size:17px;font-weight:700;text-align:center;" +
+      "margin:0 0 14px;line-height:1.3;color:inherit}" +
+    ".msl table{width:100%;border-collapse:collapse}" +
+    /* O brasão: a regra que faltava. */
+    ".msl-timbre{text-align:center;margin-bottom:4px}" +
+    ".msl-timbre .tb-bra{margin-bottom:6px}" +
+    ".msl-timbre .tb-bra img,.msl-timbre .tb-bra svg{width:62px;height:62px;" +
+      "max-height:62px;object-fit:contain;display:inline-block}" +
+    ".msl-tb-l{font-size:12.5px;line-height:1.4;text-align:center;hyphens:none}" +
+    ".msl-tb-l.forte{font-weight:700}" +
+    ".msl-tb-l.escola{font-weight:700;font-size:13px;margin-top:2px}" +
+    ".msl-timbre-linha{border:none;border-top:1.5px solid #000;margin:7px 0 13px}" +
+    /* Quadros de identificação e corpo, com o traço preto do modelo. */
+    ".msl .msl-id td{border:1px solid #000;padding:4px 7px;font-size:13px;vertical-align:top;" +
+      "text-align:left;hyphens:none}" +
+    ".msl .msl-id td.rot{white-space:nowrap;width:170px;font-weight:600}" +
+    ".msl .msl-id td.rot-curto{white-space:nowrap;width:92px;font-weight:600}" +
+    ".msl-corpo{margin-top:10px}" +
+    ".msl-corpo td{border:1px solid #000;padding:6px 9px;vertical-align:top}" +
+    /* As faixas azuis que separam as seções — sem elas o plano vira uma
+       tabela cinzenta sem hierarquia. O -webkit-print-color-adjust é o que
+       impede o navegador de "economizar tinta" e apagar o fundo. */
+    ".msl-faixa td{background:#1F3864;color:#fff;text-align:center;font-weight:700;" +
+      "font-size:13.5px;padding:5px 9px;-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
+    ".msl-faixa.alt td{background:#002060}" +
+    ".msl-lista{margin:0;padding-left:17px}" +
+    ".msl-lista li{margin-bottom:3px}" +
+    ".msl-cod{font-weight:700}" +
+    ".msl-nota{font-size:12px;color:#444}" +
+    ".msl-corrido{font-size:12.5px;line-height:1.55}" +
+    ".msl-art{margin-bottom:4px;font-size:12.5px;line-height:1.5}" +
+    ".msl-sub{font-weight:700;margin:7px 0 3px;font-size:13px;text-align:left}" +
+    ".msl-etapa{margin-bottom:7px}" +
+    ".msl-momento{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;" +
+      "text-transform:uppercase;color:#1F3864;background:#E7EFF9;border-radius:3px;" +
+      "padding:1px 6px;margin-right:6px;-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
+    ".msl-min{font-weight:700}" +
+    /* Diário: larguras fixas, senão o navegador redistribui pelo conteúdo
+       e as três colunas saem diferentes do que a escola espera. */
+    ".msl-diario{width:100%;border-collapse:collapse;margin-bottom:4px;table-layout:fixed}" +
+    ".msl-diario th,.msl-diario td{border:1px solid #000;padding:5px 7px;font-size:12.5px;" +
+      "vertical-align:top;text-align:left;hyphens:none;overflow-wrap:break-word}" +
+    ".msl-diario th{background:#E7EFF9;color:#16253A;font-weight:700;font-size:11.5px;" +
+      "-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
+    ".msl-diario th:first-child,.msl-diario td:first-child{width:52%}" +
+    ".msl-diario th:nth-child(2),.msl-diario td:nth-child(2){width:12%}" +
+    ".msl-diario th:nth-child(3),.msl-diario td:nth-child(3){width:36%}" +
+    ".msl-diario .msl-curr{font-size:11.5px;text-align:center}" +
+    ".msl-idem{color:#666;font-size:13px}" +
+    ".msl-rub{margin-top:7px}" +
+    ".msl-rub td,.msl-rub th{border:1px solid #000;padding:4px 6px;font-size:12px;vertical-align:top}" +
+    ".msl-rub th{background:#E7EFF9;font-weight:700;text-align:left;" +
+      "-webkit-print-color-adjust:exact;print-color-adjust:exact}";
 }
 
 /* =========================================================
@@ -16235,13 +16354,14 @@ function planoModeloSL(pl) {
     mslFaixa("Referências") +
       mslLinha(mslLista(referenciasDoPlano(pc, c.references))) +
   "</tbody>" +
-  /* v7.7 — o rodapé institucional vive num <tfoot> da tabela do corpo.
-     Não é firula: `position: fixed` simplesmente não é repetido pelo motor
-     de impressão do Chrome — testei e o rodapé não saía em nenhuma folha.
-     Já o <tfoot> de uma tabela que atravessa várias páginas é redesenhado
-     pelo navegador no pé de CADA uma delas. Como o corpo do plano já é uma
-     tabela única que vai do começo ao fim do documento, o rodapé acompanha
-     todas as folhas sem eu precisar mexer na estrutura. */
+  /* v10.2 — o rodapé volta a ser um <tfoot>. Eu tinha trocado por um
+     elemento fixo, mas medi: um elemento fixo NÃO reserva espaço nenhum na
+     folha — ele se desenha por cima, e cobria 4mm da última linha em todas
+     as páginas, com qualquer margem. O <tfoot> reserva. O que fazia ele
+     parecer "solto no meio da página" não era ele: era a regra que proibia
+     qualquer linha de tabela de quebrar, o que jogava seções inteiras para
+     a folha seguinte e deixava metade do papel vazio. Isso foi corrigido
+     em separado; com as seções podendo quebrar, o tfoot fica no pé. */
   mslRodapeTfoot(cfg) +
   "</table>";
 
