@@ -1169,20 +1169,31 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
    O alvo de toque recomendado é de 44px; abaixo disso o dedo erra e o
    cartão parece "vazio em cima". O texto acompanhou, senão o ícone
    maior faz o título parecer menor do que é. */
-.pn-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-.pn-tool { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(20,40,70,.06); padding: 14px 15px 15px; cursor: pointer;
-  transition: transform .14s ease, box-shadow .14s ease; }
-.pn-tool:active { transform: scale(.98); }
-.pn-tool:hover { box-shadow: 0 3px 10px rgba(20,40,70,.10); }
-.pn-tool-ic { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center;
-  justify-content: center; font-size: 21px; line-height: 1; margin-bottom: 11px; }
+/* v9.9 — os quatro atalhos eram quatro cartões soltos, 2×2, cada um com
+   moldura, sombra, título e uma linha de descrição. Somava muita borda para
+   pouca informação: o que identifica um atalho é o ícone e o nome.
+   Agora eles ocupam UM painel só, lado a lado, separados por fio de cabelo
+   em vez de moldura. O ícone subiu de 44 para 56px — é ele que o olho
+   procura — e a linha de descrição saiu da tela (continua no toque longo,
+   pelo title). O bloco ficou mais baixo do que era em 2×2, e a barra de
+   ícones vira um só objeto em vez de quatro. */
+.pn-tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+  background: var(--border2); border: 1px solid var(--border2); border-radius: 18px;
+  overflow: hidden; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(20,40,70,.06); }
+.pn-tool { background: var(--bg2); padding: 15px 6px 14px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 9px;
+  text-align: center; transition: background .14s ease; }
+.pn-tool:active { background: var(--bg3); }
+.pn-tool:hover { background: var(--bg3); }
+.pn-tool-ic { width: 56px; height: 56px; border-radius: 18px; display: flex; align-items: center;
+  justify-content: center; font-size: 26px; line-height: 1; margin-bottom: 0; }
 .ic-azul  { background: var(--acc3);  color: var(--acc); }
 .ic-verde { background: var(--grnBg); color: var(--grn); }
 .ic-ambar { background: var(--ambBg); color: var(--amb); }
 .ic-roxo  { background: var(--roxBg);  color: var(--rox); }
-.pn-tool-tt { font-size: 13.5px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
-.pn-tool-ds { font-size: 11px; color: var(--t4); margin-top: 4px; line-height: 1.4; }
+.pn-tool-tt { font-size: 11.5px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25;
+  text-wrap: balance; }
+.pn-tool-ds { display: none; }
 
 /* 5. Retomar o trabalho */
 /* v7.3 — as abas do painel também encaixam, e crescem para caber o dedo. */
@@ -1212,15 +1223,18 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
    atalhos virarem uma fila comprida. Agora só embaixo de 340px, largura de
    aparelho pequeno de verdade, e o ícone diminui um pouco em vez de o
    quadro inteiro se desfazer. */
+/* Aparelho estreito: os quatro continuam lado a lado, só o ícone recua um
+   pouco. Ele nunca desce abaixo dos 44px do alvo de toque. */
 @media (max-width: 360px) {
-  .pn-tool { padding: 12px 12px 13px; }
-  .pn-tool-ic { width: 40px; height: 40px; border-radius: 13px; font-size: 19px; margin-bottom: 9px; }
-  .pn-tool-tt { font-size: 12.5px; }
-  .pn-tool-ds { font-size: 10.5px; }
+  .pn-tool { padding: 12px 3px 12px; gap: 8px; }
+  .pn-tool-ic { width: 48px; height: 48px; border-radius: 16px; font-size: 23px; }
+  .pn-tool-tt { font-size: 10.5px; }
   .pn-ola { font-size: 20px; }
 }
-@media (max-width: 340px) {
-  .pn-tools { grid-template-columns: 1fr; }
+@media (max-width: 320px) {
+  .pn-tools { grid-template-columns: 1fr 1fr; }
+  .pn-tool-ic { width: 52px; height: 52px; font-size: 25px; }
+  .pn-tool-tt { font-size: 11.5px; }
 }
 /* Notebook: duas colunas, aproveitando a largura da tela. A coluna da
    esquerda leva o que se lê em sequência (métricas, matriz, retomada);
@@ -1238,6 +1252,13 @@ body.t-grafite #planPaper .msl-timbre-linha { border-top-color: #000; }
   .pn-a-too > .pn-tools, .pn-a-rec > .pn-card { margin-bottom: 0; }
   .pn-banner { padding: 20px 22px; }
   .pn-ola { font-size: 25px; }
+  /* No computador os atalhos moram numa coluna estreita, ao lado do resto.
+     Quatro lado a lado ali espremeria os nomes; 2×2 usa a mesma altura da
+     coluna vizinha e deixa o ícone respirar. Continua sendo um painel só. */
+  .pn-tools { grid-template-columns: 1fr 1fr; }
+  .pn-tool { padding: 18px 10px 17px; gap: 10px; }
+  .pn-tool-ic { width: 60px; height: 60px; border-radius: 19px; font-size: 28px; }
+  .pn-tool-tt { font-size: 12.5px; }
 }
 
 /* ── Calendário letivo com quadrados uniformes (v4.7) ──
@@ -4251,9 +4272,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "9.8";
+var APP_VERSAO = "9.9";
 var APP_VERSAO_DATA = "06/09/2026";
-var APP_VERSAO_NOTA = "Fevereiro corrigido e o backup passa a levar as Aulas Dadas";
+var APP_VERSAO_NOTA = "Atalhos do painel com ícones maiores, lado a lado num painel só";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -11581,11 +11602,12 @@ function viewHome() {
       "</div>";
 
   /* ---- 4. Atalhos exclusivos (o que não está na barra de baixo) ---- */
+  /* A descrição saiu da tela mas não do app: vira o title do atalho, que o
+     computador mostra ao pousar o mouse e o celular no toque longo. */
   var atalho = function(id, icone, titulo, desc, classe) {
-    return '<div class="pn-tool" onclick="go(\'' + id + '\')">' +
-      '<div class="pn-tool-ic ' + classe + '">' + ico(icone, 22) + "</div>" +
-      '<div class="pn-tool-tt">' + titulo + "</div>" +
-      '<div class="pn-tool-ds">' + desc + "</div></div>";
+    return '<div class="pn-tool" onclick="go(\'' + id + '\')" title="' + desc + '">' +
+      '<div class="pn-tool-ic ' + classe + '">' + ico(icone, 26) + "</div>" +
+      '<div class="pn-tool-tt">' + titulo + "</div></div>";
   };
   var ferramentas = '<div class="pn-tools">' +
     atalho("cobertura", "cobertura", "Cobertura BNCC", "Habilidades j&aacute; trabalhadas", "ic-azul") +
