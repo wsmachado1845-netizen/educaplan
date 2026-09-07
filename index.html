@@ -401,13 +401,14 @@ textarea.inp { resize: vertical; }
 /* v8.8 — a descrição de uma linha: que plano é, de qual disciplina e turma. */
 .hp-resumo { font-size: 11.5px; color: var(--t3); line-height: 1.45; margin-top: -3px; }
 
-/* ── O ano até aqui (v9.6) ──
-   Um gráfico de colunas, uma por mês letivo já decorrido, com a altura
-   proporcional às turmas que têm plano. A cor separa três estados: azul do
-   município para o mês completo, âmbar para o mês corrente (ainda dá tempo)
-   e vermelho para o mês que fechou devendo. As colunas sobem ao abrir a
-   tela — a animação aqui não é enfeite: ela chama o olho para a única parte
-   do painel que muda de um dia para o outro. */
+/* ── O ano até aqui (v10.1) ──
+   A primeira versão eram colunas de altura proporcional. Com os números
+   reais — quase todo mês em 0 de 9 — as colunas ficavam vazias e a faixa
+   virava uma fileira de tubos ocos: muito espaço para nenhuma informação.
+   Altura de barra só comunica quando os valores variam entre si.
+   Agora cada mês é uma gradezinha de pontos, UM POR TURMA. Ponto cheio é
+   turma com plano. Lê-se igual de bem em 0 de 9 e em 9 de 9, mostra de
+   quantas turmas se trata sem precisar da fração, e ocupa menos altura. */
 /* Aviso de pendência do painel (v10.0) — fundo tingido, do mesmo jeito que
    o aviso de backup. Os dois avisos do painel passam a ter a mesma forma;
    o que muda entre eles é só a cor, que diz do que se trata. */
@@ -427,42 +428,39 @@ textarea.inp { resize: vertical; }
 .ano-sub strong { color: var(--verm); }
 
 /* Onze meses precisam caber na largura de um celular sem virar rolagem
-   lateral — rolagem escondida é rolagem que ninguém acha. As colunas
-   encolhem até 26px, o suficiente para a barra e a abreviação. */
-.ano-barras { display: flex; gap: 5px; align-items: flex-end;
-  padding-bottom: 2px; }
+   lateral — rolagem escondida é rolagem que ninguém acha. */
+.ano-grade { display: flex; gap: 4px; align-items: flex-start; }
 .ano-mes { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;
-  align-items: center; gap: 5px; padding: 6px 1px 7px; border: 0; border-radius: 12px;
+  align-items: center; gap: 6px; padding: 8px 1px 7px; border: 0; border-radius: 12px;
   background: transparent; cursor: pointer; font: inherit; color: inherit;
   transition: background .16s; }
 .ano-mes:hover { background: var(--bg3); }
 .ano-mes:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
-.ano-col { position: relative; width: 100%; max-width: 30px; height: 62px;
-  border-radius: 9px; background: var(--bg3); overflow: hidden; display: block; }
-.ano-fill { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 9px;
-  animation: anoSobe .55s cubic-bezier(.22,.9,.3,1) both; }
-@keyframes anoSobe { from { height: 0 !important; } }
-@media (prefers-reduced-motion: reduce) { .ano-fill { animation: none; } }
-.ano-mes.ok .ano-fill { background: linear-gradient(180deg, var(--acc), var(--acc2, var(--acc))); }
+/* Três por linha: com 9 turmas dá um quadrado certinho, e com outros
+   totais a última linha simplesmente fica incompleta, sem deformar nada. */
+.ano-pontos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.ano-p { width: 7px; height: 7px; border-radius: 2.5px; background: var(--bg3);
+  box-shadow: inset 0 0 0 1px var(--border); display: block;
+  animation: anoPonto .4s ease both; }
+.ano-p.on { background: var(--acc); box-shadow: none; }
+@keyframes anoPonto { from { opacity: 0; transform: scale(.5); } }
+@media (prefers-reduced-motion: reduce) { .ano-p { animation: none; } }
 /* v10.0 — o mês corrente era âmbar. Mas âmbar, no resto do aplicativo,
    quer dizer "atenção" (backup pendente, horário não configurado), e o mês
    em curso não é um aviso: ele está apenas em andamento. Pintá-lo de âmbar
    punha uma terceira cor no gráfico e dava um alarme que não existe.
    Agora ele é neutro — contorno escuro e um marcador —, o que também
    devolve ao gráfico o "azul predominante com vermelho" que você pediu. */
-.ano-mes.agora .ano-fill { background: var(--t2); }
-.ano-mes.atraso .ano-fill { background: var(--verm); }
-.ano-mes.agora .ano-col { box-shadow: inset 0 0 0 2px var(--t1); }
-.ano-mes.agora .ano-col::after { content: ""; position: absolute; top: 5px; right: 5px;
-  width: 7px; height: 7px; border-radius: 50%; background: var(--t1); }
+.ano-mes.agora { background: var(--bg3); box-shadow: inset 0 0 0 1.5px var(--t1); }
 .ano-mes.agora .ano-nome { color: var(--t1); }
 .ano-nome { font-size: 9px; font-weight: 800; letter-spacing: .02em;
   text-transform: uppercase; color: var(--t4); }
 .ano-num { font-size: 9.5px; font-weight: 700; color: var(--t3);
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (min-width: 620px) {
-  .ano-barras { gap: 8px; }
-  .ano-col { max-width: 38px; height: 74px; }
+  .ano-grade { gap: 7px; }
+  .ano-p { width: 9px; height: 9px; border-radius: 3px; }
+  .ano-pontos { gap: 4px; }
   .ano-nome { font-size: 10px; letter-spacing: .06em; }
   .ano-num { font-size: 11px; }
 }
@@ -473,14 +471,16 @@ textarea.inp { resize: vertical; }
   margin-top: 11px; padding-top: 10px; border-top: 1px solid var(--border2);
   font-size: 10px; color: var(--t4); }
 .ano-legenda span { display: inline-flex; align-items: center; gap: 5px; }
-.ano-legenda i { width: 8px; height: 8px; border-radius: 3px; display: inline-block; }
+/* Cada item da legenda repete EXATAMENTE a forma do que representa no
+   gráfico — não só a cor: ponto aceso, ponto apagado (com o mesmo fio de
+   borda) e o mês corrente, que lá é fundo tingido MAIS contorno escuro,
+   as duas coisas juntas. O chip do mês vai um pouco maior para o contorno
+   caber sem fechar o miolo. */
+.ano-legenda i { width: 8px; height: 8px; border-radius: 2.5px; display: inline-block; }
 .ano-legenda i.ok { background: var(--acc); }
-/* A barra do mês corrente aparece como CONTORNO, não como bloco cheio —
-   porque o mês mal começou e o preenchimento é quase zero. A legenda
-   mostrava um quadrado cheio: a mesma cor, mas outra forma, e era isso que
-   fazia legenda e gráfico parecerem discordar. Agora ela é um anel. */
-.ano-legenda i.agora { background: transparent; box-shadow: inset 0 0 0 2px var(--t1); }
-.ano-legenda i.atraso { background: var(--verm); }
+.ano-legenda i.vazio { background: var(--bg3); box-shadow: inset 0 0 0 1px var(--border); }
+.ano-legenda i.agora { width: 11px; height: 11px; background: var(--bg3);
+  box-shadow: inset 0 0 0 1.5px var(--t1); border-radius: 4px; }
 
 /* ── Conferência da Matriz (v8.9) ──
    Uma linha por bloco (turma × período). O bloco com erro ganha a borda
@@ -4329,9 +4329,9 @@ function normGrade(g) {
    celular/computador já está com a atualização publicada — antes
    era preciso caçar alguma novidade na tela para ter certeza.
    ========================================================= */
-var APP_VERSAO = "10.0";
+var APP_VERSAO = "10.1";
 var APP_VERSAO_DATA = "06/09/2026";
-var APP_VERSAO_NOTA = "Legenda e gráfico iguais, aviso tingido, menu com filete e foco de teclado";
+var APP_VERSAO_NOTA = "O ano até aqui virou grade de pontos: um ponto por turma";
 
 var K_PLANS = "educaplan_plans_v2";
 var K_CFG = "educaplan_config_v2";
@@ -8217,9 +8217,21 @@ function faixaDoAnoHtml() {
         "</div>" +
       "</div>" +
     "</div>" +
-    '<div class="ano-barras">' +
+    /* v10.1 — antes cada mês era uma barra de altura proporcional. Com os
+       números reais do professor (quase tudo 0 de 9), toda barra ficava
+       vazia: o gráfico virava uma fileira de tubos ocos e não dizia nada.
+       Barra de altura só funciona quando os valores variam.
+       Agora cada mês é uma gradezinha de 9 pontos — UM PONTO POR TURMA.
+       Ponto cheio = turma com plano. O desenho diz a mesma coisa com 0/9 e
+       com 9/9, mostra de quantas turmas se trata sem precisar ler a fração,
+       e ocupa menos altura do que as barras ocupavam. */
+    '<div class="ano-grade">' +
       linhas.map(function(l) {
         var estado = l.faltando.length ? (l.corrente ? "agora" : "atraso") : "ok";
+        var pontos = "";
+        for (var i = 0; i < l.total; i++) {
+          pontos += '<i class="ano-p' + (i < l.feitos ? " on" : "") + '"></i>';
+        }
         return '<button class="ano-mes ' + estado + '" ' +
           'onclick="verMesNoHistorico(' + jsStr(l.mes) + ')" ' +
           'title="' + esc(l.mes) + ": " + l.feitos + " de " + l.total + " turmas com plano" +
@@ -8228,17 +8240,16 @@ function faixaDoAnoHtml() {
                   return esc(subjAbbrev(c.subject) + " " + (c.conhecida ? turmaCurta(c.gradeLevel) : c.gradeCurto));
                 }).join(", ") + (l.faltando.length > 4 ? "…" : "")
               : "") + '">' +
-          '<span class="ano-col"><span class="ano-fill" style="height:' +
-            Math.max(6, l.pct) + '%"></span></span>' +
+          '<span class="ano-pontos">' + pontos + "</span>" +
           '<span class="ano-nome">' + esc(l.mes.slice(0, 3)) + "</span>" +
           '<span class="ano-num">' + l.feitos + "/" + l.total + "</span>" +
         "</button>";
       }).join("") +
     "</div>" +
     '<div class="ano-legenda">' +
-      '<span><i class="ok"></i>completo</span>' +
+      '<span><i class="ok"></i>turma com plano</span>' +
+      '<span><i class="vazio"></i>sem plano</span>' +
       '<span><i class="agora"></i>m&ecirc;s corrente</span>' +
-      '<span><i class="atraso"></i>fechou incompleto</span>' +
       '<span style="margin-left:auto;opacity:.8">toque num m&ecirc;s para abrir a pasta</span>' +
     "</div>" +
   "</div>";
